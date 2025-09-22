@@ -1,0 +1,123 @@
+// src/data/smoothiesData.ts
+export const smoothies = [
+  {
+    name: "Avocado Blue Dream",
+    description: "Blueberries, banana, avocado, milk, greek yoghurt, chia seeds",
+    prices: { S: 60, M: 76, L: 91 },
+    image: "/images/smoothies/avocado-blue-dream.jpg",
+    addOns: [
+      { name: "protein powder", price: 19 },
+      { name: "ginger", price: 10 },
+      { name: "honey", price: 10 },
+      { name: "chia seeds", price: 12.5 },
+    ],
+  },
+  {
+    name: "Berries Smoothie",
+    description: "Mixed berries, greek yoghurt, banana, milk & honey",
+    prices: { S: 59, M: 75, L: 89 },
+    image: "/images/smoothies/berries-smoothie.jpg",
+    addOns: [
+      { name: "protein powder", price: 19 },
+      { name: "ginger", price: 10 },
+      { name: "honey", price: 10 },
+      { name: "chia seeds", price: 12.5 },
+    ],
+  },
+  {
+    name: "Rolled Oats Smoothie",
+    description: "Rolled oats, avocado, peanut butter, banana, greek yoghurt, oat milk & honey",
+    prices: { S: 63, M: 78, L: 95 },
+    image: "/images/smoothies/rolled-oats-smoothie.jpg",
+    addOns: [
+      { name: "protein powder", price: 19 },
+      { name: "ginger", price: 10 },
+      { name: "honey", price: 10 },
+      { name: "chia seeds", price: 12.5 },
+    ],
+  },
+  {
+    name: "Sunshine Smoothie",
+    description: "Mango, pineapple, banana, turmeric, coconut milk",
+    prices: { S: 59, M: 75, L: 89 },
+    image: "/images/smoothies/sunshine-smoothie.jpg",
+    addOns: [
+      { name: "protein powder", price: 19 },
+      { name: "ginger", price: 10 },
+      { name: "honey", price: 10 },
+      { name: "chia seeds", price: 12.5 },
+    ],
+  },
+  {
+    name: "Green Goddess",
+    description: "Spinach or kale, greek yoghurt, milk, pineapple, chia seeds, honey, lemon juice, banana, and apple",
+    prices: { S: 61, M: 77, L: 92 },
+    image: "/images/smoothies/green-goddess.jpg",
+    addOns: [
+      { name: "protein powder", price: 19 },
+      { name: "ginger", price: 10 },
+      { name: "honey", price: 10 },
+      { name: "chia seeds", price: 12.5 },
+    ],
+  },
+  {
+    name: "Charlie Brown",
+    description: "Fusion of berries, banana, peanut butter, chia seeds, dates and almond milk",
+    prices: { S: 61, M: 77, L: 92 },
+    image: "/images/smoothies/charlie-brown.jpg",
+    addOns: [
+      { name: "protein powder", price: 19 },
+      { name: "ginger", price: 10 },
+      { name: "honey", price: 10 },
+      { name: "chia seeds", price: 12.5 },
+    ],
+  },
+  {
+    name: "Chocolate Banana",
+    description: "Banana, greek yoghurt, whole milk, cocoa powder, peanut butter, honey, dark chocolate",
+    prices: { S: 60, M: 76, L: 91 },
+    image: "/images/smoothies/chocolate-banana.jpg",
+    addOns: [
+      { name: "protein powder", price: 19 },
+      { name: "ginger", price: 10 },
+      { name: "honey", price: 10 },
+      { name: "chia seeds", price: 12.5 },
+    ],
+  },
+  {
+    name: "Avocado Smoothie",
+    description: "Avocado, banana, peanut butter, whole milk, greek yoghurt, dates & honey, chia seeds",
+    prices: { S: 63, M: 78, L: 95 },
+    image: "/images/smoothies/avocado-smoothie.jpg",
+    addOns: [
+      { name: "protein powder", price: 19 },
+      { name: "ginger", price: 10 },
+      { name: "honey", price: 10 },
+      { name: "chia seeds", price: 12.5 },
+    ],
+  },
+  {
+    name: "The Golden Girl",
+    description: "Mango, pineapple, coconut milk and greek yoghurt",
+    prices: { S: 59, M: 75, L: 89 },
+    image: "/images/smoothies/the-golden-girl.jpg",
+    addOns: [
+      { name: "protein powder", price: 19 },
+      { name: "ginger", price: 10 },
+      { name: "honey", price: 10 },
+      { name: "chia seeds", price: 12.5 },
+    ],
+  },
+  {
+    name: "Tangerine Dream",
+    description: "Naartjie, orange, banana, greek yoghurt, honey, and milk",
+    prices: { S: 59, M: 75, L: 89 },
+    image: "/images/smoothies/tangerine-dream.jpg",
+    addOns: [
+      { name: "protein powder", price: 19 },
+      { name: "ginger", price: 10 },
+      { name: "honey", price: 10 },
+      { name: "chia seeds", price: 12.5 },
+    ],
+  },
+];

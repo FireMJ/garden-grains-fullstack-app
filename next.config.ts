@@ -1,7 +1,12 @@
-import type { NextConfig } from "next";
+// next.config.ts
+import { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    // your other experimental flags here…
+    serverActions: true,
+  },
+  // any other top-level config (image domains, rewrites, etc.)
 };
 
 export default nextConfig;

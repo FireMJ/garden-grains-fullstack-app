@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Garden & Grains
 
-## Getting Started
+**A cozy, modern neighborhood platform where clean eating meets community.**
 
-First, run the development server:
+Garden & Grains is a fullstack restaurant experience built for locals, remote workers, students, health enthusiasts, and anyone craving wholesome food. Designed to be warm, inviting, and visually rich, the app blends premium branding with real-time features to make ordering clean meals feel effortless and delightful.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🌿 Vision
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+A cozy, modern neighborhood spot where clean eating meets community.  
+Fresh, flavorful, and halaal-friendly — made for locals, remote workers, students, health enthusiasts and anyone craving wholesome food.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+We believe in food that nourishes, design that welcomes, and technology that connects. Garden & Grains is more than a menu — it’s a movement toward mindful eating and modern hospitality.
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 🛠️ Tech Stack
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Frontend:** Next.js 15, TypeScript, Tailwind CSS
+- **Backend:** Node.js, Express, MongoDB
+- **Features:** Real-time cart, dynamic menu, delivery distance logic, modular component system
+- **Design System:** Responsive layout, reusable UI blocks, print/digital branding integration
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## ✨ Features
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- 🥗 Dynamic menu with category pages and inline add-ons  
+- 🛒 Real-time cart with quantity, add-on, and total logic  
+- 📦 Delivery distance calculation and scheduling  
+- 📍 Location & hours with cozy neighborhood styling  
+- 📱 Mobile-first design for on-the-go ordering  
+- 🔐 Admin dashboard for menu management and analytics
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
