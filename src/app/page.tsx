@@ -10,6 +10,7 @@ import PageWrapper from "@/components/layout/PageWrapper";
 import MenuItemCard from "@/components/MenuItemCard";
 import { useCart } from "@/context/CartContext";
 import bannerImages from "@/data/bannerImages";
+import TestimonialsCarousel from "@/components/TestimonialsCarousel";
 
 // -------------------- Floating Buttons --------------------
 function FloatingCartButton() {
@@ -61,22 +62,28 @@ function FixedHeader() {
 
   return (
     <header
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
-        isScrolled ? "bg-[#1E4259] shadow-lg" : "bg-transparent"
-      } h-16 sm:h-20`}
+      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? "bg-[#1E4259] shadow-lg" : "bg-transparent"
+        } h-16 sm:h-20`}
     >
       <div className="relative w-full h-full">
-        {/* Logo */}
+        {/* Logo - FIXED: Using Next.js Image component */}
         <Link href="/" className="absolute left-4 sm:left-6 md:left-8 top-1/2 -translate-y-1/2 z-30">
-          <img src="/logo/logo.png" alt="Garden & Grains Logo" className="h-10 sm:h-12 md:h-14 object-contain" />
+          <div className="relative h-10 w-32 sm:h-12 sm:w-40 md:h-14 md:w-48">
+            <Image 
+              src="/logo/logo.png" 
+              alt="Garden & Grains Logo" 
+              fill
+              className="object-contain"
+              priority
+            />
+          </div>
         </Link>
 
         {/* Brand Name */}
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none">
           <span
-            className={`text-lg sm:text-xl md:text-2xl font-bold tracking-wide text-[#6C7B58] transform transition-all duration-500 ${
-              isScrolled ? "opacity-60 scale-90" : "opacity-100 scale-100"
-            }`}
+            className={`text-lg sm:text-xl md:text-2xl font-bold tracking-wide text-[#6C7B58] transform transition-all duration-500 ${isScrolled ? "opacity-60 scale-90" : "opacity-100 scale-100"
+              }`}
           >
             Garden & Grains
           </span>
@@ -155,25 +162,17 @@ function DynamicBanner() {
     return () => clearInterval(interval);
   }, [isClient, isPaused]);
 
-  // Preload neighbors - FIXED: using window.Image instead of Image
+  // Preload neighbors
   useEffect(() => {
     if (!isClient) return;
     const nextIndex = (currentIndex + 1) % bannerImages.length;
     const prevIndex = currentIndex === 0 ? bannerImages.length - 1 : currentIndex - 1;
-    
+
     [bannerImages[nextIndex], bannerImages[prevIndex]].forEach((src) => {
-      const img = new window.Image();
+      const img = new Image();
       img.src = src;
     });
   }, [currentIndex, isClient]);
-
-  // Swipe handlers
-  const handlers = {
-    onSwipedLeft: goNext,
-    onSwipedRight: goPrev,
-    trackMouse: true,
-    preventScrollOnSwipe: true,
-  };
 
   // Don't render dynamic content until client-side to avoid hydration mismatch
   if (!isClient) {
@@ -188,14 +187,14 @@ function DynamicBanner() {
   }
 
   return (
-    <div {...handlers} className="relative w-full h-[200px] sm:h-[300px] md:h-[400px] lg:h-[500px] overflow-hidden">
-      <Image 
-        key={currentIndex} 
-        src={bannerImages[currentIndex]} 
-        alt="Banner" 
-        fill 
-        className="object-cover transition-opacity duration-700" 
-        priority 
+    <div className="relative w-full h-[200px] sm:h-[300px] md:h-[400px] lg:h-[500px] overflow-hidden">
+      <Image
+        key={currentIndex}
+        src={bannerImages[currentIndex]}
+        alt="Banner"
+        fill
+        className="object-cover transition-opacity duration-700"
+        priority
       />
       <div className="absolute bottom-4 left-4 bg-black/50 text-white px-4 py-2 rounded-lg text-xs sm:text-sm md:text-lg">
         wholesome. crave-worthy. nourishment‑focused.
@@ -203,21 +202,21 @@ function DynamicBanner() {
 
       <div className="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t from-[#FAF7F2] to-transparent"></div>
 
-      <button 
-        onClick={goPrev} 
+      <button
+        onClick={goPrev}
         className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 text-white p-2 rounded-full hover:bg-black/60 transition"
       >
         ◀
       </button>
-      <button 
-        onClick={goNext} 
+      <button
+        onClick={goNext}
         className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 text-white p-2 rounded-full hover:bg-black/60 transition"
       >
         ▶
       </button>
 
-      <button 
-        onClick={() => setIsPaused((prev) => !prev)} 
+      <button
+        onClick={() => setIsPaused((prev) => !prev)}
         className="absolute top-2 left-2 bg-black/40 text-white px-3 py-1 rounded hover:bg-black/60 transition text-xs"
       >
         {isPaused ? "▶ Play" : "⏸ Pause"}
@@ -225,33 +224,74 @@ function DynamicBanner() {
 
       <div className="absolute bottom-4 w-full flex justify-center gap-2">
         {bannerImages.map((src, idx) => (
-          <div 
-            key={idx} 
-            className="relative group" 
-            onMouseEnter={() => setHoveredDot(idx)} 
+          <div
+            key={idx}
+            className="relative group"
+            onMouseEnter={() => setHoveredDot(idx)}
             onMouseLeave={() => setHoveredDot(null)}
           >
-            <button 
-              onClick={() => setCurrentIndex(idx)} 
-              className={`w-3 h-3 rounded-full transition ${
-                idx === currentIndex ? "bg-white scale-125" : "bg-white/50 hover:bg-white/80"
-              }`} 
+            <button
+              onClick={() => setCurrentIndex(idx)}
+              className={`w-3 h-3 rounded-full transition ${idx === currentIndex ? "bg-white scale-125" : "bg-white/50 hover:bg-white/80"
+                }`}
             />
             {hoveredDot === idx && (
               <div className="hidden sm:block absolute bottom-6 left-1/2 -translate-x-1/2 bg-white p-1 rounded shadow-lg z-50">
-                <Image 
-                  src={src} 
-                  alt={`Preview ${idx + 1}`} 
-                  width={80} 
-                  height={50} 
-                  className="object-cover rounded" 
-                  loading="lazy" 
+                <Image
+                  src={src}
+                  alt={`Preview ${idx + 1}`}
+                  width={80}
+                  height={50}
+                  className="object-cover rounded"
                 />
               </div>
             )}
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+// -------------------- Simple Card for Home Page --------------------
+function SimpleMenuItemCard({ 
+  name, 
+  price, 
+  tags = [], 
+  image, 
+  className = "" 
+}: { 
+  name: string;
+  price: number;
+  tags?: string[];
+  image?: string;
+  className?: string;
+}) {
+  return (
+    <div className={`rounded-2xl shadow-lg bg-white p-4 border border-gray-100 hover:shadow-xl transition-shadow duration-300 ${className}`}>
+      {image && (
+        <div className="relative w-full h-48 rounded-xl overflow-hidden mb-4">
+          <Image
+            src={image}
+            alt={name}
+            fill
+            className="transition-transform duration-500 hover:scale-105 object-cover"
+          />
+        </div>
+      )}
+      
+      <h3 className="text-lg font-semibold text-gray-800">{name}</h3>
+      <p className="text-green-600 font-bold mt-1">R{price}</p>
+      
+      {tags.length > 0 && (
+        <div className="flex flex-wrap gap-2 mt-2">
+          {tags.map((tag, i) => (
+            <span key={i} className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -304,23 +344,23 @@ export default function HomePage() {
             </div>
           </section>
 
-          {/* Customer Favorites */}
+          {/* Customer Favorites - FIXED: Using SimpleMenuItemCard */}
           <section className="py-8 sm:py-10 md:py-12 px-4 sm:px-6 md:px-12 bg-[#1E4259]">
             <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-4">Customer Favorites</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 mt-4">
               {favoriteImages.map((src, i) => (
-                <MenuItemCard
+                <SimpleMenuItemCard
                   key={i}
                   name={
                     i === 0 ? "Protein Pack Salad" :
-                    i === 1 ? "Chicken Avo Wrap" :
-                    "Avocado Protein Stack Salad"
+                      i === 1 ? "Chicken Avo Wrap" :
+                        "Avocado Protein Stack Salad"
                   }
                   price={i === 0 ? 125 : 115}
                   tags={
                     i === 0 ? ["Popular"] :
-                    i === 1 ? ["Customer Favorite", "New"] :
-                    ["Vegetarian"]
+                      i === 1 ? ["Customer Favorite", "New"] :
+                        ["Vegetarian"]
                   }
                   image={src}
                   className="transition-transform duration-300 hover:scale-105"
@@ -352,6 +392,12 @@ export default function HomePage() {
             <p className="text-sm sm:text-base md:text-lg text-[#4A665E] leading-relaxed max-w-3xl mx-auto">
               A vibrant, modern brand where clean eating meets connection. Fresh, flavorful, and halaal‑friendly — made for locals, remote workers, students, health enthusiasts, and anyone craving wholesome food.
             </p>
+          </section>
+
+          {/* Testimonials Carousel */}
+          <section className="px-4 md:px-12 mb-12">
+            <h2 className="text-xl font-bold text-white text-center mb-4">What customers say</h2>
+            <TestimonialsCarousel />
           </section>
 
           {/* Social Media */}
