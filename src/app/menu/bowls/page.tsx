@@ -19,39 +19,30 @@ export default function BowlsPage() {
   const [selectedBase, setSelectedBase] = useState<Record<string, string>>({});
 
   const toggleAddOn = (itemName: string, addOnName: string) => {
-    setSelectedAddOns((prev) => {
-      const current = prev[itemName] || [];
-      return {
-        ...prev,
-        [itemName]: current.includes(addOnName)
-          ? current.filter((a) => a !== addOnName)
-          : [...current, addOnName],
-      };
-    });
+    setSelectedAddOns((prev) => ({
+      ...prev,
+      [itemName]: prev[itemName]?.includes(addOnName)
+        ? prev[itemName].filter((a) => a !== addOnName)
+        : [...(prev[itemName] || []), addOnName],
+    }));
   };
 
   const toggleJuice = (itemName: string, juiceIdentifier: string) => {
-    setSelectedJuices((prev) => {
-      const current = prev[itemName] || [];
-      return {
-        ...prev,
-        [itemName]: current.includes(juiceIdentifier)
-          ? current.filter((j) => j !== juiceIdentifier)
-          : [...current, juiceIdentifier],
-      };
-    });
+    setSelectedJuices((prev) => ({
+      ...prev,
+      [itemName]: prev[itemName]?.includes(juiceIdentifier)
+        ? prev[itemName].filter((j) => j !== juiceIdentifier)
+        : [...(prev[itemName] || []), juiceIdentifier],
+    }));
   };
 
   const toggleFries = (itemName: string, fryName: string) => {
-    setSelectedFries((prev) => {
-      const current = prev[itemName] || [];
-      return {
-        ...prev,
-        [itemName]: current.includes(fryName)
-          ? current.filter((f) => f !== fryName)
-          : [...current, fryName],
-      };
-    });
+    setSelectedFries((prev) => ({
+      ...prev,
+      [itemName]: prev[itemName]?.includes(fryName)
+        ? prev[itemName].filter((f) => f !== fryName)
+        : [...(prev[itemName] || []), fryName],
+    }));
   };
 
   const handleInstructionsChange = (itemName: string, text: string) => {
@@ -72,21 +63,21 @@ export default function BowlsPage() {
       return;
     }
 
-    const addOns =
-      item.addOns?.filter((a: any) => (selectedAddOns[item.name] || []).includes(a.name)) || [];
+    const addOns = item.addOns?.filter((a: any) => 
+      (selectedAddOns[item.name] || []).includes(a.name)
+    ) || [];
 
-    const fries =
-      item.friesUpsell?.filter((f: any) => (selectedFries[item.name] || []).includes(f.name)) || [];
+    const fries = item.friesUpsell?.filter((f: any) => 
+      (selectedFries[item.name] || []).includes(f.name)
+    ) || [];
 
-    const juices =
-      item.juiceUpsell
-        ?.flatMap((group: any) =>
-          group.options
-            .filter((opt: any) =>
-              (selectedJuices[item.name] || []).includes(`${opt.name} - ${group.size}`)
-            )
-            .map((opt: any) => ({ ...opt, size: group.size }))
-        ) || [];
+    const juices = item.juiceUpsell?.flatMap((group: any) =>
+      group.options
+        .filter((opt: any) =>
+          (selectedJuices[item.name] || []).includes(`${opt.name} - ${group.size}`)
+        )
+        .map((opt: any) => ({ ...opt, size: group.size }))
+    ) || [];
 
     addToCart(
       {
@@ -133,7 +124,7 @@ export default function BowlsPage() {
         >
           ← Go Back
         </button>
-        <h1 className="text-3xl font-bold text-green-600">Bowls</h1>
+        <h1 className="text-3xl font-bold text-green-200">Fresh Bowls</h1>
         <button
           onClick={() => router.push("/cart")}
           className="px-4 py-2 rounded-lg bg-[#F4A261] text-white hover:bg-[#e68e42] transition"
@@ -179,9 +170,9 @@ export default function BowlsPage() {
           >
             <MenuItemCard {...item} />
 
-            {/* Base Selection - Dropdown */}
+            {/* Base Selection */}
             <div className="mt-4">
-              <label className="font-semibold text-[#1E4259] mb-2 block">
+              <label className="font-semibold text-white mb-2 block">
                 Base <span className="text-red-500">*</span>
               </label>
               <select
@@ -190,7 +181,7 @@ export default function BowlsPage() {
                 className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-[#F4A261] bg-white"
               >
                 <option value="">-- select a base --</option>
-                {item.baseOptions.map((base: string) => (
+                {item.baseOptions?.map((base: string) => (
                   <option key={base} value={base}>
                     {base}
                   </option>
@@ -198,9 +189,9 @@ export default function BowlsPage() {
               </select>
             </div>
 
-            {/* Dressing Selection - Dropdown */}
+            {/* Dressing Selection */}
             <div className="mt-4">
-              <label className="font-semibold text-[#1E4259] mb-2 block">
+              <label className="font-semibold text-white mb-2 block">
                 Dressing <span className="text-red-500">*</span>
               </label>
               <select
@@ -209,7 +200,7 @@ export default function BowlsPage() {
                 className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-[#F4A261] bg-white"
               >
                 <option value="">-- select a dressing --</option>
-                {bowlDressings.map((dressing: string) => (
+                {bowlDressings?.map((dressing: string) => (
                   <option key={dressing} value={dressing}>
                     {dressing}
                   </option>
@@ -217,7 +208,7 @@ export default function BowlsPage() {
               </select>
             </div>
 
-            {/* Customize My Order */}
+            {/* Customize Order Section */}
             <details className="mt-4 bg-white rounded-md border border-gray-200">
               <summary className="cursor-pointer px-3 py-2 font-semibold text-green-900 hover:bg-gray-50 transition">
                 Customize My Order
@@ -352,24 +343,32 @@ export default function BowlsPage() {
             <div className="mt-2 text-right">
               <button
                 onClick={() => handleClearSelections(item.name)}
-                className="text-sm text-red-500 hover:text-red-700 underline transition"
+                className="text-sm text-red-300 hover:text-red-200 underline transition"
               >
                 Clear Selections
               </button>
             </div>
 
-            {/* ✅ Injected Reviews Section */}
+            {/* Reviews Section */}
             <div className="mt-4">
               <ReviewsSection itemId={item.id || item.name} />
             </div>
 
-            {/* Bottom Buttons */}
+            {/* Action Buttons */}
             <div className="mt-4 flex gap-2">
               <button
                 onClick={() => handleAddToCart(item)}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300"
+                disabled={!selectedBase[item.name] || !selectedDressing[item.name]}
+                className={`flex-1 font-semibold py-2 px-4 rounded-lg transition-colors duration-300 ${
+                  selectedBase[item.name] && selectedDressing[item.name]
+                    ? "bg-green-600 hover:bg-green-700 text-white"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
               >
-                Add to Cart
+                {selectedBase[item.name] && selectedDressing[item.name] 
+                  ? "Add to Cart" 
+                  : "Select Base & Dressing"
+                }
               </button>
               <button
                 onClick={() => router.push("/schedule-order")}
