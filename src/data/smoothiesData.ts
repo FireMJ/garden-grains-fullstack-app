@@ -1,15 +1,29 @@
 // src/data/smoothiesData.ts
 export const smoothies = [
   {
+    id: "smoothie-1",
     name: "Avocado Blue Dream",
     description: "Blueberries, banana, avocado, milk, greek yoghurt, chia seeds",
-    prices: { S: 60, M: 76, L: 91 },
+    prices: { S: 60, M: 76, L: 91
+  },
     image: "/images/smoothies/avocado-blue-dream.jpg",
     addOns: [
-      { name: "protein powder", price: 19 },
-      { name: "ginger", price: 10 },
-      { name: "honey", price: 10 },
-      { name: "chia seeds", price: 12.5 },
+      {
+    id: "smoothie-2",
+    name: "protein powder", price: 19
+  },
+      {
+    id: "smoothie-3",
+    name: "ginger", price: 10
+  },
+      {
+    id: "smoothie-4",
+    name: "honey", price: 10
+  },
+      {
+    id: "smoothie-5",
+    name: "chia seeds", price: 12.5
+  },
     ],
   },
   {

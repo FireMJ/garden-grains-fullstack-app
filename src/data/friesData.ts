@@ -1,12 +1,17 @@
 export const fries = [
   {
+    id: "fries-1",
     name: "Classic Fries",
     description: "Crispy golden fries with sea salt.",
     price: 45,
     image: "/images/fries/classic-fries.jpg",
     addOns: [
-      { name: "Cheese Sauce", price: 15 },
-      { name: "Chili Mayo", price: 12 },
+      { name: "Cheese Sauce", price: 15
+  },
+      {
+    id: "fries-2",
+    name: "Chili Mayo", price: 12
+  },
     ],
     juiceUpsell: [
       {

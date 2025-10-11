@@ -1,12 +1,15 @@
-// next.config.ts
 import { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   experimental: {
-    // your other experimental flags here…
-    serverActions: true,
+    serverActions: {
+      // only if you need to allow cross-origin calls:
+      // allowedOrigins: ["https://my-proxy.com"],
+
+      // to bump the 1 MB default request-body limit:
+      // bodySizeLimit: "2mb",
+    },
   },
-  // any other top-level config (image domains, rewrites, etc.)
 };
 
 export default nextConfig;

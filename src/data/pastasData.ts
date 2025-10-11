@@ -1,15 +1,49 @@
 // src/data/pastasData.ts
 export const pastas = [
   {
+    id: "pasta-1",
     name: "Spinach Penne Pasta with Chicken",
     description:
       "Penne pasta, chicken, garlic, spinach puree, peppers, mushrooms & cheddar cheese, topped with parmesan.",
     image: "/images/pastas/spinach_penne_chicken.jpg",
     price: 148.65,
     addOns: [
-      { name: "extra chicken", price: 30 },
-      { name: "extra mushrooms", price: 15 },
-      { name: "extra cheese", price: 20 },
+      { name: "extra chicken", price: 30
+  },
+      {
+    id: "pasta-2",
+    name: "extra mushrooms", price: 15
+  },
+      {
+    id: "pasta-3",
+    name: "extra cheese", price: 20
+  },
+    ],
+    juiceUpsell: [
+      {
+        size: "250ml",
+        options: [
+          { name: "Orange Juice", price: 35 },
+          { name: "Carrot & Ginger Juice", price: 38 },
+          { name: "Mango Juice", price: 37 },
+        ],
+      },
+      {
+        size: "350ml",
+        options: [
+          { name: "Orange Juice", price: 45 },
+          { name: "Carrot & Ginger Juice", price: 48 },
+          { name: "Mango Juice", price: 47 },
+        ],
+      },
+      {
+        size: "500ml",
+        options: [
+          { name: "Orange Juice", price: 55 },
+          { name: "Carrot & Ginger Juice", price: 58 },
+          { name: "Mango Juice", price: 57 },
+        ],
+      },
     ],
   },
   {
@@ -23,6 +57,32 @@ export const pastas = [
       { name: "extra cheese", price: 20 },
       { name: "extra spinach", price: 10 },
     ],
+   juiceUpsell: [
+      {
+        size: "250ml",
+        options: [
+          { name: "Orange Juice", price: 35 },
+          { name: "Carrot & Ginger Juice", price: 38 },
+          { name: "Mango Juice", price: 37 },
+        ],
+      },
+      {
+        size: "350ml",
+        options: [
+          { name: "Orange Juice", price: 45 },
+          { name: "Carrot & Ginger Juice", price: 48 },
+          { name: "Mango Juice", price: 47 },
+        ],
+      },
+      {
+        size: "500ml",
+        options: [
+          { name: "Orange Juice", price: 55 },
+          { name: "Carrot & Ginger Juice", price: 58 },
+          { name: "Mango Juice", price: 57 },
+        ],
+      },
+    ],
   },
   {
     name: "Garlic Beef Pasta",
@@ -34,6 +94,32 @@ export const pastas = [
       { name: "extra beef", price: 35 },
       { name: "extra mushrooms", price: 15 },
       { name: "extra cheese", price: 20 },
+    ],
+   juiceUpsell: [
+      {
+        size: "250ml",
+        options: [
+          { name: "Orange Juice", price: 35 },
+          { name: "Carrot & Ginger Juice", price: 38 },
+          { name: "Mango Juice", price: 37 },
+        ],
+      },
+      {
+        size: "350ml",
+        options: [
+          { name: "Orange Juice", price: 45 },
+          { name: "Carrot & Ginger Juice", price: 48 },
+          { name: "Mango Juice", price: 47 },
+        ],
+      },
+      {
+        size: "500ml",
+        options: [
+          { name: "Orange Juice", price: 55 },
+          { name: "Carrot & Ginger Juice", price: 58 },
+          { name: "Mango Juice", price: 57 },
+        ],
+      },
     ],
   },
   {
@@ -47,6 +133,32 @@ export const pastas = [
       { name: "extra pesto", price: 15 },
       { name: "extra cheese", price: 20 },
     ],
+   juiceUpsell: [
+      {
+        size: "250ml",
+        options: [
+          { name: "Orange Juice", price: 35 },
+          { name: "Carrot & Ginger Juice", price: 38 },
+          { name: "Mango Juice", price: 37 },
+        ],
+      },
+      {
+        size: "350ml",
+        options: [
+          { name: "Orange Juice", price: 45 },
+          { name: "Carrot & Ginger Juice", price: 48 },
+          { name: "Mango Juice", price: 47 },
+        ],
+      },
+      {
+        size: "500ml",
+        options: [
+          { name: "Orange Juice", price: 55 },
+          { name: "Carrot & Ginger Juice", price: 58 },
+          { name: "Mango Juice", price: 57 },
+        ],
+      },
+    ],
   },
   {
     name: "Mushroom & Spinach Penne",
@@ -58,6 +170,32 @@ export const pastas = [
       { name: "extra mushrooms", price: 15 },
       { name: "extra spinach", price: 10 },
       { name: "extra cheese", price: 20 },
+    ],
+    juiceUpsell: [
+      {
+        size: "250 ml",
+        options: [
+          { name: "Classic Orange Juice", price: 32.5 },
+          { name: "Carrot & Ginger Juice", price: 34.5 },
+          { name: "Beetroot & Apple Juice", price: 34.5 },
+        ],
+      },
+      {
+        size: "350ml",
+        options: [
+          { name: "Orange Juice", price: 45 },
+          { name: "Carrot & Ginger Juice", price: 48 },
+          { name: "Mango Juice", price: 47 },
+        ],
+      },
+      { 
+        size: "500 ml",
+        options: [
+          { name: "Classic Orange Juice", price: 45.0 },
+          { name: "Carrot & Ginger Juice", price: 48.0 },
+          { name: "Beetroot & Apple Juice", price: 48.0 },
+        ],
+      },
     ],
   },
 ];

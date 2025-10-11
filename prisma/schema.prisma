@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//
+// ─── USER MODEL ───────────────────────────────────────────────
+//
+model User {
+  id        String    @id @default(cuid())
+  name      String?
+  email     String    @unique
+  phone     String?   @unique
+  password  String
+  role      Role      @default(USER)
+  isNewUser Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  orders    Order[]
+  pageVisits PageVisit[]
+  activities Activity[]
+}
+
+//
+// ─── ORDER MODELS ─────────────────────────────────────────────
+//
+model Order {
+  id             String         @id @default(cuid())
+  user           User?          @relation(fields: [userId], references: [id])
+  userId         String?
+  total          Float
+  status         OrderStatus    @default(PENDING)
+  scheduledAt    DateTime?
+  deliveryStatus DeliveryStatus @default(PENDING)
+  deliveredAt    DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  items          OrderItem[]
+}
+
+model OrderItem {
+  id       String  @id @default(cuid())
+  order    Order   @relation(fields: [orderId], references: [id])
+  orderId  String
+  name     String
+  price    Float
+  quantity Int      @default(1)
+  addOns   Json?
+  notes    String?
+}
+
+//
+// ─── ENUMS ───────────────────────────────────────────────────
+//
+enum Role {
+  USER
+  STAFF
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PREPARING
+  COMPLETED
+  CANCELLED
+}
+
+enum DeliveryStatus {
+  PENDING
+  ENROUTE
+  DELIVERED
+}
+
+//
+// ─── ANALYTICS MODELS ─────────────────────────────────────────
+//
+model PageVisit {
+  id        String   @id @default(cuid())
+  path      String
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Activity {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  createdAt DateTime @default(now())
+}
+
+//
+// ─── ACCESS LOG ───────────────────────────────────────────────
+//
+model AccessLog {
+  id        Int      @id @default(autoincrement())
+  email     String
+  role      String
+  path      String
+  timestamp DateTime @default(now())
+}

@@ -3,16 +3,18 @@ import React, { createContext, useContext, useState, ReactNode } from "react";
 import { AddOn, Fry, Juice } from "@/types/menu";
 
 export interface CartItem {
+  id?: string;
   name: string;
-  price: number;
-  quantity: number;
+  price: number; // base price
+  quantity?: number; // default 1
   addOns?: AddOn[];
   fries?: Fry[];
   juices?: Juice[];
   specialInstructions?: string;
   dressing?: string;
+  base?: string;
   image?: string;
-  id?: string;
+  totalPrice?: number; // recalculated price including addOns, fries, juices * quantity
 }
 
 interface CartContextType {
@@ -32,56 +34,45 @@ interface CartContextType {
   cartItemCount: number;
 }
 
-// --- Helpers ---
+// ---- helpers ----
 export const normaliseAddOns = (addOns: AddOn[] = []) => {
-  const map = new Map<string, { name: string; price: number; quantity?: number }>();
-  addOns.forEach((addOn) => {
-    const key = addOn.name.toLowerCase();
-    if (!map.has(key)) {
-      map.set(key, { ...addOn });
-    } else {
-      const existing = map.get(key)!;
-      existing.quantity = (existing.quantity || 1) + (addOn.quantity || 1);
-    }
+  const map = new Map<string, AddOn>();
+  addOns.forEach((a) => {
+    const key = a.name.toLowerCase();
+    if (!map.has(key)) map.set(key, { ...a, quantity: a.quantity || 1 });
+    else map.get(key)!.quantity! += a.quantity || 1;
   });
   return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
 };
 
 export const normaliseFries = (fries: Fry[] = []) => {
-  const map = new Map<string, { name: string; price: number; quantity?: number }>();
-  fries.forEach((fry) => {
-    const key = fry.name.toLowerCase();
-    if (!map.has(key)) {
-      map.set(key, { ...fry });
-    } else {
-      const existing = map.get(key)!;
-      existing.quantity = (existing.quantity || 1) + (fry.quantity || 1);
-    }
+  const map = new Map<string, Fry>();
+  fries.forEach((f) => {
+    const key = f.name.toLowerCase();
+    if (!map.has(key)) map.set(key, { ...f, quantity: f.quantity || 1 });
+    else map.get(key)!.quantity! += f.quantity || 1;
   });
   return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
 };
 
 export const normaliseJuices = (juices: Juice[] = []) => {
-  const map = new Map<string, { name: string; size: string; price: number; quantity?: number }>();
-  juices.forEach((juice) => {
-    const key = `${juice.name.toLowerCase()}-${juice.size.toLowerCase()}`;
-    if (!map.has(key)) {
-      map.set(key, { ...juice });
-    } else {
-      const existing = map.get(key)!;
-      existing.quantity = (existing.quantity || 1) + (juice.quantity || 1);
-    }
+  const map = new Map<string, Juice>();
+  juices.forEach((j) => {
+    const key = `${j.name.toLowerCase()}-${j.size.toLowerCase()}`;
+    if (!map.has(key)) map.set(key, { ...j, quantity: j.quantity || 1 });
+    else map.get(key)!.quantity! += j.quantity || 1;
   });
-  return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name) || a.size.localeCompare(b.size));
+  return Array.from(map.values()).sort((a, b) =>
+    a.name.localeCompare(b.name) || a.size.localeCompare(b.size)
+  );
 };
 
 export const areAddOnsEqual = (a: AddOn[] = [], b: AddOn[] = []) => {
   const normA = normaliseAddOns(a);
   const normB = normaliseAddOns(b);
   if (normA.length !== normB.length) return false;
-  return normA.every((addOn, idx) => 
-    addOn.name === normB[idx].name && 
-    addOn.quantity === normB[idx].quantity
+  return normA.every(
+    (v, i) => v.name === normB[i].name && v.quantity === normB[i].quantity
   );
 };
 
@@ -89,9 +80,8 @@ export const areFriesEqual = (a: Fry[] = [], b: Fry[] = []) => {
   const normA = normaliseFries(a);
   const normB = normaliseFries(b);
   if (normA.length !== normB.length) return false;
-  return normA.every((fry, idx) => 
-    fry.name === normB[idx].name && 
-    fry.quantity === normB[idx].quantity
+  return normA.every(
+    (v, i) => v.name === normB[i].name && v.quantity === normB[i].quantity
   );
 };
 
@@ -99,13 +89,35 @@ export const areJuicesEqual = (a: Juice[] = [], b: Juice[] = []) => {
   const normA = normaliseJuices(a);
   const normB = normaliseJuices(b);
   if (normA.length !== normB.length) return false;
-  return normA.every((juice, idx) => 
-    juice.name === normB[idx].name && 
-    juice.size === normB[idx].size &&
-    juice.quantity === normB[idx].quantity
+  return normA.every(
+    (v, i) =>
+      v.name === normB[i].name &&
+      v.size === normB[i].size &&
+      v.quantity === normB[i].quantity
   );
 };
 
+// ---- price calculator ----
+const calculateTotalPrice = (item: CartItem, qty: number = 1) => {
+  const addOnsTotal =
+    item.addOns?.reduce(
+      (sum, a) => sum + a.price * (a.quantity || 1),
+      0
+    ) || 0;
+  const friesTotal =
+    item.fries?.reduce(
+      (sum, f) => sum + f.price * (f.quantity || 1),
+      0
+    ) || 0;
+  const juicesTotal =
+    item.juices?.reduce(
+      (sum, j) => sum + j.price * (j.quantity || 1),
+      0
+    ) || 0;
+  return (item.price + addOnsTotal + friesTotal + juicesTotal) * qty;
+};
+
+// ---- context ----
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
@@ -127,17 +139,31 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           areFriesEqual(i.fries, item.fries) &&
           areJuicesEqual(i.juices, item.juices) &&
           (i.dressing || "") === (item.dressing || "") &&
+          (i.base || "") === (item.base || "") &&
           (i.specialInstructions || "") === (item.specialInstructions || "")
       );
 
       if (existingIndex !== -1) {
         const updatedCart = [...prevCart];
-        updatedCart[existingIndex].quantity += quantity;
+        const newQty = (updatedCart[existingIndex].quantity || 1) + quantity;
+        updatedCart[existingIndex].quantity = newQty;
+        updatedCart[existingIndex].totalPrice = calculateTotalPrice(
+          updatedCart[existingIndex],
+          newQty
+        );
         return updatedCart;
       } else {
-        return [...prevCart, { ...item, quantity }];
+        return [
+          ...prevCart,
+          {
+            ...item,
+            quantity,
+            totalPrice: calculateTotalPrice(item, quantity),
+          },
+        ];
       }
     });
+
     openCart();
   };
 
@@ -149,8 +175,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         areFriesEqual(cartItem.fries, item.fries) &&
         areJuicesEqual(cartItem.juices, item.juices) &&
         (cartItem.dressing || "") === (item.dressing || "") &&
+        (cartItem.base || "") === (item.base || "") &&
         (cartItem.specialInstructions || "") === (item.specialInstructions || "")
-          ? { ...cartItem, quantity: Math.max(newQty, 1) }
+          ? {
+              ...cartItem,
+              quantity: Math.max(newQty, 1),
+              totalPrice: calculateTotalPrice(cartItem, Math.max(newQty, 1)),
+            }
           : cartItem
       )
     );
@@ -166,6 +197,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             areFriesEqual(cartItem.fries, item.fries) &&
             areJuicesEqual(cartItem.juices, item.juices) &&
             (cartItem.dressing || "") === (item.dressing || "") &&
+            (cartItem.base || "") === (item.base || "") &&
             (cartItem.specialInstructions || "") === (item.specialInstructions || "")
           )
       )
@@ -179,7 +211,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     setScheduledTime(time);
   };
 
-  const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
+  const cartItemCount = cart.reduce(
+    (total, item) => total + (item.quantity || 0),
+    0
+  );
 
   return (
     <CartContext.Provider
@@ -207,8 +242,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
 export const useCart = () => {
   const context = useContext(CartContext);
-  if (!context) {
-    throw new Error("useCart must be used within a CartProvider");
-  }
+  if (!context) throw new Error("useCart must be used within a CartProvider");
   return context;
 };
