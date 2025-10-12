@@ -26,7 +26,7 @@ export async function POST(req: Request) {
           create: cart.map((item: any) => ({
             name: item.name,
             price: item.price,
-            quantity: item.quantity,
+            quantity: item.quantity || 1,
             addOns: item.addOns ? JSON.stringify(item.addOns) : "[]",
             fries: item.fries ? JSON.stringify(item.fries) : "[]",
             juices: item.juices ? JSON.stringify(item.juices) : "[]",

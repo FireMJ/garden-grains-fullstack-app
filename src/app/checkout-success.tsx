@@ -26,7 +26,7 @@ export default function CheckoutSuccessPage() {
           body: JSON.stringify({
             items: cart,
             total: cart.reduce(
-              (acc, item) => acc + item.price * (item.quantity || 1),
+              (acc, item) => acc + item.price * (item.quantity || 1 || 1),
               0
             ),
             userEmail: session.user?.email,

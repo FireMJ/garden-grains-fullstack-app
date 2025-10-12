@@ -23,7 +23,7 @@ export default function ScheduleOrderPage() {
   }, [scheduledDate, scheduledTime]);
 
   const total = cart.reduce((sum, item) => {
-    const baseTotal = item.price * item.quantity;
+    const baseTotal = item.price * item.quantity || 1;
     const addOnsTotal = item.addOns?.reduce((a, o) => a + (o.price * (o.quantity || 1)), 0) || 0;
     const friesTotal = item.fries?.reduce((a, o) => a + (o.price * (o.quantity || 1)), 0) || 0;
     const juiceTotal = item.juices?.reduce((a, o) => a + (o.price * (o.quantity || 1)), 0) || 0;
@@ -81,7 +81,7 @@ export default function ScheduleOrderPage() {
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
         <h2 className="text-xl font-semibold mb-4 text-[#1C4A6E]">Order Summary</h2>
         {cart.map((item, index) => {
-          const itemTotal = (item.price * item.quantity) +
+          const itemTotal = (item.price * item.quantity || 1) +
             (item.addOns?.reduce((a, o) => a + (o.price * (o.quantity || 1)), 0) || 0) +
             (item.fries?.reduce((a, o) => a + (o.price * (o.quantity || 1)), 0) || 0) +
             (item.juices?.reduce((a, o) => a + (o.price * (o.quantity || 1)), 0) || 0);
@@ -89,7 +89,7 @@ export default function ScheduleOrderPage() {
           return (
             <div key={item.id || index} className="flex flex-col py-2 border-b">
               <div className="flex justify-between">
-                <span className="text-gray-900 font-medium">{item.name} × {item.quantity}</span>
+                <span className="text-gray-900 font-medium">{item.name} × {item.quantity || 1}</span>
                 <span className="text-gray-900 font-semibold">R{itemTotal.toFixed(2)}</span>
               </div>
 

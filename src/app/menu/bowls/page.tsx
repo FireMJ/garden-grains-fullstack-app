@@ -137,7 +137,7 @@ export default function BowlsPage() {
   const total = cart.reduce(
     (sum, item) =>
       sum +
-      item.price * item.quantity +
+      item.price * item.quantity || 1 +
       (item.addOns?.reduce((a, o) => a + o.price, 0) ?? 0) +
       (item.fries?.reduce((a, f) => a + f.price, 0) ?? 0) +
       (item.juices?.reduce((a, j) => a + j.price, 0) ?? 0),
@@ -169,7 +169,7 @@ export default function BowlsPage() {
           <div className="flex justify-between items-center">
             <div>
               <p className="font-semibold">
-                Items in cart: {cart.reduce((sum, item) => sum + item.quantity, 0)}
+                Items in cart: {cart.reduce((sum, item) => sum + item.quantity || 1, 0)}
               </p>
               <p className="text-green-900 font-bold">Total: R {total.toFixed(2)}</p>
             </div>

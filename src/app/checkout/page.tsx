@@ -17,7 +17,7 @@ export default function CheckoutPage() {
 
   // Total calculation
   const total = cart.reduce((sum, item) => {
-    const base = item.price * item.quantity;
+    const base = item.price * item.quantity || 1;
     const addOns = item.addOns?.reduce((acc, o) => acc + o.price * (o.quantity ?? 1), 0) ?? 0;
     const fries = item.fries?.reduce((acc, o) => acc + o.price * (o.quantity ?? 1), 0) ?? 0;
     const juices = item.juices?.reduce((acc, o) => acc + o.price * (o.quantity ?? 1), 0) ?? 0;
@@ -227,7 +227,7 @@ function CartItem({ item, total }: { item: any; total: number }) {
         <span className="font-semibold text-gray-800">{item.name}</span>
         <span className="text-gray-700">R{total.toFixed(2)}</span>
       </div>
-      <p className="text-sm text-gray-600 mt-1">Qty: {item.quantity}</p>
+      <p className="text-sm text-gray-600 mt-1">Qty: {item.quantity || 1}</p>
 
       {item.addOns?.length > 0 && <DetailSection title="Add-ons" items={item.addOns}/>}
       {item.fries?.length > 0 && <DetailSection title="Fries" items={item.fries}/>}
@@ -249,7 +249,7 @@ function DetailSection({ title, items }: { title: string; items: any[] }) {
       <ul className="ml-4 text-sm text-gray-600">
         {items.map((item, idx) => (
           <li key={idx}>
-            + {item.name} {item.size && `(${item.size})`} (R{item.price.toFixed(2)}) {item.quantity > 1 && `× ${item.quantity}`}
+            + {item.name} {item.size && `(${item.size})`} (R{item.price.toFixed(2)}) {item.quantity || 1 > 1 && `× ${item.quantity || 1}`}
           </li>
         ))}
       </ul>
@@ -258,7 +258,7 @@ function DetailSection({ title, items }: { title: string; items: any[] }) {
 }
 
 function calculateItemTotal(item: any): number {
-  const base = item.price * item.quantity;
+  const base = item.price * item.quantity || 1;
   const addOns = item.addOns?.reduce((acc: number, o: any) => acc + o.price * (o.quantity ?? 1), 0) ?? 0;
   const fries = item.fries?.reduce((acc: number, o: any) => acc + o.price * (o.quantity ?? 1), 0) ?? 0;
   const juices = item.juices?.reduce((acc: number, o: any) => acc + o.price * (o.quantity ?? 1), 0) ?? 0;

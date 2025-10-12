@@ -27,7 +27,7 @@ export default function CartDrawer() {
     const addOnsTotal = item.addOns?.reduce((a, o) => a + o.price * (o.quantity ?? 1), 0) ?? 0;
     const friesTotal = item.fries?.reduce((a, o) => a + o.price * (o.quantity ?? 1), 0) ?? 0;
     const juiceTotal = item.juices?.reduce((a, o) => a + o.price * (o.quantity ?? 1), 0) ?? 0;
-    return (item.price + addOnsTotal + friesTotal + juiceTotal) * item.quantity;
+    return (item.price + addOnsTotal + friesTotal + juiceTotal) * item.quantity || 1;
   };
 
   const total = cart.reduce((sum, item) => sum + calcSubTotal(item), 0);
@@ -50,7 +50,7 @@ export default function CartDrawer() {
     }
 
     updatedItem[type] = list;
-    updateQuantity(updatedItem, item.quantity);
+    updateQuantity(updatedItem, item.quantity || 1);
   };
 
   const handleApplyPromo = () => {
@@ -139,7 +139,7 @@ export default function CartDrawer() {
                           <h3 className="font-semibold text-[#1E4259]">{item.name}</h3>
                           <span className="font-semibold text-[#1E4259]">R{itemSubTotal.toFixed(2)}</span>
                         </div>
-                        <div className="text-xs text-gray-500">× {item.quantity}</div>
+                        <div className="text-xs text-gray-500">× {item.quantity || 1}</div>
                       </div>
                     </div>
 

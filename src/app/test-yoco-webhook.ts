@@ -19,7 +19,7 @@ const SAMPLE_ORDER_ID = "order_test_001";
 // Types of events to test
 const EVENTS = [
   { type: "checkout.completed", status: "successful" },
-  { type: "checkout.completed", status: "failed" },
+  { type: "checkout.completed", status: "FAILED" },
   { type: "payment.refunded", status: "refunded" },
   { type: "payment.canceled", status: "canceled" },
 ];

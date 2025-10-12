@@ -25,13 +25,13 @@ export async function POST(req: Request) {
     const order = await prisma.order.create({
       data: {
         userId: session.user.id,
-        status: "pending",
+        status: "PENDING",
         total: amount,
         items: {
           create: cart.map((item: any) => ({
             name: item.name,
             price: item.price,
-            quantity: item.quantity,
+            quantity: item.quantity || 1,
           })),
         },
       },

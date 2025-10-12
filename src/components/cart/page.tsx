@@ -9,7 +9,7 @@ export default function CartPage() {
   // calculate total
   const total = cart.reduce((sum, item) => {
     const addOnsTotal = item.addOns?.reduce((a, o) => a + o.price, 0) || 0;
-    return sum + (item.price + addOnsTotal) * item.quantity;
+    return sum + (item.price + addOnsTotal) * item.quantity || 1;
   }, 0);
 
   return (
@@ -50,7 +50,7 @@ export default function CartPage() {
                   {item.name}
                 </h2>
                 <p className="text-gray-600">
-                  R{item.price} × {item.quantity}
+                  R{item.price} × {item.quantity || 1}
                 </p>
 
                 {/* Add-ons */}

@@ -24,7 +24,7 @@ export default function FloatingCartButton() {
     const addOnsTotal = item.addOns?.reduce((a, o) => a + o.price * (o.quantity ?? 1), 0) ?? 0;
     const friesTotal = item.fries?.reduce((a, o) => a + o.price * (o.quantity ?? 1), 0) ?? 0;
     const juiceTotal = item.juices?.reduce((a, o) => a + o.price * (o.quantity ?? 1), 0) ?? 0;
-    const itemTotal = (item.price + addOnsTotal + friesTotal + juiceTotal) * item.quantity;
+    const itemTotal = (item.price + addOnsTotal + friesTotal + juiceTotal) * item.quantity || 1;
     return sum + itemTotal;
   }, 0);
 

@@ -9,7 +9,7 @@ export default function CartPage() {
   const total = cart.reduce(
     (sum, item) =>
       sum +
-      item.price * item.quantity +
+      item.price * item.quantity || 1 +
       (item.addOns?.reduce((a, o) => a + o.price, 0) ?? 0),
     0
   );
@@ -35,7 +35,7 @@ export default function CartPage() {
               <div className="flex justify-between">
                 <h3 className="font-semibold text-green-900">{item.name}</h3>
                 <p className="text-sm text-gray-700">
-                  R {item.price} × {item.quantity}
+                  R {item.price} × {item.quantity || 1}
                 </p>
               </div>
               {item.dressing && (
