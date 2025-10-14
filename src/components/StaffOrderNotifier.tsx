@@ -1,47 +1,30 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { toast } from "sonner"
-import { useSession } from "next-auth/react"
+import { useEffect } from "react";
+import { toast } from "sonner";
+import { getAuth, onAuthStateChanged, User } from "firebase/auth";
 
 export default function StaffOrderNotifier() {
-  const { data: session } = useSession()
-  const [audio] = useState(
-    typeof Audio !== "undefined" ? new Audio("/sounds/new-order.mp3") : null
-  )
-
   useEffect(() => {
-    // 🚫 Only STAFF or ADMIN should get live order alerts
-    const role = (session?.user as any)?.role
-    if (!role || (role !== "STAFF" && role !== "ADMIN")) return
+    const auth = getAuth();
+    let currentUser: User | null = null;
 
-    const eventSource = new EventSource("/api/orders/stream")
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      currentUser = user;
+    });
 
-    eventSource.onmessage = (event) => {
-      const data = JSON.parse(event.data)
-
-      // Play ringtone for pending orders
-      if (data.some((o: any) => o.status === "PENDING")) {
-        audio?.play().catch(() => {
-          console.warn("Autoplay blocked until user interaction.")
-        })
-
-        toast.success("🔔 New order received!", {
-          description: "Check Staff Dashboard to manage it.",
-          duration: 5000,
-        })
+    // Example: simulate a WebSocket or Firestore listener for new orders
+    const simulateNewOrder = setInterval(() => {
+      if (currentUser) {
+        toast(`New order received!`, { description: "Check the dashboard." });
       }
-    }
-
-    eventSource.onerror = (err) => {
-      console.error("SSE error:", err)
-      eventSource.close()
-    }
+    }, 15000);
 
     return () => {
-      eventSource.close()
-    }
-  }, [session, audio])
+      unsubscribeAuth();
+      clearInterval(simulateNewOrder);
+    };
+  }, []);
 
-  return null
+  return null;
 }

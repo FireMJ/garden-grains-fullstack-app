@@ -1,0 +1,188 @@
+[1mdiff --git a/package-lock.json b/package-lock.json[m
+[1mindex 11cd536..49d5dea 100644[m
+[1m--- a/package-lock.json[m
+[1m+++ b/package-lock.json[m
+[36m@@ -8,16 +8,13 @@[m
+       "name": "garden-grains-fullstack-app",[m
+       "version": "0.1.0",[m
+       "dependencies": {[m
+[31m-        "@prisma/client": "^6.17.0",[m
+         "@types/node-fetch": "^2.6.13",[m
+         "axios": "^1.12.2",[m
+         "bcryptjs": "^3.0.2",[m
+[31m-        "chalk": "^5.6.2",[m
+         "firebase": "^12.4.0",[m
+         "framer-motion": "^12.23.13",[m
+         "lucide-react": "^0.544.0",[m
+         "next": "^15.5.0",[m
+[31m-        "next-auth": "^4.24.11",[m
+         "node-fetch": "^3.3.2",[m
+         "react": "^19.1.0",[m
+         "react-dom": "^19.1.0",[m
+[36m@@ -39,7 +36,6 @@[m
+         "eslint": "^9",[m
+         "eslint-config-next": "15.5.0",[m
+         "postcss": "^8.5.6",[m
+[31m-        "prisma": "^6.17.0",[m
+         "rimraf": "^6.0.1",[m
+         "tailwindcss": "^4.1.13",[m
+         "typescript": "^5.9.3"[m
+[36m@@ -58,15 +54,6 @@[m
+         "url": "https://github.com/sponsors/sindresorhus"[m
+       }[m
+     },[m
+[31m-    "node_modules/@babel/runtime": {[m
+[31m-      "version": "7.28.4",[m
+[31m-      "resolved": "https://registry.npmjs.org/@babel/runtime/-/runtime-7.28.4.tgz",[m
+[31m-      "integrity": "sha512-Q/N6JNWvIvPnLDvjlE1OUBLPQHH6l3CltCEsHIujp45zQUSSh8K+gHnaEX45yAT1nyngnINhvWtzN+Nb9D8RAQ==",[m
+[31m-      "license": "MIT",[m
+[31m-      "engines": {[m
+[31m-        "node": ">=6.9.0"[m
+[31m-      }[m
+[31m-    },[m
+     "node_modules/@emnapi/core": {[m
+       "version": "1.5.0",[m
+       "resolved": "https://registry.npmjs.org/@emnapi/core/-/core-1.5.0.tgz",[m
+[36m@@ -1676,100 +1663,6 @@[m
+         "node": ">=12.4.0"[m
+       }[m
+     },[m
+[31m-    "node_modules/@panva/hkdf": {[m
+[31m-      "version": "1.2.1",[m
+[31m-      "resolved": "https://registry.npmjs.org/@panva/hkdf/-/hkdf-1.2.1.tgz",[m
+[31m-      "integrity": "sha512-6oclG6Y3PiDFcoyk8srjLfVKyMfVCKJ27JwNPViuXziFpmdz+MZnZN/aKY0JGXgYuO/VghU0jcOAZgWXZ1Dmrw==",[m
+[31m-      "license": "MIT",[m
+[31m-      "funding": {[m
+[31m-        "url": "https://github.com/sponsors/panva"[m
+[31m-      }[m
+[31m-    },[m
+[31m-    "node_modules/@prisma/client": {[m
+[31m-      "version": "6.17.0",[m
+[31m-      "resolved": "https://registry.npmjs.org/@prisma/client/-/client-6.17.0.tgz",[m
+[31m-      "integrity": "sha512-b42mTLOdLEZ6e/igu8CLdccAUX9AwHknQQ1+pHOftnzDP2QoyZyFvcANqSLs5ockimFKJnV7Ljf+qrhNYf6oAg==",[m
+[31m-      "hasInstallScript": true,[m
+[31m-      "license": "Apache-2.0",[m
+[31m-      "engines": {[m
+[31m-        "node": ">=18.18"[m
+[31m-      },[m
+[31m-      "peerDependencies": {[m
+[31m-        "prisma": "*",[m
+[31m-        "typescript": ">=5.1.0"[m
+[31m-      },[m
+[31m-      "peerDependenciesMeta": {[m
+[31m-        "prisma": {[m
+[31m-          "optional": true[m
+[31m-        },[m
+[31m-        "typescript": {[m
+[31m-          "optional": true[m
+[31m-        }[m
+[31m-      }[m
+[31m-    },[m
+[31m-    "node_modules/@prisma/config": {[m
+[31m-      "version": "6.17.0",[m
+[31m-      "resolved": "https://registry.npmjs.org/@prisma/config/-/config-6.17.0.tgz",[m
+[31m-      "integrity": "sha512-k8tuChKpkO/Vj7ZEzaQMNflNGbaW4X0r8+PC+W2JaqVRdiS2+ORSv1SrDwNxsb8YyzIQJucXqLGZbgxD97ZhsQ==",[m
+[31m-      "devOptional": true,[m
+[31m-      "license": "Apache-2.0",[m
+[31m-      "dependencies": {[m
+[31m-        "c12": "3.1.0",[m
+[31m-        "deepmerge-ts": "7.1.5",[m
+[31m-        "effect": "3.16.12",[m
+[31m-        "empathic": "2.0.0"[m
+[31m-      }[m
+[31m-    },[m
+[31m-    "node_modules/@prisma/debug": {[m
+[31m-      "version": "6.17.0",[m
+[31m-      "resolved": "https://registry.npmjs.org/@prisma/debug/-/debug-6.17.0.tgz",[m
+[31m-      "integrity": "sha512-eE2CB32nr1hRqyLVnOAVY6c//iSJ/PN+Yfoa/2sEzLGpORaCg61d+nvdAkYSh+6Y2B8L4BVyzkRMANLD6nnC2g==",[m
+[31m-      "devOptional": true,[m
+[31m-      "license": "Apache-2.0"[m
+[31m-    },[m
+[31m-    "node_modules/@prisma/engines": {[m
+[31m-      "version": "6.17.0",[m
+[31m-      "resolved": "https://registry.npmjs.org/@prisma/engines/-/engines-6.17.0.tgz",[m
+[31m-      "integrity": "sha512-XhE9v3hDQTNgCYMjogcCYKi7HCEkZf9WwTGuXy8cmY8JUijvU0ap4M7pGLx4pBblkp5EwUsYzw1YLtH7yi0GZw==",[m
+[31m-      "devOptional": true,[m
+[31m-      "hasInstallScript": true,[m
+[31m-      "license": "Apache-2.0",[m
+[31m-      "dependencies": {[m
+[31m-        "@prisma/debug": "6.17.0",[m
+[31m-        "@prisma/engines-version": "6.17.0-16.c0aafc03b8ef6cdced8654b9a817999e02457d6a",[m
+[31m-        "@prisma/fetch-engine": "6.17.0",[m
+[31m-        "@prisma/get-platform": "6.17.0"[m
+[31m-      }[m
+[31m-    },[m
+[31m-    "node_modules/@prisma/engines-version": {[m
+[31m-      "version": "6.17.0-16.c0aafc03b8ef6cdced8654b9a817999e02457d6a",[m
+[31m-      "resolved": "https://registry.npmjs.org/@prisma/engines-version/-/engines-version-6.17.0-16.c0aafc03b8ef6cdced8654b9a817999e02457d6a.tgz",[m
+[31m-      "integrity": "sha512-G0VU4uFDreATgTz4sh3dTtU2C+jn+J6c060ixavWZaUaSRZsNQhSPW26lbfez7GHzR02RGCdqs5UcSuGBC3yLw==",[m
+[31m-      "devOptional": true,[m
+[31m-      "license": "Apache-2.0"[m
+[31m-    },[m
+[31m-    "node_modules/@prisma/fetch-engine": {[m
+[31m-      "version": "6.17.0",[m
+[31m-      "resolved": "https://registry.npmjs.org/@prisma/fetch-engine/-/fetch-engine-6.17.0.tgz",[m
+[31m-      "integrity": "sha512-YSl5R3WIAPrmshYPkaaszOsBIWRAovOCHn3y7gkTNGG51LjYW4pi6PFNkGouW6CA06qeTjTbGrDRCgFjnmVWDg==",[m
+[31m-      "devOptional": true,[m
+[31m-      "license": "Apache-2.0",[m
+[31m-      "dependencies": {[m
+[31m-        "@prisma/debug": "6.17.0",[m
+[31m-        "@prisma/engines-version": "6.17.0-16.c0aafc03b8ef6cdced8654b9a817999e02457d6a",[m
+[31m-        "@prisma/get-platform": "6.17.0"[m
+[31m-      }[m
+[31m-    },[m
+[31m-    "node_modules/@prisma/get-platform": {[m
+[31m-      "version": "6.17.0",[m
+[31m-      "resolved": "https://registry.npmjs.org/@prisma/get-platform/-/get-platform-6.17.0.tgz",[m
+[31m-      "integrity": "sha512-3tEKChrnlmLXPd870oiVfRvj7vVKuxqP349hYaMDsbV4TZd3+lFqw8KTI2Tbq5DopamfNuNqhVCj+R6ZxKKYGQ==",[m
+[31m-      "devOptional": true,[m
+[31m-      "license": "Apache-2.0",[m
+[31m-      "dependencies": {[m
+[31m-        "@prisma/debug": "6.17.0"[m
+[31m-      }[m
+[31m-    },[m
+     "node_modules/@protobufjs/aspromise": {[m
+       "version": "1.1.2",[m
+       "resolved": "https://registry.npmjs.org/@protobufjs/aspromise/-/aspromise-1.1.2.tgz",[m
+[36m@@ -3309,35 +3202,6 @@[m
+         "node": "^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7"[m
+       }[m
+     },[m
+[31m-    "node_modules/c12": {[m
+[31m-      "version": "3.1.0",[m
+[31m-      "resolved": "https://registry.npmjs.org/c12/-/c12-3.1.0.tgz",[m
+[31m-      "integrity": "sha512-uWoS8OU1MEIsOv8p/5a82c3H31LsWVR5qiyXVfBNOzfffjUWtPnhAb4BYI2uG2HfGmZmFjCtui5XNWaps+iFuw==",[m
+[31m-      "devOptional": true,[m
+[31m-      "license": "MIT",[m
+[31m-      "dependencies": {[m
+[31m-        "chokidar": "^4.0.3",[m
+[31m-        "confbox": "^0.2.2",[m
+[31m-        "defu": "^6.1.4",[m
+[31m-        "dotenv": "^16.6.1",[m
+[31m-        "exsolve": "^1.0.7",[m
+[31m-        "giget": "^2.0.0",[m
+[31m-        "jiti": "^2.4.2",[m
+[31m-        "ohash": "^2.0.11",[m
+[31m-        "pathe": "^2.0.3",[m
+[31m-        "perfect-debounce": "^1.0.0",[m
+[31m-        "pkg-types": "^2.2.0",[m
+[31m-        "rc9": "^2.1.2"[m
+[31m-      },[m
+[31m-      "peerDependencies": {[m
+[31m-        "magicast": "^0.3.5"[m
+[31m-      },[m
+[31m-      "peerDependenciesMeta": {[m
+[31m-        "magicast": {[m
+[31m-          "optional": true[m
+[31m-        }[m
+[31m-      }[m
+[31m-    },[m
+     "node_modules/call-bind": {[m
+       "version": "1.0.8",[m
+       "resolved": "https://registry.npmjs.org/call-bind/-/call-bind-1.0.8.tgz",[m
+[36m@@ -3417,34 +3281,6 @@[m
+       ],[m
+       "license": "CC-BY-4.0"[m
+     },[m
+[31m-    "node_modules/chalk": {[m
+[31m-      "version": "5.6

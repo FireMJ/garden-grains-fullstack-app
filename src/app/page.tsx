@@ -3,14 +3,15 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useSession, signOut } from "next-auth/react";
 import { useSwipeable } from "react-swipeable";
 import { FaInstagram, FaFacebook, FaTiktok, FaTwitter, FaWhatsapp } from "react-icons/fa";
+import { User, onAuthStateChanged, signOut } from "firebase/auth";
 
 import PageWrapper from "@/components/layout/PageWrapper";
 import TestimonialsCarousel from "@/components/TestimonialsCarousel";
 import { useCart } from "@/context/CartContext";
 import bannerImages from "@/data/bannerImages";
+import { auth } from "@/lib/firebase";
 
 // -------------------- Floating Buttons --------------------
 function FloatingCartButton() {
@@ -50,15 +51,32 @@ function FloatingWhatsAppButton() {
 // -------------------- Fixed Header --------------------
 function FixedHeader() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const { cart } = useCart();
   const itemCount = cart.reduce((total, item) => total + (item.quantity || 1), 0);
-  const { data: session } = useSession();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
 
   return (
     <header
@@ -93,43 +111,24 @@ function FixedHeader() {
         </div>
 
         <div className="absolute right-4 sm:right-6 md:right-8 top-1/2 -translate-y-1/2 z-30 flex items-center gap-3 sm:gap-4 md:gap-5">
-          {session?.user?.role === "ADMIN" && (
-            <Link
-              href="/admin/dashboard"
-              className="text-white hover:text-[#F4A261] transition font-medium text-xs sm:text-sm md:text-base"
-            >
-              Admin
-            </Link>
-          )}
-          {session?.user?.role === "STAFF" && (
-            <Link
-              href="/staff/dashboard"
-              className="text-white hover:text-[#F4A261] transition font-medium text-xs sm:text-sm md:text-base"
-            >
-              Staff
-            </Link>
-          )}
-
-          {!session && (
+          {!user ? (
             <>
               <Link
-                href="/signin"
+                href="/auth/signin"
                 className="text-white hover:text-[#F4A261] transition font-medium text-xs sm:text-sm md:text-base"
               >
                 Sign In
               </Link>
               <Link
-                href="/signup"
+                href="/auth/signup"
                 className="text-white hover:text-[#F4A261] transition font-medium text-xs sm:text-sm md:text-base"
               >
                 Sign Up
               </Link>
             </>
-          )}
-
-          {session && (
+          ) : (
             <button
-              onClick={() => signOut({ callbackUrl: "/" })}
+              onClick={handleSignOut}
               className="text-white hover:text-[#F4A261] transition font-medium text-xs sm:text-sm md:text-base"
             >
               Sign Out
@@ -303,15 +302,15 @@ const favoriteImages = [
 ];
 
 // -------------------- Updated Menu Item Card --------------------
-const SimpleMenuItemCard = ({ name, price, tags, image, className }) => {
+const SimpleMenuItemCard = ({ name, price, tags, image, className }: any) => {
   const addOns = ["Extra Avocado", "Protein Boost", "Gluten-Free Bread"];
   const [showAddOns, setShowAddOns] = useState(false);
   const [selectedAddOns, setSelectedAddOns] = useState(
-    () => addOns.reduce((acc, addon) => ({ ...acc, [addon]: false }), {})
+    () => addOns.reduce((acc: any, addon) => ({ ...acc, [addon]: false }), {})
   );
 
-  const toggleAddOn = (addon) => {
-    setSelectedAddOns((prev) => ({
+  const toggleAddOn = (addon: string) => {
+    setSelectedAddOns((prev: any) => ({
       ...prev,
       [addon]: !prev[addon],
     }));
@@ -326,7 +325,7 @@ const SimpleMenuItemCard = ({ name, price, tags, image, className }) => {
         <h3 className="font-semibold text-gray-800">{name}</h3>
         <p className="text-[#F4A261] font-bold">R{price}</p>
         <div className="flex flex-wrap gap-1 mt-2">
-          {tags?.map((tag, index) => (
+          {tags?.map((tag: string, index: number) => (
             <span
               key={index}
               className="bg-[#6C7B58] text-white text-xs px-2 py-1 rounded"

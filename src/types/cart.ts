@@ -4,18 +4,19 @@ export interface CartItem {
   price: number;
   quantity: number;
   image: string;
-  selectedAddOns?: string[];
-  selectedFries?: string[];
-  selectedJuices?: string[];
   instructions?: string;
   selectedSize?: string;
+  addOns?: any[];
+  fries?: any[];
+  juices?: any[];
 }
 
 export interface CartContextType {
   cart: CartItem[];
   addToCart: (item: CartItem) => void;
-  removeFromCart: (index: number) => void;
-  updateQuantity: (item: CartItem, newQuantity: number) => void;
+  removeFromCart: (itemId: string) => void;
+  updateQuantity: (itemId: string, quantity: number) => void;
   clearCart: () => void;
-  schedule?: any;
+  getTotalPrice: () => number;
+  getTotalItems: () => number;
 }

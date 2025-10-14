@@ -1,3 +1,6 @@
+import React, { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
+import { useSwipeable } from "react-swipeable";
 // -------------------- Dynamic Banner Optimized --------------------
 const DynamicBanner: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);

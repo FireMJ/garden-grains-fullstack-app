@@ -1,186 +1,118 @@
-// src/app/auth/signup/page.tsx
 "use client";
 
 import { useState } from "react";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import toast, { Toaster } from "react-hot-toast";
 import Link from "next/link";
-import { Loader, AlertCircle, CheckCircle } from "lucide-react";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
-export default function SignUp() {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: ""
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+export default function SignUpPage() {
   const router = useRouter();
+  const { signInWithGoogle } = useGoogleSignIn();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [image, setImage] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
-    setSuccess("");
-
-    // Validation
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
-      setLoading(false);
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters long");
-      setLoading(false);
-      return;
-    }
-
     try {
-      const res = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-        }),
-      });
+      const userCred = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCred.user;
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Registration failed");
+      let photoURL = "";
+      if (image) {
+        const imgRef = ref(storage, `users/${user.uid}/${image.name}`);
+        await uploadBytes(imgRef, image);
+        photoURL = await getDownloadURL(imgRef);
       }
 
-      setSuccess("Account created successfully! Redirecting to sign in...");
-      
-      // Redirect to signin after success
-      setTimeout(() => {
-        router.push("/signin?message=Registration successful");
-      }, 2000);
-
+      await updateProfile(user, { displayName: name, photoURL });
+      toast.success("Account created!");
+      router.push("/");
     } catch (err: any) {
-      setError(err.message);
+      toast.error(err.message || "Failed to sign up");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-6">
-        <h1 className="text-2xl font-bold text-center text-gray-900 mb-6">
-          Create Your Account
-        </h1>
+    <div className="flex min-h-screen items-center justify-center bg-gray-50">
+      <Toaster position="top-right" />
+      <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md space-y-6">
+        <h2 className="text-2xl font-bold text-center text-gray-800">Create Account</h2>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-red-500" />
-            <p className="text-red-700 text-sm">{error}</p>
-          </div>
-        )}
-
-        {success && (
-          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md flex items-center gap-2">
-            <CheckCircle className="w-4 h-4 text-green-500" />
-            <p className="text-green-700 text-sm">{success}</p>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-              Full Name
-            </label>
-            <input
-              id="name"
-              name="name"
-              type="text"
-              required
-              value={formData.name}
-              onChange={handleChange}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#1E4259] focus:border-[#1E4259]"
-              placeholder="Enter your full name"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              Email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              value={formData.email}
-              onChange={handleChange}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#1E4259] focus:border-[#1E4259]"
-              placeholder="Enter your email"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              value={formData.password}
-              onChange={handleChange}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#1E4259] focus:border-[#1E4259]"
-              placeholder="Enter your password (min. 6 characters)"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-              Confirm Password
-            </label>
-            <input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              required
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#1E4259] focus:border-[#1E4259]"
-              placeholder="Confirm your password"
-            />
-          </div>
+        <form onSubmit={handleSignUp} className="space-y-4">
+          <input
+            type="text"
+            placeholder="Full Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg p-3"
+          />
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg p-3"
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg p-3"
+            required
+          />
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setImage(e.target.files?.[0] || null)}
+            className="w-full border border-gray-300 rounded-lg p-2"
+          />
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#1E4259] hover:bg-[#2A536B] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1E4259] disabled:opacity-50"
+            className="w-full bg-green-600 text-white p-3 rounded-lg hover:bg-green-700 disabled:opacity-50 transition"
           >
-            {loading ? (
-              <Loader className="w-4 h-4 animate-spin" />
-            ) : (
-              "Create Account"
-            )}
+            {loading ? "Creating account..." : "Sign Up"}
           </button>
         </form>
 
-        <div className="mt-4 text-center">
-          <p className="text-sm text-gray-600">
-            Already have an account?{" "}
-            <Link href="/signin" className="text-[#1E4259] hover:underline font-medium">
-              Sign in
-            </Link>
-          </p>
+        <div className="flex items-center justify-center space-x-2">
+          <span className="h-px w-1/4 bg-gray-300"></span>
+          <span className="text-gray-500 text-sm">or</span>
+          <span className="h-px w-1/4 bg-gray-300"></span>
         </div>
+
+        <button
+          onClick={signInWithGoogle}
+          className="w-full flex items-center justify-center bg-white border border-gray-300 text-gray-700 p-3 rounded-lg hover:bg-gray-100 transition"
+        >
+          <img src="/icons/google.svg" alt="Google" className="h-5 w-5 mr-2" />
+          Continue with Google
+        </button>
+
+        <Link
+          href="/auth/phone"
+          className="block text-center text-green-700 hover:underline text-sm"
+        >
+          Sign up with Phone
+        </Link>
+
+        <p className="text-center text-gray-500 text-sm">
+          Already have an account?{" "}
+          <Link href="/auth/signin" className="text-green-700 hover:underline">
+            Sign In
+          </Link>
+        </p>
       </div>
     </div>
   );
