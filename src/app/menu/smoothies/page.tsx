@@ -80,7 +80,7 @@ export default function SmoothiesPage() {
   const total = cart.reduce(
     (sum, item) =>
       sum +
-      item.price * item.quantity || 1 +
+      item.price * item.quantity +
       (item.addOns?.reduce((a, o) => a + o.price, 0) ?? 0) +
       (item.fries?.reduce((a, f) => a + f.price, 0) ?? 0),
     0
@@ -111,7 +111,7 @@ export default function SmoothiesPage() {
           <div className="flex justify-between items-center">
             <div>
               <p className="font-semibold">
-                Items in cart: {cart.reduce((sum, item) => sum + item.quantity || 1, 0)}
+                Items in cart: {cart.reduce((sum, item) => sum + item.quantity, 0)}
               </p>
               <p className="text-green-900 font-bold">Total: R {total.toFixed(2)}</p>
             </div>

@@ -15,11 +15,11 @@ const GoToCartButton: React.FC<GoToCartButtonProps> = ({ visible, duration = 400
   const [show, setShow] = useState(visible);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const itemCount = cart.reduce((sum, item) => sum + item.quantity || 1, 0);
+  const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const total = cart.reduce(
     (sum, item) =>
       sum +
-      item.price * item.quantity || 1 +
+      item.price * item.quantity +
       (item.addOns?.reduce((a, o) => a + o.price, 0) ?? 0),
     0
   );

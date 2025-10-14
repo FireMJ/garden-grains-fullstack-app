@@ -5,7 +5,7 @@ import { useCart } from "@/context/CartContext";
 
 export default function FloatingCartButton() {
   const { cart } = useCart();
-  const itemCount = cart.reduce((total, item) => total + (item.quantity || 1), 0);
+  const itemCount = cart.reduce((total, item) => total + (item.quantity), 0);
 
   return (
     <Link

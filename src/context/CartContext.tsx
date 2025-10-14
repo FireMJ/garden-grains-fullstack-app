@@ -1,7 +1,29 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from "react";
-import { CartItem, CartContextType } from "@/types/cart";
+
+export interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image: string;
+  instructions?: string;
+  selectedSize?: string;
+  addOns?: any[];
+  fries?: any[];
+  juices?: any[];
+}
+
+interface CartContextType {
+  cart: CartItem[];
+  addToCart: (item: CartItem) => void;
+  removeFromCart: (itemId: string) => void;
+  updateQuantity: (itemId: string, quantity: number) => void;
+  clearCart: () => void;
+  getTotalPrice: () => number;
+  getTotalItems: () => number;
+}
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
@@ -26,11 +48,11 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       if (existingItem) {
         return prevCart.map((cartItem) =>
           cartItem.id === item.id
-            ? { ...cartItem, quantity: cartItem.quantity + (item.quantity || 1) }
+            ? { ...cartItem, quantity: cartItem.quantity + (item.quantity) }
             : cartItem
         );
       } else {
-        return [...prevCart, { ...item, quantity: item.quantity || 1 }];
+        return [...prevCart, { ...item, quantity: item.quantity }];
       }
     });
   };
@@ -57,9 +79,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
 
   const getTotalPrice = () => {
     return cart.reduce((total, item) => {
-      const itemTotal = item.price * item.quantity;
-      const addOnsTotal = item.addOns?.reduce((sum, addOn) => sum + addOn.price, 0) || 0;
-      return total + itemTotal + addOnsTotal;
+      return total + (item.price * item.quantity);
     }, 0);
   };
 

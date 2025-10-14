@@ -33,14 +33,14 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   </div>
                   <div className="flex items-center gap-2">
                     <button 
-                      onClick={() => updateQuantity(item.id, (item.quantity || 1) - 1)}
+                      onClick={() => updateQuantity(item.id!, (item.quantity) - 1)}
                       className="px-2 py-1 bg-gray-200 rounded"
                     >
                       -
                     </button>
-                    <span>{item.quantity || 1}</span>
+                    <span>{item.quantity}</span>
                     <button 
-                      onClick={() => updateQuantity(item.id, (item.quantity || 1) + 1)}
+                      onClick={() => updateQuantity(item.id!, (item.quantity) + 1)}
                       className="px-2 py-1 bg-gray-200 rounded"
                     >
                       +

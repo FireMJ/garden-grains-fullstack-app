@@ -111,7 +111,7 @@ export default function StaffOrdersCard({}: StaffOrdersCardProps) {
             <ul className="pl-4 list-disc text-gray-600">
               {order.items.map((item: any) => (
                 <li key={item.id}>
-                  {item.name} × {item.quantity || 1}{" "}
+                  {item.name} × {item.quantity}{" "}
                   {item.addOns && item.addOns.length > 0 && (
                     <span className="text-xs text-gray-500">
                       (Add-ons: {JSON.stringify(item.addOns)})

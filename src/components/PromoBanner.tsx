@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebaseClient";
+// import { db } from "@/lib/firebaseClient";
 
 export default function PromoBanner() {
   const [items, setItems] = useState<any[]>([]);

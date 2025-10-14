@@ -16,7 +16,7 @@ import { auth } from "@/lib/firebase";
 // -------------------- Floating Buttons --------------------
 function FloatingCartButton() {
   const { cart } = useCart();
-  const itemCount = cart.reduce((total, item) => total + (item.quantity || 1), 0);
+  const itemCount = cart.reduce((total, item) => total + (item.quantity), 0);
 
   return (
     <Link
@@ -54,7 +54,7 @@ function FixedHeader() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { cart } = useCart();
-  const itemCount = cart.reduce((total, item) => total + (item.quantity || 1), 0);
+  const itemCount = cart.reduce((total, item) => total + (item.quantity), 0);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
