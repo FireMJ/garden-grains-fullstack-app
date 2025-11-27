@@ -1,0 +1,27 @@
+/* src/styles/components/typography.css */
+.brand-heading {
+  @apply text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-yellow-300 via-white to-yellow-300 bg-clip-text text-transparent animate-shimmer;
+}
+
+.tag-badge {
+  @apply text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-medium;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% center;
+  }
+}
+
+.animate-shimmer {
+  background-size: 200% auto;
+  animation: shimmer 2s linear infinite;
+}
+
+.explore-title {
+  @apply text-3xl font-extrabold text-emerald-700 tracking-tight mb-4;
+}
+
+.explore-link {
+  @apply text-emerald-600 hover:text-emerald-800 underline font-medium transition;
+}

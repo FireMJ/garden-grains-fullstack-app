@@ -1,0 +1,78 @@
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+.pnp.cjs
+.yarn/install-state.gz
+
+# Testing
+/coverage
+
+# Next.js
+/.next/
+/out/
+/build
+
+# Production
+/dist
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Local env files
+.env*.local
+.env
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+
+# Build logs
+build.log
+
+# Backup files
+*.backup
+*.backup*
+*.orig
+*.rej
+
+# Temporary files
+*.tmp
+nul
+
+# Script files (we'll keep only the essential ones)
+*.mjs
+*.cjs
+*.sh
+!backup-to-github.sh
+!README.md
+
+# Firebase service account (sensitive!)
+serviceAccountKey.json
+
+# Package manager files
+package-lock.json
+
+# Build artifacts
+.next/
+out/
+dist/

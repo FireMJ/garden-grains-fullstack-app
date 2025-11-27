@@ -1,0 +1,16 @@
+--- a/src/app/auth/signup/page.tsx
++++ b/src/app/auth/signup/page.tsx
+@@ -189,11 +189,11 @@
+ 
+     try {
+       const appVerifier = new RecaptchaVerifier(
+-        "recaptcha-container",
+-        { size: "invisible" },
+-        auth
++        auth,
++        "recaptcha-container",
++        { size: "invisible" }
+       );
+ 
+       const confirmationResult = await signInWithPhoneNumber(
+         auth,

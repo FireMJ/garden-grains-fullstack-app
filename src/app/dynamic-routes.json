@@ -1,0 +1,12 @@
+[
+  "src\\app\\ClientLayoutWrapper",
+  "src\\app\\ClientProviders",
+  "src\\app\\menu\\breakfast\\:slug\\BreakfastDetailClient",
+  "src\\app\\menu\\juices\\:slug\\AddReviewForm",
+  "src\\app\\menu\\juices\\:slug\\RatingStars",
+  "src\\app\\menu\\juices\\:slug\\ReviewsSection",
+  "src\\app\\menu\\pastas\\:slug\\PastaDetailClient",
+  "src\\app\\menu\\soups\\:slug\\SoupDetailClient",
+  "src\\app\\menu\\stirfry\\:slug\\StirFryDetailClient",
+  "src\\app\\providers\\FirebaseAuthProvider"
+]

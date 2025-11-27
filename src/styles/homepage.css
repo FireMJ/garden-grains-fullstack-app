@@ -1,0 +1,23 @@
+/* src/styles/homepage.css */
+.nav-btn {
+  @apply bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800 transition;
+}
+
+.btn-primary {
+  @apply bg-emerald-600 text-white px-4 py-2 rounded-full hover:bg-emerald-700 transition;
+}
+
+.btn-secondary {
+  @apply bg-yellow-600 text-white px-4 py-2 rounded-full hover:bg-yellow-700 transition;
+}
+
+.animate-shimmer {
+  background-size: 200% auto;
+  animation: shimmer 2s linear infinite;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% center;
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "firestore": {
+    "database": "(default)",
+    "location": "africa-south1",
+    "rules": "rules_version = '2';",
+    "indexes": "service cloud.firestore {"
+  }
+}

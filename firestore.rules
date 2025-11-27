@@ -1,0 +1,62 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =========================
+    // ORDERS COLLECTION
+    // =========================
+    match /orders/{orderId} {
+      // Customers can create orders only for themselves
+      allow create: if request.auth != null
+        && request.auth.token.role == 'customer'
+        && request.resource.data.customerId == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.totalPrice > 0;
+
+      // Customers can update only items or instructions, not status or price
+      allow update: if request.auth != null
+        && request.auth.token.role == 'customer'
+        && request.auth.uid == resource.data.customerId
+        && request.resource.data.keys().hasOnly(['items', 'specialInstructions'])
+        && request.resource.data.totalPrice == resource.data.totalPrice
+        && request.resource.data.status == resource.data.status;
+
+      // Staff can move status forward: pending → preparing → ready
+      allow update: if request.auth != null
+        && request.auth.token.role == 'staff'
+        && request.resource.data.keys().hasOnly(['status'])
+        && (
+          (resource.data.status == 'pending' && request.resource.data.status == 'preparing') ||
+          (resource.data.status == 'preparing' && request.resource.data.status == 'ready')
+        );
+
+      // Delivery can only move ready → delivered
+      allow update: if request.auth != null
+        && request.auth.token.role == 'delivery'
+        && request.auth.uid == resource.data.deliveryId
+        && request.resource.data.keys().hasOnly(['status'])
+        && resource.data.status == 'ready'
+        && request.resource.data.status == 'delivered';
+
+      // Admin can update any field except customerId, but must respect status transitions
+      allow update: if request.auth != null
+        && request.auth.token.role == 'admin'
+        && request.resource.data.customerId == resource.data.customerId
+        && (
+          (resource.data.status == 'pending' && request.resource.data.status in ['pending','preparing']) ||
+          (resource.data.status == 'preparing' && request.resource.data.status in ['preparing','ready']) ||
+          (resource.data.status == 'ready' && request.resource.data.status in ['ready','delivered']) ||
+          (resource.data.status == 'delivered' && request.resource.data.status == 'delivered')
+        );
+
+      // Owner has full write access
+      allow write: if request.auth != null && request.auth.token.role == 'owner';
+
+      // Read rules
+      allow read: if request.auth != null && (
+        request.auth.token.role in ['customer','staff','delivery','admin','owner']
+      );
+    }
+  }
+}
