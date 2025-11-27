@@ -77,6 +77,7 @@ export default function BowlDetailPage() {
     const cartItem = {
       id: `${bowlItem.id}-${Date.now()}`,
       name: bowlItem.name,
+      description: bowlItem.description, // ✅ Added missing description
       price: bowlItem.price,
       quantity: quantity,
       total: itemTotal,
