@@ -31,8 +31,9 @@ export default function BreakfastDetailPage() {
   const slug = params.slug as string;
   const breakfastItem = breakfasts.find(item => item.slug === slug);
 
+  // State for customization
   const [selectedAddOns, setSelectedAddOns] = useState<AddOn[]>([]);
-  const [selectedJuice, setSelectedJuice] = useState<JuiceGroup | null>(null);
+  const [selectedJuice, setSelectedJuice] = useState<{ size: string; option: JuiceOption } | null>(null);
   const [specialInstructions, setSpecialInstructions] = useState("");
   const [quantity, setQuantity] = useState(1);
 
@@ -52,19 +53,21 @@ export default function BreakfastDetailPage() {
     );
   }
 
+  // Calculate total price INCLUDING add-ons and upsells
   const addOnsTotal = selectedAddOns.reduce((sum, addon) => sum + addon.price, 0);
-  const juiceTotal = selectedJuice ? selectedJuice.options[0]?.price || 0 : 0;
+  const juiceTotal = selectedJuice ? selectedJuice.option.price : 0;
   const itemTotal = (breakfastItem.price + addOnsTotal + juiceTotal) * quantity;
 
   const handleAddToCart = () => {
     const cartItem = {
       id: `${breakfastItem.id}-${Date.now()}`,
       name: breakfastItem.name,
+      description: breakfastItem.description,
       price: breakfastItem.price,
       quantity: quantity,
       total: itemTotal,
       addOns: selectedAddOns,
-      juice: selectedJuice,
+      juice: selectedJuice, // ✅ Now matches CartItem interface
       specialInstructions: specialInstructions,
       image: breakfastItem.image,
       category: "breakfast"
@@ -82,15 +85,16 @@ export default function BreakfastDetailPage() {
     );
   };
 
-  const toggleJuice = (juiceGroup: JuiceGroup, juiceOption: any) => {
+  const toggleJuice = (juiceGroup: JuiceGroup, juiceOption: JuiceOption) => {
     setSelectedJuice(prev => 
-      prev?.size === juiceGroup.size ? null : {
-        ...juiceGroup,
-        options: [juiceOption]
+      prev?.option.id === juiceOption.id ? null : {
+        size: juiceGroup.size,
+        option: juiceOption // ✅ Now has the required structure
       }
     );
   };
 
+  // Sample add-ons
   const availableAddOns: AddOn[] = [
     { id: "extra-honey", name: "Extra Honey", price: 5.00 },
     { id: "extra-nuts", name: "Extra Nuts & Seeds", price: 10.00 },
@@ -98,6 +102,7 @@ export default function BreakfastDetailPage() {
     { id: "extra-fruit", name: "Extra Fresh Fruit", price: 12.00 }
   ];
 
+  // Sample juice upsells
   const availableJuiceUpsells: JuiceGroup[] = [
     {
       size: "Regular",
@@ -111,6 +116,7 @@ export default function BreakfastDetailPage() {
 
   return (
     <main className="min-h-screen bg-[#1E4259] text-white pt-20">
+      {/* Navigation */}
       <div className="bg-white/10 backdrop-blur-sm border-b border-white/20">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <button
@@ -127,6 +133,7 @@ export default function BreakfastDetailPage() {
 
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="grid md:grid-cols-2 gap-8">
+          {/* Image */}
           <div className="relative h-80 md:h-96 rounded-2xl overflow-hidden">
             <Image
               src={breakfastItem.image}
@@ -143,6 +150,7 @@ export default function BreakfastDetailPage() {
             </div>
           </div>
 
+          {/* Details */}
           <div className="space-y-6">
             <div>
               <h1 className="text-3xl font-bold text-[#F4A261] mb-2">
@@ -156,6 +164,7 @@ export default function BreakfastDetailPage() {
               </div>
             </div>
 
+            {/* Quantity Selector */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-300">
                 Quantity
@@ -177,6 +186,7 @@ export default function BreakfastDetailPage() {
               </div>
             </div>
 
+            {/* Add-ons */}
             <div className="space-y-3">
               <h3 className="text-lg font-semibold text-[#F4A261]">Add-ons</h3>
               <div className="space-y-2">
@@ -195,6 +205,7 @@ export default function BreakfastDetailPage() {
               </div>
             </div>
 
+            {/* Juice Upsell */}
             <div className="space-y-3">
               <h3 className="text-lg font-semibold text-[#F4A261]">Add a Fresh Juice</h3>
               <div className="space-y-2">
@@ -206,7 +217,7 @@ export default function BreakfastDetailPage() {
                         <input
                           type="radio"
                           name="juice"
-                          checked={selectedJuice?.size === juiceGroup.size && selectedJuice.options[0]?.id === juice.id}
+                          checked={selectedJuice?.option.id === juice.id}
                           onChange={() => toggleJuice(juiceGroup, juice)}
                           className="w-4 h-4 text-[#F4A261]"
                         />
@@ -219,6 +230,7 @@ export default function BreakfastDetailPage() {
               </div>
             </div>
 
+            {/* Special Instructions */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-300">
                 Special Instructions
@@ -231,6 +243,7 @@ export default function BreakfastDetailPage() {
               />
             </div>
 
+            {/* Total and Add to Cart */}
             <div className="space-y-4">
               <div className="flex justify-between items-center text-lg">
                 <span className="font-semibold">Total:</span>

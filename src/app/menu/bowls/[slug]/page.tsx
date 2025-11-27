@@ -69,21 +69,32 @@ export default function BowlDetailPage() {
     const selectedBase = bowlBases.find(b => b.id === selectedOptions.base);
     const selectedDressing = bowlDressings.find(d => d.id === selectedOptions.dressing);
     const selectedFries = friesUpsell.find(f => f.id === selectedOptions.fries);
-    const selectedJuice = selectedOptions.juice ? {
-      size: selectedOptions.juice.size,
-      option: juiceGroup.flatMap(g => g.options).find(j => j.id === selectedOptions.juice?.option)
+    
+    // ✅ Fix: Ensure juice option is defined before adding to cart
+    const selectedJuiceOption = selectedOptions.juice 
+      ? juiceGroup.flatMap(g => g.options).find(j => j.id === selectedOptions.juice?.option)
+      : null;
+
+    const selectedJuice = selectedJuiceOption ? {
+      size: selectedOptions.juice!.size,
+      option: selectedJuiceOption // ✅ Now definitely defined
     } : null;
+
+    // ✅ Fix: Properly filter out undefined addOns and cast to correct type
+    const selectedAddOns = selectedOptions.addOns
+      .map(id => commonAddOns.find(a => a.id === id))
+      .filter((addOn): addOn is NonNullable<typeof addOn> => addOn !== undefined);
 
     const cartItem = {
       id: `${bowlItem.id}-${Date.now()}`,
       name: bowlItem.name,
-      description: bowlItem.description, // ✅ Added missing description
+      description: bowlItem.description,
       price: bowlItem.price,
       quantity: quantity,
       total: itemTotal,
       base: selectedBase?.name || "",
       dressing: selectedDressing?.name || "",
-      addOns: selectedOptions.addOns.map(id => commonAddOns.find(a => a.id === id)).filter(Boolean),
+      addOns: selectedAddOns,
       fries: selectedFries,
       juice: selectedJuice,
       specialInstructions: selectedOptions.specialInstructions,

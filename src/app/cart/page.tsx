@@ -1,220 +1,240 @@
 "use client";
 
+import React from "react";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
+import Image from "next/image";
 
 export default function CartPage() {
-  const {
-    state: { items: cart, total, itemCount },
-    clearCart,
-    removeFromCart,
-    updateQuantity,
-  } = useCart();
-
-  const getCartTotal = () => {
-    return total;
-  };
+  const { state, removeFromCart, updateQuantity, clearCart } = useCart();
+  const router = useRouter();
 
   const handleQuantityChange = (id: string, newQuantity: number) => {
-    if (newQuantity < 1) {
+    if (newQuantity === 0) {
       removeFromCart(id);
     } else {
       updateQuantity(id, newQuantity);
     }
   };
 
-  const calculateItemTotal = (item: any) => {
-    return item.price * item.quantity;
-  };
+  const deliveryFee = state.total > 0 ? 45 : 0; // R45 delivery fee
+  const freeDeliveryThreshold = 850; // R850 for free delivery
+  const qualifiesForFreeDelivery = state.total >= freeDeliveryThreshold;
+  const finalTotal = qualifiesForFreeDelivery ? state.total : state.total + deliveryFee;
 
-  if (cart.length === 0) {
+  if (state.items.length === 0) {
     return (
-      <div className="min-h-screen bg-[#1E4259] pt-20">
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <h1 className="text-4xl font-bold text-[#F4A261] mb-8">Shopping Cart</h1>
-          <div className="bg-white/10 rounded-xl p-8 text-center">
-            <div className="text-6xl mb-4">🛒</div>
-            <h2 className="text-2xl font-semibold text-white mb-4">Your cart is empty</h2>
-            <p className="text-gray-300 mb-6">Add some delicious items from our menu to get started!</p>
-            <a 
-              href="/menu"
-              className="inline-block bg-[#F4A261] text-white px-6 py-3 rounded-lg hover:bg-[#e68e42] transition font-semibold"
-            >
-              Browse Menu
-            </a>
-          </div>
+      <div className="min-h-screen bg-[#1E4259] text-white pt-20">
+        <div className="max-w-4xl mx-auto px-4 py-8 text-center">
+          <h1 className="text-4xl font-bold mb-4 text-[#F4A261]">Your Cart</h1>
+          <p className="text-xl mb-8">Your cart is empty</p>
+          <button
+            onClick={() => router.push("/menu")}
+            className="bg-[#F4A261] text-white px-6 py-3 rounded-lg hover:bg-[#e68e42] transition"
+          >
+            Browse Menu
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#1E4259] pt-20">
+    <div className="min-h-screen bg-[#1E4259] text-white pt-20">
       <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold text-[#F4A261]">Shopping Cart</h1>
-          <div className="text-white">
-            <p className="text-lg">{itemCount} {itemCount === 1 ? 'item' : 'items'}</p>
-          </div>
-        </div>
+        <h1 className="text-4xl font-bold mb-8 text-[#F4A261]">Your Cart</h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-3 gap-8">
           {/* Cart Items */}
-          <div className="lg:col-span-2">
-            <div className="bg-white/10 rounded-xl p-6">
-              <h2 className="text-2xl font-semibold text-white mb-6">Order Items</h2>
-              <div className="space-y-4">
-                {cart.map((item) => (
-                  <div key={item.id} className="bg-white/5 rounded-lg p-4 border border-white/10">
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex-1">
-                        <h3 className="text-xl font-semibold text-white">{item.name}</h3>
+          <div className="lg:col-span-2 space-y-6">
+            {state.items.map((item) => (
+              <div
+                key={item.id}
+                className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm"
+              >
+                <div className="flex gap-4">
+                  {/* Item Image */}
+                  <div className="relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
+                    <Image
+                      src={item.image}
+                      alt={item.name}
+                      fill
+                      className="object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#6C7B58] to-[#8A9B6E] flex items-center justify-center">
+                      <span className="text-white/80 text-xs">Image</span>
+                    </div>
+                  </div>
+
+                  {/* Item Details */}
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-xl font-bold text-green-200">{item.name}</h3>
                         <p className="text-gray-300 text-sm mt-1">{item.description}</p>
                         
-                        {/* Display customizations */}
+                        {/* Base Selection */}
+                        {item.base && (
+                          <div className="mt-2">
+                            <p className="text-sm text-gray-400">Base: <span className="text-white">{item.base}</span></p>
+                          </div>
+                        )}
+
+                        {/* Dressing Selection */}
+                        {item.dressing && (
+                          <div className="mt-1">
+                            <p className="text-sm text-gray-400">Dressing: <span className="text-white">{item.dressing}</span></p>
+                          </div>
+                        )}
+
+                        {/* Add-ons */}
                         {item.addOns && item.addOns.length > 0 && (
                           <div className="mt-2">
                             <p className="text-sm text-gray-400">Add-ons:</p>
                             <div className="flex flex-wrap gap-1 mt-1">
-                              {item.addOns.map((addOn: any, index: number) => (
-                                <span key={index} className="text-xs bg-[#6c8665] text-white px-2 py-1 rounded">
-                                  {addOn.name}
+                              {item.addOns.map((addOn) => (
+                                <span
+                                  key={addOn.id}
+                                  className="bg-green-600 text-white px-2 py-1 rounded text-xs"
+                                >
+                                  {addOn.name} +R{addOn.price}
                                 </span>
                               ))}
                             </div>
                           </div>
                         )}
 
-                        {item.friesUpsell && item.friesUpsell.length > 0 && (
+                        {/* Fries - FIXED: using 'fries' not 'friesUpsell' */}
+                        {item.fries && (
                           <div className="mt-2">
                             <p className="text-sm text-gray-400">Fries:</p>
                             <div className="flex flex-wrap gap-1 mt-1">
-                              {item.friesUpsell.map((fry: any, index: number) => (
-                                <span key={index} className="text-xs bg-[#6c8665] text-white px-2 py-1 rounded">
-                                  {fry.name}
-                                </span>
-                              ))}
+                              <span className="bg-yellow-600 text-white px-2 py-1 rounded text-xs">
+                                {item.fries.name} +R{item.fries.price}
+                              </span>
                             </div>
                           </div>
                         )}
 
-                        {item.juiceUpsell && item.juiceUpsell.length > 0 && (
+                        {/* Juice */}
+                        {item.juice && (
                           <div className="mt-2">
                             <p className="text-sm text-gray-400">Juice:</p>
                             <div className="flex flex-wrap gap-1 mt-1">
-                              {item.juiceUpsell.map((juice: any, index: number) => (
-                                <span key={index} className="text-xs bg-[#6c8665] text-white px-2 py-1 rounded">
-                                  {juice.name}
-                                </span>
-                              ))}
+                              <span className="bg-orange-600 text-white px-2 py-1 rounded text-xs">
+                                {item.juice.size} {item.juice.option.name} +R{item.juice.option.price}
+                              </span>
                             </div>
                           </div>
                         )}
 
+                        {/* Special Instructions */}
                         {item.specialInstructions && (
                           <div className="mt-2">
                             <p className="text-sm text-gray-400">Special Instructions:</p>
-                            <p className="text-xs text-gray-300 mt-1">{item.specialInstructions}</p>
+                            <p className="text-white text-sm mt-1">{item.specialInstructions}</p>
                           </div>
                         )}
                       </div>
-                      
-                      <div className="text-right ml-4">
-                        <p className="text-2xl font-bold text-[#F4A261]">R{calculateItemTotal(item).toFixed(2)}</p>
-                        <p className="text-sm text-gray-400">R{item.price} each</p>
-                      </div>
-                    </div>
 
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center space-x-3">
-                        <button
-                          onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                          className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-white hover:bg-white/30 transition"
-                        >
-                          -
-                        </button>
-                        <span className="text-white font-semibold min-w-8 text-center">{item.quantity}</span>
-                        <button
-                          onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                          className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-white hover:bg-white/30 transition"
-                        >
-                          +
-                        </button>
+                      {/* Price and Quantity */}
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-[#F4A261]">R{item.total.toFixed(2)}</p>
+                        <div className="flex items-center gap-3 mt-3">
+                          <button
+                            onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
+                            className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"
+                          >
+                            -
+                          </button>
+                          <span className="font-bold w-8 text-center">{item.quantity}</span>
+                          <button
+                            onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                            className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
-                      
-                      <button
-                        onClick={() => removeFromCart(item.id)}
-                        className="text-red-400 hover:text-red-300 transition text-sm font-semibold"
-                      >
-                        Remove
-                      </button>
                     </div>
                   </div>
-                ))}
+                </div>
               </div>
+            ))}
 
-              {/* Clear Cart Button */}
-              <div className="mt-6 pt-6 border-t border-white/20">
-                <button
-                  onClick={clearCart}
-                  className="w-full py-3 bg-red-600/20 text-red-400 rounded-lg hover:bg-red-600/30 transition font-semibold border border-red-400/20"
-                >
-                  Clear Entire Cart
-                </button>
-              </div>
+            {/* Clear Cart Button */}
+            <div className="flex justify-end">
+              <button
+                onClick={clearCart}
+                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition"
+              >
+                Clear Cart
+              </button>
             </div>
           </div>
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-white/10 rounded-xl p-6 sticky top-24">
-              <h2 className="text-2xl font-semibold text-white mb-6">Order Summary</h2>
+            <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm sticky top-24">
+              <h2 className="text-2xl font-bold text-[#F4A261] mb-4">Order Summary</h2>
               
-              <div className="space-y-4 mb-6">
-                <div className="flex justify-between text-gray-300">
-                  <span>Subtotal ({itemCount} {itemCount === 1 ? 'item' : 'items'})</span>
-                  <span>R{getCartTotal().toFixed(2)}</span>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span>Subtotal ({state.itemCount} items)</span>
+                  <span>R{state.total.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-gray-300">
+                
+                <div className="flex justify-between">
                   <span>Delivery Fee</span>
-                  <span>R{getCartTotal() > 200 ? '0.00' : '25.00'}</span>
+                  <span>
+                    {qualifiesForFreeDelivery ? (
+                      <span className="text-green-400">FREE</span>
+                    ) : (
+                      `R${deliveryFee.toFixed(2)}`
+                    )}
+                  </span>
                 </div>
-                {getCartTotal() > 200 && (
-                  <div className="flex justify-between text-green-400 text-sm">
-                    <span>Free Delivery Applied!</span>
-                    <span>-R25.00</span>
+
+                {!qualifiesForFreeDelivery && (
+                  <div className="text-sm text-yellow-400 bg-yellow-400/10 p-2 rounded">
+                    Add R{(freeDeliveryThreshold - state.total).toFixed(2)} more for FREE delivery!
                   </div>
                 )}
-                <div className="border-t border-white/20 pt-4">
-                  <div className="flex justify-between text-lg font-semibold text-white">
+
+                <div className="border-t border-white/20 pt-3">
+                  <div className="flex justify-between text-xl font-bold">
                     <span>Total</span>
-                    <span>R{(getCartTotal() + (getCartTotal() > 200 ? 0 : 25)).toFixed(2)}</span>
+                    <span className="text-[#F4A261]">R{finalTotal.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="mt-6 space-y-3">
                 <button
-                  onClick={() => window.location.href = '/checkout'}
-                  className="w-full py-4 bg-[#F4A261] text-white rounded-lg hover:bg-[#e68e42] transition font-semibold text-lg"
+                  onClick={() => router.push("/checkout")}
+                  className="w-full bg-[#F4A261] hover:bg-[#e68e42] text-white font-bold py-4 px-6 rounded-lg transition text-lg"
                 >
                   Proceed to Checkout
                 </button>
                 
                 <button
-                  onClick={() => window.location.href = '/menu'}
-                  className="w-full py-3 bg-white/10 text-white rounded-lg hover:bg-white/20 transition font-semibold border border-white/20"
+                  onClick={() => router.push("/menu")}
+                  className="w-full bg-transparent border border-white text-white hover:bg-white/10 py-3 px-6 rounded-lg transition"
                 >
                   Continue Shopping
                 </button>
-              </div>
 
-              {getCartTotal() < 200 && (
-                <div className="mt-4 p-3 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
-                  <p className="text-yellow-300 text-sm text-center">
-                    Add R{(200 - getCartTotal()).toFixed(2)} more for free delivery!
-                  </p>
-                </div>
-              )}
+                <button
+                  onClick={() => router.push("/schedule-order")}
+                  className="w-full bg-[#6C7B58] hover:bg-[#5a6a4d] text-white py-3 px-6 rounded-lg transition"
+                >
+                  Schedule Order
+                </button>
+              </div>
             </div>
           </div>
         </div>

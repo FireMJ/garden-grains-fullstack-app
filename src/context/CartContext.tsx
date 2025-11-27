@@ -6,16 +6,24 @@ export interface AddOn {
   id: string;
   name: string;
   price: number;
-  quantity?: number;
 }
 
-export interface Customization {
-  addOns?: AddOn[];
-  fries?: any[];
-  juice?: any[];
-  base?: string;
-  dressing?: string;
-  specialInstructions?: string;
+export interface JuiceOption {
+  id: string;
+  name: string;
+  price: number;
+}
+
+export interface JuiceGroup {
+  size: string;
+  options: JuiceOption[];
+}
+
+export interface FriesUpsell {
+  id: string;
+  name: string;
+  price: number;
+  optional?: boolean;
 }
 
 export interface CartItem {
@@ -24,13 +32,14 @@ export interface CartItem {
   description: string;
   price: number;
   quantity: number;
+  total: number; // This should be the final total including all extras
   image: string;
-  customizations?: Customization;
-  base?: any;
-  dressing?: any;
+  category: string;
   addOns?: AddOn[];
-  friesUpsell?: any[];
-  juiceUpsell?: { id: string; name: string; price: number; size: string }[];
+  juice?: { size: string; option: JuiceOption } | null;
+  fries?: FriesUpsell;
+  base?: string;
+  dressing?: string;
   specialInstructions?: string;
 }
 
@@ -46,21 +55,48 @@ type CartAction =
   | { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number } }
   | { type: 'CLEAR_CART' };
 
+// Helper function to calculate item total including all extras
+const calculateItemTotal = (item: CartItem): number => {
+  const baseTotal = item.price * item.quantity;
+  
+  // Calculate add-ons total
+  const addOnsTotal = (item.addOns || []).reduce((sum, addOn) => sum + addOn.price, 0) * item.quantity;
+  
+  // Calculate juice upsell total
+  const juiceTotal = (item.juice ? item.juice.option.price : 0) * item.quantity;
+  
+  // Calculate fries upsell total
+  const friesTotal = (item.fries ? item.fries.price : 0) * item.quantity;
+  
+  return baseTotal + addOnsTotal + juiceTotal + friesTotal;
+};
+
+// Helper function to calculate cart total
+const calculateCartTotal = (items: CartItem[]): number => {
+  return items.reduce((sum, item) => sum + item.total, 0);
+};
+
 const cartReducer = (state: CartState, action: CartAction): CartState => {
   switch (action.type) {
     case 'ADD_ITEM': {
-      const existingItemIndex = state.items.findIndex(item => item.id === action.payload.id);
-      
+      const existingItemIndex = state.items.findIndex(
+        item => item.id === action.payload.id
+      );
+
       if (existingItemIndex > -1) {
         const updatedItems = state.items.map((item, index) =>
           index === existingItemIndex
-            ? { ...item, quantity: item.quantity + action.payload.quantity }
+            ? { 
+                ...item, 
+                quantity: item.quantity + action.payload.quantity,
+                total: calculateItemTotal({ ...item, quantity: item.quantity + action.payload.quantity })
+              }
             : item
         );
-        
-        const total = updatedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+        const total = calculateCartTotal(updatedItems);
         const itemCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
-        
+
         return {
           ...state,
           items: updatedItems,
@@ -68,10 +104,14 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
           itemCount
         };
       } else {
-        const updatedItems = [...state.items, action.payload];
-        const total = updatedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const newItem = {
+          ...action.payload,
+          total: calculateItemTotal(action.payload)
+        };
+        const updatedItems = [...state.items, newItem];
+        const total = calculateCartTotal(updatedItems);
         const itemCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
-        
+
         return {
           ...state,
           items: updatedItems,
@@ -80,12 +120,12 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         };
       }
     }
-    
+
     case 'REMOVE_ITEM': {
       const updatedItems = state.items.filter(item => item.id !== action.payload);
-      const total = updatedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const total = calculateCartTotal(updatedItems);
       const itemCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
-      
+
       return {
         ...state,
         items: updatedItems,
@@ -93,17 +133,21 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         itemCount
       };
     }
-    
+
     case 'UPDATE_QUANTITY': {
       const updatedItems = state.items.map(item =>
         item.id === action.payload.id
-          ? { ...item, quantity: Math.max(0, action.payload.quantity) }
+          ? { 
+              ...item, 
+              quantity: Math.max(0, action.payload.quantity),
+              total: calculateItemTotal({ ...item, quantity: Math.max(0, action.payload.quantity) })
+            }
           : item
       ).filter(item => item.quantity > 0);
-      
-      const total = updatedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+      const total = calculateCartTotal(updatedItems);
       const itemCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
-      
+
       return {
         ...state,
         items: updatedItems,
@@ -111,14 +155,14 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         itemCount
       };
     }
-    
+
     case 'CLEAR_CART':
       return {
         items: [],
         total: 0,
         itemCount: 0
       };
-    
+
     default:
       return state;
   }
