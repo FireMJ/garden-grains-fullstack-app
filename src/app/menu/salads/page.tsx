@@ -5,38 +5,13 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
+import { salads } from "@/data/saladsData";
 
 export default function SaladsListPage() {
   const router = useRouter();
   const { state } = useCart();
 
-  // TODO: Replace with actual data import for salads
-  const menuItems = [
-    {
-      id: "1",
-      name: "Sample Fresh Salads Item 1",
-      description: "Delicious salads item description with fresh ingredients",
-      price: 45.00,
-      image: "/images/menu/salads/item1.jpg"
-    },
-    {
-      id: "2", 
-      name: "Sample Fresh Salads Item 2",
-      description: "Premium salads item description made to perfection",
-      price: 55.00,
-      image: "/images/menu/salads/item2.jpg"
-    },
-    {
-      id: "3",
-      name: "Sample Fresh Salads Item 3", 
-      description: "Special salads item description with unique flavors",
-      price: 65.00,
-      image: "/images/menu/salads/item3.jpg"
-    }
-  ];
-
-  const handleNavigate = (name: string) => {
-    const slug = name.replace(/\s+/g, "-").toLowerCase();
+  const handleNavigate = (slug: string) => {
     router.push(`/menu/salads/${slug}`);
   };
 
@@ -114,7 +89,7 @@ export default function SaladsListPage() {
 
         {/* Menu Items Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {menuItems.map((item) => {
+          {salads.map((item) => {
             const inCart = state.items.filter(
               (c) => c.name.toLowerCase() === item.name.toLowerCase()
             );
@@ -127,7 +102,7 @@ export default function SaladsListPage() {
             return (
               <div
                 key={item.id}
-                onClick={() => handleNavigate(item.name)}
+                onClick={() => handleNavigate(item.slug)}
                 className="bg-white/10 rounded-2xl shadow-lg cursor-pointer overflow-hidden transition transform hover:scale-105 hover:shadow-xl backdrop-blur-sm"
               >
                 <div className="relative w-full h-52">
@@ -137,14 +112,13 @@ export default function SaladsListPage() {
                     fill
                     className="object-cover"
                     onError={(e) => {
-                      // Fallback if image doesn't exist
                       const target = e.target as HTMLImageElement;
                       target.style.display = 'none';
                       target.nextElementSibling?.classList.remove('hidden');
                     }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-br from-[#6C7B58] to-[#8A9B6E] hidden items-center justify-center">
-                    <span className="text-white/80 text-sm">Fresh Salads Image</span>
+                    <span className="text-white/80 text-sm">Salad Image</span>
                   </div>
                 </div>
 
@@ -170,7 +144,7 @@ export default function SaladsListPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleNavigate(item.name);
+                      handleNavigate(item.slug);
                     }}
                     className="mt-3 bg-[#F4A261] hover:bg-[#e68e42] text-white font-semibold py-2 px-4 rounded-lg transition"
                   >
@@ -202,10 +176,10 @@ export default function SaladsListPage() {
                 Bowls
               </Link>
               <Link
-                href="/menu/juices"
+                href="/menu/salads"
                 className="bg-[#2A5568] text-white px-4 py-2 rounded-lg hover:bg-[#1E4259] transition text-sm"
               >
-                Juices
+                Salads
               </Link>
               <Link
                 href="/menu"
