@@ -5,43 +5,15 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
+import { juices } from "@/data/juicesData";
 
 export default function JuicesListPage() {
   const router = useRouter();
-  const { state } = useCart();
+  const { cartItems, totalItems, totalPrice } = useCart(); // Fixed: using correct cart context properties
 
-  // TODO: Replace with actual data import for juices
-  const menuItems = [
-    {
-      id: "1",
-      name: "Green Detox Juice",
-      description: "Spinach, kale, apple, lemon, and ginger for a healthy cleanse",
-      price: 45.00,
-      image: "/images/menu/juices/item1.jpg"
-    },
-    {
-      id: "2", 
-      name: "Tropical Bliss",
-      description: "Pineapple, mango, orange, and coconut water for a tropical escape",
-      price: 42.00,
-      image: "/images/menu/juices/item2.jpg"
-    },
-    {
-      id: "3",
-      name: "Red Revitalize", 
-      description: "Beetroot, carrot, apple, and lemon for energy and vitality",
-      price: 48.00,
-      image: "/images/menu/juices/item3.jpg"
-    }
-  ];
-
-  const handleNavigate = (name: string) => {
-    const slug = name.replace(/\s+/g, "-").toLowerCase();
+  const handleNavigate = (slug: string) => {
     router.push(`/menu/juices/${slug}`);
   };
-
-  const totalItems = state.itemCount;
-  const totalPrice = state.total;
 
   return (
     <main className="min-h-screen bg-[#1E4259] text-white pt-20">
@@ -49,7 +21,7 @@ export default function JuicesListPage() {
       <div className="bg-white/10 backdrop-blur-sm border-b border-white/20">
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
-            <Link 
+            <Link
               href="/menu"
               className="flex items-center text-white hover:text-[#F4A261] transition"
             >
@@ -58,7 +30,7 @@ export default function JuicesListPage() {
               </svg>
               Back to Menu
             </Link>
-            <Link 
+            <Link
               href="/"
               className="flex items-center text-white hover:text-[#F4A261] transition"
             >
@@ -78,12 +50,12 @@ export default function JuicesListPage() {
             Fresh Juices
           </h1>
           <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-            Cold-pressed, nutrient-rich juices made fresh daily with healthy ingredients
+            Revitalize your day with our cold-pressed, nutrient-packed fresh juices
           </p>
         </div>
 
         {/* Cart Summary */}
-        {state.items.length > 0 && (
+        {cartItems.length > 0 && (
           <div className="bg-[#6c8665] rounded-lg p-4 mb-8 max-w-4xl mx-auto">
             <div className="flex justify-between items-center">
               <div>
@@ -114,8 +86,8 @@ export default function JuicesListPage() {
 
         {/* Menu Items Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {menuItems.map((item) => {
-            const inCart = state.items.filter(
+          {juices.map((item) => {
+            const inCart = cartItems.filter(
               (c) => c.name.toLowerCase() === item.name.toLowerCase()
             );
             const itemCount = inCart.reduce((sum, i) => sum + i.quantity, 0);
@@ -124,10 +96,13 @@ export default function JuicesListPage() {
               0
             );
 
+            // Get the smallest price for display
+            const displayPrice = Math.min(...Object.values(item.prices));
+
             return (
               <div
                 key={item.id}
-                onClick={() => handleNavigate(item.name)}
+                onClick={() => handleNavigate(item.slug)}
                 className="bg-white/10 rounded-2xl shadow-lg cursor-pointer overflow-hidden transition transform hover:scale-105 hover:shadow-xl backdrop-blur-sm"
               >
                 <div className="relative w-full h-52">
@@ -137,15 +112,23 @@ export default function JuicesListPage() {
                     fill
                     className="object-cover"
                     onError={(e) => {
-                      // Fallback if image doesn't exist
                       const target = e.target as HTMLImageElement;
                       target.style.display = 'none';
                       target.nextElementSibling?.classList.remove('hidden');
                     }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#6C7B58] to-[#8A9B6E] hidden items-center justify-center">
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#2A5568] to-[#6C7B58] hidden items-center justify-center">
                     <span className="text-white/80 text-sm">Juice Image</span>
                   </div>
+
+                  {/* Tags */}
+                  {item.tags && item.tags.includes("Popular") && (
+                    <div className="absolute top-3 left-3">
+                      <span className="bg-[#F4A261] text-white text-xs px-2 py-1 rounded-full font-semibold">
+                        Popular
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="p-6 flex flex-col gap-2">
@@ -155,9 +138,30 @@ export default function JuicesListPage() {
                   <p className="text-gray-100 text-sm line-clamp-3">
                     {item.description}
                   </p>
-                  <span className="font-bold text-green-300 text-lg">
-                    R{item.price.toFixed(2)}
-                  </span>
+
+                  {/* Price Range */}
+                  <div className="text-green-300 font-bold text-lg">
+                    {Object.keys(item.prices).length > 1
+                      ? `From R${displayPrice}`
+                      : `R${displayPrice}`
+                    }
+                  </div>
+
+                  {/* Sizes Available */}
+                  <div className="text-xs text-gray-400">
+                    Sizes: {Object.keys(item.prices).join(", ")}
+                  </div>
+
+                  {/* Benefits */}
+                  {item.benefits && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {item.benefits.slice(0, 2).map((benefit, index) => (
+                        <span key={index} className="bg-green-500/20 text-green-300 text-xs px-2 py-1 rounded">
+                          {benefit}
+                        </span>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Show live cart count for this item */}
                   {itemCount > 0 && (
@@ -170,7 +174,7 @@ export default function JuicesListPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleNavigate(item.name);
+                      handleNavigate(item.slug);
                     }}
                     className="mt-3 bg-[#F4A261] hover:bg-[#e68e42] text-white font-semibold py-2 px-4 rounded-lg transition"
                   >
@@ -202,10 +206,10 @@ export default function JuicesListPage() {
                 Bowls
               </Link>
               <Link
-                href="/menu/fries"
-                className="bg-[#E76F51] text-white px-4 py-2 rounded-lg hover:bg-[#d65a3c] transition text-sm"
+                href="/menu/juices"
+                className="bg-[#2A5568] text-white px-4 py-2 rounded-lg hover:bg-[#1E4259] transition text-sm"
               >
-                Fries & Sides
+                Juices
               </Link>
               <Link
                 href="/menu"

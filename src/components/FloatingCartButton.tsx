@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 
 export default function FloatingCartButton() {
-  const { state } = useCart();
-  const itemCount = state.items.reduce((sum, item) => sum + item.quantity, 0);
+  const { cartItems, totalItems, totalPrice } = useCart();
+  const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   // Don't show if cart is empty
   if (itemCount === 0) {

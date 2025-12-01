@@ -39,7 +39,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     const unsubscribe = onSnapshot(
-      doc(db, 'users', user.id),
+      doc(db, 'users', user.uid),
       (doc) => {
         if (doc.exists()) {
           setUserData(doc.data() as UserData);

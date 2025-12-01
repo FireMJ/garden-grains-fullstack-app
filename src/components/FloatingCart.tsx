@@ -4,14 +4,14 @@ import React from "react";
 import { useCart } from "@/context/CartContext";
 
 export default function FloatingCart() {
-  const { state } = useCart();
+  const { cartItems, totalItems, totalPrice } = useCart();
 
-  if (state.items.length === 0) {
+  if (cartItems.length === 0) {
     return null;
   }
 
   // Calculate total including add-ons, fries, and juice
-  const cartTotal = state.items.reduce(
+  const cartTotal = cartItems.reduce(
     (total, item) =>
       total +
       item.price * item.quantity +
@@ -38,7 +38,7 @@ export default function FloatingCart() {
               d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5.5M7 13l2.5 5.5m0 0L17 21"
             />
           </svg>
-          <span className="font-bold">{state.itemCount}</span>
+          <span className="font-bold">{totalItems}</span>
         </div>
         <div className="border-l border-white/30 h-6"></div>
         <span className="font-bold">R{cartTotal.toFixed(2)}</span>

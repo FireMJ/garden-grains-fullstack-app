@@ -1,32 +1,27 @@
-'use client';
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import './globals.css'
+import { CartProvider } from '@/context/CartContext'
 
-import { GeistSans } from 'geist/font/sans';
-import { GeistMono } from 'geist/font/mono';
-import './globals.css';
-import { AuthProvider } from '@/context/AuthContext';
-import { CartProvider } from '@/context/CartContext';
-import FixedHeader from '@/components/FixedHeader';
+const inter = Inter({ subsets: ['latin'] })
+
+export const metadata: Metadata = {
+  title: 'Garden Grains',
+  description: 'Fresh, healthy meals and smoothies',
+}
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
   return (
     <html lang="en">
-      <head>
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-      </head>
-      <body className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}>
-        <AuthProvider>
-          <CartProvider>
-            <FixedHeader />
-            <main className="pt-16">
-              {children}
-            </main>
-          </CartProvider>
-        </AuthProvider>
+      <body className={inter.className}>
+        <CartProvider>
+          {children}
+        </CartProvider>
       </body>
     </html>
-  );
+  )
 }

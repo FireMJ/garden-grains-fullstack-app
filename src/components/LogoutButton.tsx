@@ -1,15 +1,15 @@
 'use client';
 
-import { useAuth } from "@/context/AuthContext";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 
 export default function LogoutButton() {
-  const { logout } = useAuth();
   const router = useRouter();
 
-  const handleSignOut = async () => {
+  const handleLogout = async () => {
     try {
-      await logout();
+      await signOut(auth);
       router.push("/");
     } catch (error) {
       console.error("Error signing out:", error);
@@ -18,8 +18,8 @@ export default function LogoutButton() {
 
   return (
     <button
-      onClick={handleSignOut}
-      className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
+      onClick={handleLogout}
+      className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
     >
       Sign Out
     </button>

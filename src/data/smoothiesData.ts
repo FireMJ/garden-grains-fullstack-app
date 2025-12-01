@@ -1,128 +1,206 @@
+export interface SmoothieItem {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  category: string;
+  popular?: boolean;
+  ingredients: string[];
+  sizes: SizeOption[];
+  addOns?: AddOn[];
+}
+
+export interface SizeOption {
+  label: string;
+  price: number;
+}
+
 export interface AddOn {
   id: string;
   name: string;
   price: number;
 }
 
-export interface SmoothieItem {
-  id: string;
-  name: string;
-  description: string;
-  prices: {
-    S: number; // 250ml
-    M: number; // 350ml  
-    L: number; // 500ml
-  };
-  image: string;
-  tags?: string[];
-  addOns?: AddOn[];
-}
-
-// ✅ Common add-ons for smoothies
 export const smoothieAddOns: AddOn[] = [
-  { id: "addon1", name: "protein powder", price: 19 },
-  { id: "addon2", name: "ginger", price: 10 },
-  { id: "addon3", name: "honey", price: 10 },
-  { id: "addon4", name: "chia seeds", price: 12.5 },
+  { id: "addon-1", name: "Protein Powder", price: 19 },
+  { id: "addon-2", name: "Ginger", price: 10 },
+  { id: "addon-3", name: "Honey", price: 10 },
+  { id: "addon-4", name: "Chia Seeds", price: 12.50 },
+  { id: "addon-5", name: "Extra Fruit", price: 15 },
+  { id: "addon-6", name: "Spirulina", price: 12 },
 ];
 
-// ✅ Size options
-export const sizeOptions = [
-  { id: "size1", name: "250ml", label: "S" },
-  { id: "size2", name: "350ml", label: "M" },
-  { id: "size3", name: "500ml", label: "L" },
-];
-
-// ✅ Main smoothies data
 export const smoothies: SmoothieItem[] = [
   {
-    id: "smoothie1",
+    id: "smoothie-1",
+    slug: "avocado-blue-dream",
     name: "Avocado Blue Dream",
-    description: "Blueberries, banana, avocado, milk, greek yoghurt, chia seeds",
-    prices: { S: 60, M: 76, L: 91 },
+    description: "Blue berries, banana, avocado, milk, greek yoghurt, chia seeds",
+    price: 76, // Updated to medium price
     image: "/images/smoothies/avocado-blue-dream.jpg",
-    tags: ["creamy", "protein"],
-    addOns: smoothieAddOns,
+    category: "smoothies",
+    popular: true,
+    ingredients: ["Blue berries", "Banana", "Avocado", "Milk", "Greek yoghurt", "Chia seeds"],
+    sizes: [
+      { label: "250ml", price: 60 },
+      { label: "350ml", price: 76 },
+      { label: "500ml", price: 91 }
+    ],
+    addOns: smoothieAddOns
   },
   {
-    id: "smoothie2",
+    id: "smoothie-2",
+    slug: "berries-smoothie",
     name: "Berries Smoothie",
     description: "Mixed berries, greek yoghurt, banana, milk & honey",
-    prices: { S: 59, M: 75, L: 89 },
+    price: 75, // Updated to medium price
     image: "/images/smoothies/berries-smoothie.jpg",
-    tags: ["antioxidant", "fruity"],
-    addOns: smoothieAddOns,
+    category: "smoothies",
+    popular: true,
+    ingredients: ["Mixed berries", "Greek yoghurt", "Banana", "Milk", "Honey"],
+    sizes: [
+      { label: "250ml", price: 59 },
+      { label: "350ml", price: 75 },
+      { label: "500ml", price: 89 }
+    ],
+    addOns: smoothieAddOns
   },
   {
-    id: "smoothie3",
+    id: "smoothie-3",
+    slug: "rolled-oats-smoothie",
     name: "Rolled Oats Smoothie",
     description: "Rolled oats, avocado, peanut butter, banana, greek yoghurt, oat milk & honey",
-    prices: { S: 63, M: 78, L: 95 },
-    image: "/images/smoothies/rolled-oats-smoothie.jpg",
-    tags: ["energy", "filling"],
-    addOns: smoothieAddOns,
+    price: 78, // Updated to medium price
+    image: "/images/smoothies/rolled-oats.jpg",
+    category: "smoothies",
+    popular: false,
+    ingredients: ["Rolled oats", "Avocado", "Peanut butter", "Banana", "Greek yoghurt", "Oat milk", "Honey"],
+    sizes: [
+      { label: "250ml", price: 63 },
+      { label: "350ml", price: 78 },
+      { label: "500ml", price: 95 }
+    ],
+    addOns: smoothieAddOns
   },
   {
-    id: "smoothie4",
+    id: "smoothie-4",
+    slug: "sunshine-smoothie",
     name: "Sunshine Smoothie",
     description: "Mango, pineapple, banana, turmeric, coconut milk",
-    prices: { S: 59, M: 75, L: 89 },
-    image: "/images/smoothies/sunshine-smoothie.jpg",
-    tags: ["tropical", "refreshing"],
-    addOns: smoothieAddOns,
+    price: 75, // Updated to medium price
+    image: "/images/smoothies/sunshine.jpg",
+    category: "smoothies",
+    popular: true,
+    ingredients: ["Mango", "Pineapple", "Banana", "Turmeric", "Coconut milk"],
+    sizes: [
+      { label: "250ml", price: 59 },
+      { label: "350ml", price: 75 },
+      { label: "500ml", price: 89 }
+    ],
+    addOns: smoothieAddOns
   },
   {
-    id: "smoothie5",
+    id: "smoothie-5",
+    slug: "green-goddess",
     name: "Green Goddess",
     description: "Spinach or kale, greek yoghurt, milk, pineapple, chia seeds, honey, lemon juice, banana, and apple",
-    prices: { S: 61, M: 77, L: 92 },
+    price: 77, // Updated to medium price
     image: "/images/smoothies/green-goddess.jpg",
-    tags: ["detox", "green"],
-    addOns: smoothieAddOns,
+    category: "smoothies",
+    popular: true,
+    ingredients: ["Spinach/Kale", "Greek yoghurt", "Milk", "Pineapple", "Chia seeds", "Honey", "Lemon juice", "Banana", "Apple"],
+    sizes: [
+      { label: "250ml", price: 61 },
+      { label: "350ml", price: 77 },
+      { label: "500ml", price: 92 }
+    ],
+    addOns: smoothieAddOns
   },
   {
-    id: "smoothie6",
+    id: "smoothie-6",
+    slug: "charlie-brown",
     name: "Charlie Brown",
     description: "Fusion of berries, banana, peanut butter, chia seeds, dates and almond milk",
-    prices: { S: 61, M: 77, L: 92 },
+    price: 77, // Updated to medium price
     image: "/images/smoothies/charlie-brown.jpg",
-    tags: ["nutty", "sweet"],
-    addOns: smoothieAddOns,
+    category: "smoothies",
+    popular: false,
+    ingredients: ["Mixed berries", "Banana", "Peanut butter", "Chia seeds", "Dates", "Almond milk"],
+    sizes: [
+      { label: "250ml", price: 61 },
+      { label: "350ml", price: 77 },
+      { label: "500ml", price: 92 }
+    ],
+    addOns: smoothieAddOns
   },
   {
-    id: "smoothie7",
+    id: "smoothie-7",
+    slug: "chocolate-banana",
     name: "Chocolate Banana",
     description: "Banana, greek yoghurt, whole milk, cocoa powder, peanut butter, honey, dark chocolate",
-    prices: { S: 60, M: 76, L: 91 },
+    price: 76, // Updated to medium price
     image: "/images/smoothies/chocolate-banana.jpg",
-    tags: ["indulgent", "chocolate"],
-    addOns: smoothieAddOns,
+    category: "smoothies",
+    popular: true,
+    ingredients: ["Banana", "Greek yoghurt", "Whole milk", "Cocoa powder", "Peanut butter", "Honey", "Dark chocolate"],
+    sizes: [
+      { label: "250ml", price: 60 },
+      { label: "350ml", price: 76 },
+      { label: "500ml", price: 91 }
+    ],
+    addOns: smoothieAddOns
   },
   {
-    id: "smoothie8",
+    id: "smoothie-8",
+    slug: "avocado-smoothie",
     name: "Avocado Smoothie",
     description: "Avocado, banana, peanut butter, whole milk, greek yoghurt, dates & honey, chia seeds",
-    prices: { S: 63, M: 78, L: 95 },
+    price: 78, // Updated to medium price
     image: "/images/smoothies/avocado-smoothie.jpg",
-    tags: ["creamy", "protein"],
-    addOns: smoothieAddOns,
+    category: "smoothies",
+    popular: false,
+    ingredients: ["Avocado", "Banana", "Peanut butter", "Whole milk", "Greek yoghurt", "Dates", "Honey", "Chia seeds"],
+    sizes: [
+      { label: "250ml", price: 63 },
+      { label: "350ml", price: 78 },
+      { label: "500ml", price: 95 }
+    ],
+    addOns: smoothieAddOns
   },
   {
-    id: "smoothie9",
+    id: "smoothie-9",
+    slug: "the-golden-girl",
     name: "The Golden Girl",
     description: "Mango, pineapple, coconut milk and greek yoghurt",
-    prices: { S: 59, M: 75, L: 89 },
-    image: "/images/smoothies/the-golden-girl.jpg",
-    tags: ["tropical", "creamy"],
-    addOns: smoothieAddOns,
+    price: 75, // Updated to medium price
+    image: "/images/smoothies/golden-girl.jpg",
+    category: "smoothies",
+    popular: true,
+    ingredients: ["Mango", "Pineapple", "Coconut milk", "Greek yoghurt"],
+    sizes: [
+      { label: "250ml", price: 59 },
+      { label: "350ml", price: 75 },
+      { label: "500ml", price: 89 }
+    ],
+    addOns: smoothieAddOns
   },
   {
-    id: "smoothie10",
+    id: "smoothie-10",
+    slug: "tangerine-dream",
     name: "Tangerine Dream",
     description: "Naartjie, orange, banana, greek yoghurt, honey, and milk",
-    prices: { S: 59, M: 75, L: 89 },
+    price: 75, // Updated to medium price
     image: "/images/smoothies/tangerine-dream.jpg",
-    tags: ["citrus", "refreshing"],
-    addOns: smoothieAddOns,
-  },
+    category: "smoothies",
+    popular: false,
+    ingredients: ["Naartjie", "Orange", "Banana", "Greek yoghurt", "Honey", "Milk"],
+    sizes: [
+      { label: "250ml", price: 59 },
+      { label: "350ml", price: 75 },
+      { label: "500ml", price: 89 }
+    ],
+    addOns: smoothieAddOns
+  }
 ];

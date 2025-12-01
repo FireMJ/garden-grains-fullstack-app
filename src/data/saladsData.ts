@@ -1,247 +1,286 @@
-export interface AddOn {
-  id: string;
-  name: string;
-  price: number;
-}
-
-export interface JuiceOption {
-  id: string;
-  name: string;
-  price: number;
-}
-
-export interface JuiceGroup {
-  size: string;
-  options: JuiceOption[];
-}
-
-export interface FriesUpsell {
-  id: string;
-  name: string;
-  price: number;
-}
-
-export interface Salad {
+export interface SaladItem {
   id: string;
   slug: string;
   name: string;
   description: string;
   price: number;
   image: string;
-  tags?: string[];
-  dressings: string[];
+  category: string;
+  popular?: boolean;
+  ingredients: string[];
+  bases?: BaseOption[];
+  dressings: Dressing[];
   addOns?: AddOn[];
-  friesUpsell?: FriesUpsell[];
-  juiceUpsell?: JuiceGroup[];
 }
 
-// ✅ Common add-ons for salads
-export const commonAddOns: AddOn[] = [
-  { id: "addon1", name: "extra chicken", price: 39 },
-  { id: "addon2", name: "extra beef", price: 45 },
-  { id: "addon3", name: "extra quinoa", price: 35 },
-  { id: "addon4", name: "extra millet", price: 30 },
-  { id: "addon5", name: "extra couscous", price: 30 },
-  { id: "addon6", name: "extra brown rice", price: 30 },
-  { id: "addon7", name: "extra bulgar wheat", price: 30 },
-  { id: "addon8", name: "extra edamame beans", price: 65 },
-  { id: "addon9", name: "extra corn", price: 15 },
-  { id: "addon10", name: "extra peas", price: 15 },
-  { id: "addon11", name: "extra steamed broccoli", price: 20 },
-  { id: "addon12", name: "extra chickpeas", price: 20 },
-  { id: "addon13", name: "extra feta", price: 25 },
-  { id: "addon14", name: "extra olives", price: 20 },
-  { id: "addon15", name: "extra raisins", price: 17 },
-  { id: "addon16", name: "extra cashew nuts", price: 20 },
-  { id: "addon17", name: "extra pumpkin seeds", price: 25 },
-  { id: "addon18", name: "extra poached egg", price: 15 },
-  { id: "addon19", name: "extra avocado", price: 20 },
-  { id: "addon20", name: "extra boiled egg", price: 15 },
-  { id: "addon21", name: "extra dressing", price: 15 },
-  { id: "addon22", name: "chili oil", price: 18 },
+export interface BaseOption {
+  id: string;
+  name: string;
+  price: number;
+}
+
+export interface Dressing {
+  id: string;
+  name: string;
+  price: number;
+}
+
+export interface AddOn {
+  id: string;
+  name: string;
+  price: number;
+}
+
+// Base options for salads that need them
+export const saladBases: BaseOption[] = [
+  { id: "base-couscous", name: "Couscous", price: 35 },
+  { id: "base-quinoa", name: "Quinoa", price: 35 },
+  { id: "base-bulgur", name: "Bulgur Wheat", price: 30 },
+  { id: "base-millet", name: "Millet", price: 30 },
+  { id: "base-egg-noodles", name: "Egg Noodles", price: 20 },
 ];
 
-// ✅ Fries upsell options
-export const friesUpsell: FriesUpsell[] = [
-  { id: "fries1", name: "No fries", price: 0 },
-  { id: "fries2", name: "Regular Fries", price: 25 },
-  { id: "fries3", name: "Sweet Potato Fries", price: 35 },
-  { id: "fries4", name: "Chili Cheese Fries", price: 45 },
+// All dressing options
+export const saladDressings: Dressing[] = [
+  { id: "dress-1", name: "Orange Ginger Dressing", price: 0 },
+  { id: "dress-2", name: "Sesame Soy Dressing", price: 0 },
+  { id: "dress-3", name: "Buttermilk Ranch Dressing", price: 0 },
+  { id: "dress-4", name: "Balsamic Vinaigrette", price: 0 },
+  { id: "dress-5", name: "Lemon & Herb Vinaigrette", price: 0 },
+  { id: "dress-6", name: "Honey Mustard Dressing", price: 0 },
+  { id: "dress-7", name: "Apple Cider Vinaigrette", price: 0 },
+  { id: "dress-8", name: "Authentic Greek Dressing", price: 0 },
+  { id: "dress-9", name: "Citrus Coriander Dressing", price: 0 },
 ];
 
-// ✅ Juice upsell options
-export const juiceGroup: JuiceGroup[] = [
-  {
-    size: "250ml",
-    options: [
-      { id: "juice1", name: "Orange Juice", price: 35 },
-      { id: "juice2", name: "Carrot & Ginger Juice", price: 38 },
-      { id: "juice3", name: "Mango Juice", price: 37 },
-    ],
-  },
-  {
-    size: "350ml",
-    options: [
-      { id: "juice4", name: "Orange Juice", price: 45 },
-      { id: "juice5", name: "Carrot & Ginger Juice", price: 48 },
-      { id: "juice6", name: "Mango Juice", price: 47 },
-    ],
-  },
-  {
-    size: "500ml",
-    options: [
-      { id: "juice7", name: "Orange Juice", price: 55 },
-      { id: "juice8", name: "Carrot & Ginger Juice", price: 58 },
-      { id: "juice9", name: "Mango Juice", price: 57 },
-    ],
-  },
+// All add-on options
+export const saladAddOns: AddOn[] = [
+  { id: "addon-chicken", name: "Chicken", price: 39 },
+  { id: "addon-beef", name: "Beef", price: 45 },
+  { id: "addon-avocado", name: "Avocado", price: 20 },
+  { id: "addon-poached-egg", name: "Poached Egg", price: 15 },
+  { id: "addon-feta", name: "Feta Cheese", price: 25 },
+  { id: "addon-chickpeas", name: "Chickpeas", price: 15 },
+  { id: "addon-cashew", name: "Cashew Nuts", price: 20 },
+  { id: "addon-pumpkin-seeds", name: "Pumpkin Seeds", price: 20 },
+  { id: "addon-sunflower-seeds", name: "Sunflower Seeds", price: 20 },
+  { id: "addon-corn", name: "Corn", price: 15 },
+  { id: "addon-raisins", name: "Raisins", price: 15 },
+  { id: "addon-olives", name: "Olives", price: 20 },
 ];
 
-// ✅ Salad dressings
-export const saladDressings = [
-  { id: "dressing1", name: "No Dressing", price: 0 },
-  { id: "dressing2", name: "Orange Ginger Dressing", price: 0 },
-  { id: "dressing3", name: "Sesame Soy Dressing", price: 0 },
-  { id: "dressing4", name: "Buttermilk Ranch Dressing", price: 0 },
-  { id: "dressing5", name: "Balsamic Vinaigrette", price: 0 },
-  { id: "dressing6", name: "Lemon & Herb Vinaigrette", price: 0 },
-  { id: "dressing7", name: "Honey Mustard Dressing", price: 0 },
-  { id: "dressing8", name: "Apple Cider Vinaigrette", price: 0 },
-  { id: "dressing9", name: "Authentic Greek Dressing", price: 0 },
-  { id: "dressing10", name: "Citrus Coriander Dressing", price: 0 },
-  { id: "dressing11", name: "Creamy Chipotle Yoghurt Sauce", price: 0 },
-];
-
-// ✅ Main salads data
-export const salads: Salad[] = [
+export const salads: SaladItem[] = [
   {
-    id: "salad1",
+    id: "salad-1",
     slug: "greek-salad",
     name: "Greek Salad",
-    description: "lettuce, cherry tomatoes, bell peppers, cucumber, red onion, olives, and feta cheese, with a sprinkle of sesame seeds",
+    description: "Fresh lettuce, cherry tomatoes, bell peppers, cucumber, red onion, olives, and feta cheese with a sprinkle of sesame seeds",
     price: 125.95,
     image: "/images/salads/greek-salad.jpg",
-    tags: ["vegetarian", "classic"],
-    dressings: ["dressing1", "dressing2", "dressing3", "dressing4", "dressing5", "dressing6", "dressing7", "dressing8", "dressing9", "dressing10", "dressing11"],
-    addOns: commonAddOns,
-    friesUpsell: friesUpsell,
-    juiceUpsell: juiceGroup
+    category: "salads",
+    popular: true,
+    ingredients: ["Lettuce", "Cherry tomatoes", "Bell peppers", "Cucumber", "Red onion", "Olives", "Feta cheese", "Sesame seeds"],
+    dressings: saladDressings,
+    addOns: saladAddOns.filter(addon => ["addon-chicken", "addon-beef", "addon-avocado"].includes(addon.id))
   },
   {
-    id: "salad2",
+    id: "salad-2",
     slug: "garden-salad",
     name: "Garden Salad",
-    description: "mixed greens, avocado slices, mozzarella cheese, cherry tomatoes, peppers, peas, cucumber, with a sprinkle of sesame seeds",
+    description: "Mixed greens, avocado slices, mozzarella cheese, cherry tomatoes, peppers, peas, cucumber with a sprinkle of sesame seeds",
     price: 129.65,
     image: "/images/salads/garden-salad.jpg",
-    tags: ["vegetarian", "fresh"],
-    dressings: ["dressing1", "dressing2", "dressing3", "dressing4", "dressing5", "dressing6", "dressing7", "dressing8", "dressing9", "dressing10", "dressing11"],
-    addOns: commonAddOns,
-    friesUpsell: friesUpsell,
-    juiceUpsell: juiceGroup
+    category: "salads",
+    popular: true,
+    ingredients: ["Mixed greens", "Avocado slices", "Mozzarella cheese", "Cherry tomatoes", "Peppers", "Peas", "Cucumber", "Sesame seeds"],
+    dressings: saladDressings,
+    addOns: saladAddOns.filter(addon => ["addon-chicken", "addon-beef"].includes(addon.id))
   },
   {
-    id: "salad3",
+    id: "salad-3",
     slug: "protein-pack-salad",
     name: "Protein Pack Salad",
-    description: "mixed greens, diced cucumber, corn kernels, grilled chicken, hard-boiled egg, avocado slices, cherry tomatoes, chickpeas, with a sprinkle of sesame seeds",
+    description: "Mixed greens, diced cucumber, corn kernels, grilled chicken, hard-boiled egg, avocado slices, cherry tomatoes, chickpeas with sesame seeds",
     price: 135.25,
-    image: "/images/salads/protein-pack-salad.jpg",
-    tags: ["protein-packed", "popular"],
-    dressings: ["dressing1", "dressing2", "dressing3", "dressing4", "dressing5", "dressing6", "dressing7", "dressing8", "dressing9", "dressing10", "dressing11"],
-    addOns: commonAddOns,
-    friesUpsell: friesUpsell,
-    juiceUpsell: juiceGroup
+    image: "/images/salads/protein-pack.jpg",
+    category: "salads",
+    popular: true,
+    ingredients: ["Mixed greens", "Diced cucumber", "Corn kernels", "Grilled chicken", "Hard-boiled egg", "Avocado slices", "Cherry tomatoes", "Chickpeas", "Sesame seeds"],
+    dressings: saladDressings,
+    addOns: saladAddOns
   },
   {
-    id: "salad4",
+    id: "salad-4",
     slug: "millet-salad",
     name: "Millet Salad",
-    description: "millet, tomatoes, cucumber, olives, crumbled feta, chopped fresh parsley, fresh mint, & a sprinkle of sesame seeds",
+    description: "Millet, tomatoes, cucumber, olives, crumbled feta, chopped fresh parsley, fresh mint & a sprinkle of sesame seeds",
     price: 126.65,
     image: "/images/salads/millet-salad.jpg",
-    tags: ["vegetarian", "nutritious"],
-    dressings: ["dressing1", "dressing2", "dressing3", "dressing4", "dressing5", "dressing6", "dressing7", "dressing8", "dressing9", "dressing10", "dressing11"],
-    addOns: commonAddOns,
-    friesUpsell: friesUpsell,
-    juiceUpsell: juiceGroup
+    category: "salads",
+    popular: false,
+    ingredients: ["Millet", "Tomatoes", "Cucumber", "Olives", "Feta cheese", "Fresh parsley", "Fresh mint", "Sesame seeds"],
+    dressings: saladDressings,
+    addOns: saladAddOns.filter(addon => ["addon-chicken", "addon-beef", "addon-avocado", "addon-poached-egg"].includes(addon.id))
   },
   {
-    id: "salad5",
+    id: "salad-5",
     slug: "tabbouleh-salad",
     name: "Tabbouleh Salad (V)",
-    description: "bulgar wheat, tomatoes, cucumber, scallions, chopped parsley & mint, with a sprinkle of sesame seeds",
+    description: "Bulgar wheat, tomatoes, cucumber, scallions, chopped parsley & mint with a sprinkle of sesame seeds",
     price: 127.00,
-    image: "/images/salads/tabbouleh-salad.jpg",
-    tags: ["vegan", "refreshing"],
-    dressings: ["dressing1", "dressing2", "dressing3", "dressing4", "dressing5", "dressing6", "dressing7", "dressing8", "dressing9", "dressing10", "dressing11"],
-    addOns: commonAddOns,
-    friesUpsell: friesUpsell,
-    juiceUpsell: juiceGroup
+    image: "/images/salads/tabbouleh.jpg",
+    category: "salads",
+    popular: false,
+    bases: saladBases.filter(base => base.id === "base-bulgur"),
+    ingredients: ["Bulgar wheat", "Tomatoes", "Cucumber", "Scallions", "Parsley", "Mint", "Sesame seeds"],
+    dressings: saladDressings,
+    addOns: saladAddOns.filter(addon => ["addon-chicken", "addon-beef", "addon-avocado"].includes(addon.id))
   },
   {
-    id: "salad6",
+    id: "salad-6",
     slug: "quinoa-feta-salad",
     name: "Quinoa Feta Salad",
-    description: "cooked quinoa, diced cucumber, cherry tomatoes, red onion, olives, feta cheese, pickled radishes, chickpeas, and roasted peppers, with a sprinkle of sesame seeds",
+    description: "Cooked quinoa, diced cucumber, cherry tomatoes, red onion, olives, feta cheese, pickled radishes, chickpeas, and roasted peppers with sesame seeds",
     price: 128.65,
-    image: "/images/salads/quinoa-feta-salad.jpg",
-    tags: ["vegetarian", "wholesome"],
-    dressings: ["dressing1", "dressing2", "dressing3", "dressing4", "dressing5", "dressing6", "dressing7", "dressing8", "dressing9", "dressing10", "dressing11"],
-    addOns: commonAddOns,
-    friesUpsell: friesUpsell,
-    juiceUpsell: juiceGroup
+    image: "/images/salads/quinoa-feta.jpg",
+    category: "salads",
+    popular: true,
+    bases: saladBases.filter(base => base.id === "base-quinoa"),
+    ingredients: ["Quinoa", "Diced cucumber", "Cherry tomatoes", "Red onion", "Olives", "Feta cheese", "Pickled radishes", "Chickpeas", "Roasted peppers", "Sesame seeds"],
+    dressings: saladDressings,
+    addOns: saladAddOns.filter(addon => ["addon-chicken", "addon-beef", "addon-poached-egg"].includes(addon.id))
   },
   {
-    id: "salad7",
+    id: "salad-7",
+    slug: "protein-avocado-stack",
+    name: "Protein Avocado Stack (V)",
+    description: "Avocado diced, cherry tomatoes, cucumber, red onion thinly sliced, bell peppers, fresh cilantro, sweet corn kernels with sesame seeds",
+    price: 126.70,
+    image: "/images/salads/avocado-stack.jpg",
+    category: "salads",
+    popular: false,
+    ingredients: ["Avocado", "Cherry tomatoes", "Cucumber", "Red onion", "Bell peppers", "Fresh cilantro", "Sweet corn kernels", "Sesame seeds"],
+    dressings: saladDressings,
+    addOns: saladAddOns.filter(addon => ["addon-poached-egg"].includes(addon.id))
+  },
+  {
+    id: "salad-8",
+    slug: "four-bean-salad",
+    name: "4 Bean Salad (V)",
+    description: "Fresh green beans, kidney beans, garbanzo beans, black beans, arugula, bell peppers, cucumber, red onion, fresh parsley, fresh oregano with sesame seeds",
+    price: 135.75,
+    image: "/images/salads/four-bean.jpg",
+    category: "salads",
+    popular: false,
+    ingredients: ["Green beans", "Kidney beans", "Garbanzo beans", "Black beans", "Arugula", "Bell peppers", "Cucumber", "Red onion", "Parsley", "Oregano", "Sesame seeds"],
+    dressings: saladDressings,
+    addOns: saladAddOns.filter(addon => ["addon-chicken", "addon-beef", "addon-avocado"].includes(addon.id))
+  },
+  {
+    id: "salad-9",
     slug: "free-range-chicken-salad",
     name: "Free Range Chicken Salad",
-    description: "mixed greens, seasoned grilled chicken, avocado slices, black beans, corn kernels, diced tomatoes, grated mozzarella cheese, sprinkle of sesame seeds",
-    price: 133.75,
-    image: "/images/salads/free-range-chicken-salad.jpg",
-    tags: ["protein-packed", "fresh"],
-    dressings: ["dressing1", "dressing2", "dressing3", "dressing4", "dressing5", "dressing6", "dressing7", "dressing8", "dressing9", "dressing10", "dressing11"],
-    addOns: commonAddOns,
-    friesUpsell: friesUpsell,
-    juiceUpsell: juiceGroup
+    description: "Mixed greens, seasoned grilled chicken, avocado slices, black beans, corn kernels, diced tomatoes, grated mozzarella cheese with sesame seeds",
+    price: 129.65,
+    image: "/images/salads/chicken-salad.jpg",
+    category: "salads",
+    popular: true,
+    ingredients: ["Mixed greens", "Grilled chicken", "Avocado slices", "Black beans", "Corn kernels", "Diced tomatoes", "Mozzarella cheese", "Sesame seeds"],
+    dressings: saladDressings,
+    addOns: saladAddOns
   },
   {
-    id: "salad8",
+    id: "salad-10",
     slug: "bowld-chickpea-salad",
     name: "Bowl'd Chickpea Salad (V)",
-    description: "chickpeas, cucumber, cherry tomatoes, bell peppers, olives, red onions, parsley, with a sprinkle of sesame seeds",
-    price: 129.65,
-    image: "/images/salads/bowld-chickpea-salad.jpg",
-    tags: ["vegan", "crunchy"],
-    dressings: ["dressing1", "dressing2", "dressing3", "dressing4", "dressing5", "dressing6", "dressing7", "dressing8", "dressing9", "dressing10", "dressing11"],
-    addOns: commonAddOns,
-    friesUpsell: friesUpsell,
-    juiceUpsell: juiceGroup
+    description: "Chickpeas, cucumber, cherry tomatoes, bell peppers, olives, red onions, parsley with a sprinkle of sesame seeds",
+    price: 133.75,
+    image: "/images/salads/chickpea-salad.jpg",
+    category: "salads",
+    popular: false,
+    ingredients: ["Chickpeas", "Cucumber", "Cherry tomatoes", "Bell peppers", "Olives", "Red onions", "Parsley", "Sesame seeds"],
+    dressings: saladDressings,
+    addOns: saladAddOns.filter(addon => ["addon-chicken", "addon-beef"].includes(addon.id))
   },
   {
-    id: "salad9",
+    id: "salad-11",
     slug: "pesto-glow-salad",
     name: "Pesto Glow Salad (V)",
-    description: "baby spinach & arugula, cherry tomatoes, cucumber, zucchini, red onion, quinoa, avocado, chickpeas & sunflower seeds, tossed in our house-made basil pesto, with a touch of lemon, sprinkle of sesame seeds",
+    description: "Baby spinach & arugula, cherry tomatoes, cucumber, zucchini, red onion, quinoa, avocado, chickpeas & sunflower seeds tossed in basil pesto with lemon and sesame seeds",
     price: 127.35,
-    image: "/images/salads/pesto-glow-salad.jpg",
-    tags: ["vegan", "savory"],
-    dressings: ["dressing1", "dressing2", "dressing3", "dressing4", "dressing5", "dressing6", "dressing7", "dressing8", "dressing9", "dressing10", "dressing11"],
-    addOns: commonAddOns,
-    friesUpsell: friesUpsell,
-    juiceUpsell: juiceGroup
+    image: "/images/salads/pesto-glow.jpg",
+    category: "salads",
+    popular: true,
+    ingredients: ["Baby spinach", "Arugula", "Cherry tomatoes", "Cucumber", "Zucchini", "Red onion", "Quinoa", "Avocado", "Chickpeas", "Sunflower seeds", "Basil pesto", "Lemon", "Sesame seeds"],
+    dressings: saladDressings,
+    addOns: saladAddOns
   },
   {
-    id: "salad10",
-    slug: "power-bowl-salad",
+    id: "salad-12",
+    slug: "power-bowl",
     name: "Power Bowl (V)",
-    description: "baby spinach, kale, bell peppers, avocado, chickpeas, sweet potatoes, quinoa, corn kernels, pumpkin seeds, sprinkle of sesame seeds",
+    description: "Baby spinach, kale, bell peppers, avocado, chickpeas, sweet potatoes, quinoa, corn kernels, pumpkin seeds with sesame seeds",
     price: 135.95,
-    image: "/images/salads/power-bowl-salad.jpg",
-    tags: ["vegan", "energy-boosting"],
-    dressings: ["dressing1", "dressing2", "dressing3", "dressing4", "dressing5", "dressing6", "dressing7", "dressing8", "dressing9", "dressing10", "dressing11"],
-    addOns: commonAddOns,
-    friesUpsell: friesUpsell,
-    juiceUpsell: juiceGroup
+    image: "/images/salads/power-bowl.jpg",
+    category: "salads",
+    popular: true,
+    bases: saladBases,
+    ingredients: ["Baby spinach", "Kale", "Bell peppers", "Avocado", "Chickpeas", "Sweet potatoes", "Quinoa", "Corn kernels", "Pumpkin seeds", "Sesame seeds"],
+    dressings: saladDressings,
+    addOns: saladAddOns
+  },
+  {
+    id: "salad-13",
+    slug: "couscous-salad",
+    name: "Couscous Salad (V)",
+    description: "Couscous, roasted butternut, thinly sliced onion, chickpeas, cherry tomatoes, smoked paprika, cinnamon, garlic, sugar, roasted pumpkin seeds, sesame seeds, feta cheese",
+    price: 127.65,
+    image: "/images/salads/couscous-salad.jpg",
+    category: "salads",
+    popular: false,
+    bases: saladBases.filter(base => base.id === "base-couscous"),
+    ingredients: ["Couscous", "Roasted butternut", "Onion", "Chickpeas", "Cherry tomatoes", "Smoked paprika", "Cinnamon", "Garlic", "Sugar", "Pumpkin seeds", "Sesame seeds", "Feta cheese"],
+    dressings: saladDressings,
+    addOns: saladAddOns.filter(addon => ["addon-chicken", "addon-beef", "addon-poached-egg", "addon-feta"].includes(addon.id))
+  },
+  {
+    id: "salad-14",
+    slug: "live-off-the-land-salad",
+    name: "Live off the Land Salad (V)",
+    description: "Lettuce, cucumber, avocado, peppers, cherry tomatoes, carrot, roasted sunflower, pumpkin seeds, cashew nuts with sesame seeds",
+    price: 129.00,
+    image: "/images/salads/live-off-land.jpg",
+    category: "salads",
+    popular: false,
+    ingredients: ["Lettuce", "Cucumber", "Avocado", "Peppers", "Cherry tomatoes", "Carrot", "Sunflower seeds", "Pumpkin seeds", "Cashew nuts", "Sesame seeds"],
+    dressings: saladDressings,
+    addOns: saladAddOns.filter(addon => ["addon-chicken", "addon-beef", "addon-poached-egg"].includes(addon.id))
+  },
+  {
+    id: "salad-15",
+    slug: "vitality-chic-broco-bowl",
+    name: "Vitality Chic-Broco Bowl",
+    description: "Tender pan-grilled chicken breasts paired with vibrant steamed broccoli, drizzled in a luscious creamy dressing sauce of your choice",
+    price: 132.00,
+    image: "/images/salads/chic-broco-bowl.jpg",
+    category: "salads",
+    popular: true,
+    ingredients: ["Grilled chicken breasts", "Steamed broccoli", "Creamy dressing"],
+    dressings: saladDressings,
+    addOns: saladAddOns.filter(addon => ["addon-chicken", "addon-beef", "addon-poached-egg"].includes(addon.id))
+  },
+  {
+    id: "salad-16",
+    slug: "mixed-grain-salad",
+    name: "Mixed Grain Salad (V)",
+    description: "Millet, quinoa, bulgur wheat, cherry tomatoes, cucumber, red onion, chickpeas, olives, fresh parsley, fresh mint leaves with sesame seeds",
+    price: 133.95,
+    image: "/images/salads/mixed-grain.jpg",
+    category: "salads",
+    popular: false,
+    bases: saladBases.filter(base => ["base-millet", "base-quinoa", "base-bulgur"].includes(base.id)),
+    ingredients: ["Millet", "Quinoa", "Bulgur wheat", "Cherry tomatoes", "Cucumber", "Red onion", "Chickpeas", "Olives", "Parsley", "Mint leaves", "Sesame seeds"],
+    dressings: saladDressings,
+    addOns: saladAddOns.filter(addon => ["addon-beef", "addon-avocado", "addon-feta"].includes(addon.id))
   }
 ];

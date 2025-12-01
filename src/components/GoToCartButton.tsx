@@ -11,8 +11,8 @@ interface GoToCartButtonProps {
 }
 
 const GoToCartButton: React.FC<GoToCartButtonProps> = ({ visible, duration = 4000 }) => {
-  const { state } = useCart();
-  const cart = state.items;
+  const { cartItems, totalItems, totalPrice } = useCart();
+  const cart = cartItems;
   const [show, setShow] = useState(visible);
   const [drawerOpen, setDrawerOpen] = useState(false);
 

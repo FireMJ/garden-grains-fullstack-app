@@ -5,16 +5,14 @@ import { useCart } from "@/context/CartContext";
 import Link from "next/link";
 
 export default function ScheduleOrderPage() {
-  const { state } = useCart();
-  const getTotalItems = () => state.items.reduce((sum, item) => sum + item.quantity, 0);
-  const getCartTotal = () => state.total;
+  const { cartItems, totalItems, totalPrice } = useCart();
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [specialInstructions, setSpecialInstructions] = useState("");
 
-  const itemCount = getTotalItems();
-  const total = getCartTotal();
+  const itemCount = totalItems;
+  const total = totalPrice;
 
   const handleScheduleOrder = () => {
     // Save scheduled order to localStorage or send to API

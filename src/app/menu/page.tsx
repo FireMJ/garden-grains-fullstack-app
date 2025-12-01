@@ -14,7 +14,7 @@ const menuCategories = [
     color: "from-[#F4A261] to-[#E76F51]",
     items: [
       "Yoghurt, Chia Seeds & Fruit Bowl",
-      "Nutritious Breakfast Bowl", 
+      "Nutritious Breakfast Bowl",
       "Roasted Oats and Nuts Bowl",
       "Granola and Yogurt Bowl",
       "All-Bran and Yogurt Bowl"
@@ -43,7 +43,7 @@ const menuCategories = [
     items: [
       "Green Detox Juice",
       "Tropical Bliss",
-      "Red Revitalize", 
+      "Red Revitalize",
       "Citrus Burst",
       "Berry Boost"
     ]
@@ -163,7 +163,7 @@ const menuCategories = [
 ];
 
 export default function MenuPage() {
-  const { state } = useCart();
+  const { cartItems, totalItems, totalPrice } = useCart(); // Fixed: using correct cart context properties
 
   return (
     <div className="min-h-screen bg-[#1E4259] pt-20">
@@ -171,7 +171,7 @@ export default function MenuPage() {
       <div className="bg-white/10 backdrop-blur-sm border-b border-white/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
-            <Link 
+            <Link
               href="/"
               className="flex items-center text-white hover:text-[#F4A261] transition"
             >
@@ -199,15 +199,15 @@ export default function MenuPage() {
         </div>
 
         {/* Cart Summary - Sticky */}
-        {state.itemCount > 0 && (
+        {totalItems > 0 && (
           <div className="sticky top-20 z-40 bg-white rounded-lg shadow-lg p-4 mb-8 max-w-2xl mx-auto">
             <div className="flex justify-between items-center">
               <div>
                 <p className="font-semibold text-gray-900">
-                  {state.itemCount} {state.itemCount === 1 ? 'item' : 'items'} in cart
+                  {totalItems} {totalItems === 1 ? 'item' : 'items'} in cart
                 </p>
                 <p className="text-green-600 font-bold text-lg">
-                  Total: R{state.total.toFixed(2)}
+                  Total: R{totalPrice.toFixed(2)}
                 </p>
               </div>
               <div className="flex gap-2">

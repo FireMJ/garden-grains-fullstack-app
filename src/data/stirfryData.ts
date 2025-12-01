@@ -4,15 +4,17 @@ export interface AddOn {
   price: number;
 }
 
-export interface JuiceOption {
+export interface BaseOption {
   id: string;
   name: string;
   price: number;
 }
 
-export interface JuiceGroup {
+export interface JuiceUpsell {
+  id: string;
+  name: string;
+  price: number;
   size: string;
-  options: JuiceOption[];
 }
 
 export interface FriesUpsell {
@@ -22,249 +24,178 @@ export interface FriesUpsell {
   optional?: boolean;
 }
 
-export interface Stirfry {
+export interface MenuItem {
   id: string;
   slug: string;
   name: string;
   description: string;
   price: number;
   image: string;
+  category: string;
   tags?: string[];
+  baseOptions?: BaseOption[];
   addOns?: AddOn[];
   friesUpsell?: FriesUpsell[];
-  juiceUpsell?: JuiceGroup[];
+  juiceUpsell?: JuiceUpsell[];
 }
 
-export const stirfries: Stirfry[] = [
+export const stirfries: MenuItem[] = [
   {
-    id: "1",
-    slug: "chicken-stirfry",
-    name: "chicken stirfry",
-    description: "Tender chicken with fresh vegetables in your choice of sauce",
-    price: 110.00,
-    image: "/images/stirfry/chicken-stirfry.jpg",
-    tags: ["popular", "high-protein"],
+    id: "stirfry-1",
+    slug: "beef-vegetable-stir-fry",
+    name: "Beef & Vegetable Stir Fry",
+    description: "Tender beef, broccoli, carrots, bell peppers, green onions, beef stock, low sodium soy sauce, honey, sesame oil, fresh ginger, garlic, cornstarch, with a sprinkle of sesame seeds",
+    price: 139.65,
+    image: "/images/stirfry/beef-vegetable.jpg",
+    category: "stirfries",
+    tags: ["Beef", "Popular", "Protein"],
+    baseOptions: [
+      { id: "base-1-1", name: "No extra base", price: 0 },
+      { id: "base-1-2", name: "Egg noodles", price: 20.00 },
+      { id: "base-1-3", name: "Quinoa", price: 35.00 },
+      { id: "base-1-4", name: "Millet", price: 30.00 },
+      { id: "base-1-5", name: "Bulgur", price: 30.00 }
+    ],
     addOns: [
-      { id: "stirfry-addon-1", name: "Extra Chicken", price: 25 },
-      { id: "stirfry-addon-2", name: "Extra Vegetables", price: 15 },
-      { id: "stirfry-addon-3", name: "Fried Egg", price: 12 },
-      { id: "stirfry-addon-4", name: "Extra Sauce", price: 8 },
+      { id: "addon-1-1", name: "Extra beef", price: 45.00 },
+      { id: "addon-1-2", name: "Extra vegetables", price: 25.00 },
+      { id: "addon-1-3", name: "Extra sauce", price: 15.00 }
     ],
     friesUpsell: [
-      { id: "stirfry-fries-1", name: "No fries", price: 0 },
-      { id: "stirfry-fries-2", name: "Steamed Rice", price: 15 },
-      { id: "stirfry-fries-3", name: "Fried Rice", price: 25 },
+      { id: "fries-1-1", name: "Skinny Potato Chips", price: 45.00 },
+      { id: "fries-1-2", name: "Sweet Potato Fries", price: 59.00 },
     ],
     juiceUpsell: [
-      {
-        size: "250ml",
-        options: [
-          { id: "stirfry-juice-1", name: "Orange Juice", price: 35 },
-          { id: "stirfry-juice-2", name: "Apple Juice", price: 32 },
-          { id: "stirfry-juice-3", name: "Mango Juice", price: 37 },
-        ],
-      },
-      {
-        size: "350ml",
-        options: [
-          { id: "stirfry-juice-4", name: "Orange Juice", price: 45 },
-          { id: "stirfry-juice-5", name: "Apple Juice", price: 42 },
-          { id: "stirfry-juice-6", name: "Mango Juice", price: 47 },
-        ],
-      },
+      { id: "juice-1-1", name: "Orange Juice (250ml)", price: 35.00, size: "250ml" },
+      { id: "juice-1-2", name: "Carrot & Ginger Juice (250ml)", price: 38.00, size: "250ml" },
+      { id: "juice-1-3", name: "Mango Juice (250ml)", price: 37.00, size: "250ml" },
+      { id: "juice-1-4", name: "Apple & Pear Juice (250ml)", price: 36.00, size: "250ml" },
+      { id: "juice-1-5", name: "Green Mile Juice (250ml)", price: 40.00, size: "250ml" },
+      { id: "juice-1-6", name: "Orange Juice (350ml)", price: 45.00, size: "350ml" },
+      { id: "juice-1-7", name: "Carrot & Ginger Juice (350ml)", price: 48.00, size: "350ml" },
+      { id: "juice-1-8", name: "Mango Juice (350ml)", price: 47.00, size: "350ml" },
+      { id: "juice-1-9", name: "Apple & Pear Juice (350ml)", price: 46.00, size: "350ml" },
+      { id: "juice-1-10", name: "Green Mile Juice (350ml)", price: 50.00, size: "350ml" },
     ],
   },
   {
-    id: "2",
-    slug: "beef-stirfry",
-    name: "beef stirfry",
-    description: "Sliced beef with colorful vegetables and Asian-inspired sauce",
-    price: 125.00,
-    image: "/images/stirfry/beef-stirfry.jpg",
-    tags: ["high-protein", "hearty"],
+    id: "stirfry-2",
+    slug: "power-bowl",
+    name: "Power Bowl (V)",
+    description: "A vegetarian power bowl with your choice of base",
+    price: 135.95,
+    image: "/images/stirfry/power-bowl.jpg",
+    category: "stirfries",
+    tags: ["Vegetarian", "Healthy", "Popular"],
+    baseOptions: [
+      { id: "base-2-1", name: "Egg noodles", price: 20.00 },
+      { id: "base-2-2", name: "Quinoa", price: 35.00 },
+      { id: "base-2-3", name: "Millet", price: 30.00 },
+      { id: "base-2-4", name: "Bulgur", price: 30.00 }
+    ],
     addOns: [
-      { id: "stirfry-addon-5", name: "Extra Beef", price: 30 },
-      { id: "stirfry-addon-6", name: "Extra Vegetables", price: 15 },
-      { id: "stirfry-addon-7", name: "Fried Egg", price: 12 },
-      { id: "stirfry-addon-8", name: "Extra Sauce", price: 8 },
+      { id: "addon-2-1", name: "Extra vegetables", price: 25.00 },
+      { id: "addon-2-2", name: "Extra sauce", price: 15.00 },
+      { id: "addon-2-3", name: "Avocado", price: 18.00 }
     ],
     friesUpsell: [
-      { id: "stirfry-fries-4", name: "No fries", price: 0 },
-      { id: "stirfry-fries-5", name: "Steamed Rice", price: 15 },
-      { id: "stirfry-fries-6", name: "Fried Rice", price: 25 },
+      { id: "fries-2-1", name: "Skinny Potato Chips", price: 45.00 },
+      { id: "fries-2-2", name: "Sweet Potato Fries", price: 59.00 },
     ],
     juiceUpsell: [
-      {
-        size: "250ml",
-        options: [
-          { id: "stirfry-juice-7", name: "Orange Juice", price: 35 },
-          { id: "stirfry-juice-8", name: "Apple Juice", price: 32 },
-          { id: "stirfry-juice-9", name: "Mango Juice", price: 37 },
-        ],
-      },
-      {
-        size: "350ml",
-        options: [
-          { id: "stirfry-juice-10", name: "Orange Juice", price: 45 },
-          { id: "stirfry-juice-11", name: "Apple Juice", price: 42 },
-          { id: "stirfry-juice-12", name: "Mango Juice", price: 47 },
-        ],
-      },
+      { id: "juice-2-1", name: "Orange Juice (250ml)", price: 35.00, size: "250ml" },
+      { id: "juice-2-2", name: "Carrot & Ginger Juice (250ml)", price: 38.00, size: "250ml" },
+      { id: "juice-2-3", name: "Mango Juice (250ml)", price: 37.00, size: "250ml" },
+      { id: "juice-2-4", name: "Apple & Pear Juice (250ml)", price: 36.00, size: "250ml" },
+      { id: "juice-2-5", name: "Green Mile Juice (250ml)", price: 40.00, size: "250ml" },
+      { id: "juice-2-6", name: "Orange Juice (350ml)", price: 45.00, size: "350ml" },
+      { id: "juice-2-7", name: "Carrot & Ginger Juice (350ml)", price: 48.00, size: "350ml" },
+      { id: "juice-2-8", name: "Mango Juice (350ml)", price: 47.00, size: "350ml" },
+      { id: "juice-2-9", name: "Apple & Pear Juice (350ml)", price: 46.00, size: "350ml" },
+      { id: "juice-2-10", name: "Green Mile Juice (350ml)", price: 50.00, size: "350ml" },
     ],
   },
   {
-    id: "3",
-    slug: "tofu-stirfry",
-    name: "tofu stirfry",
-    description: "Crispy tofu with mixed vegetables in savory sauce",
-    price: 95.00,
-    image: "/images/stirfry/tofu-stirfry.jpg",
-    tags: ["vegetarian", "vegan-option"],
+    id: "stirfry-3",
+    slug: "chicken-vegetable-stir-fry",
+    name: "Chicken & Vegetable Stir Fry",
+    description: "Chicken breasts, broccoli, carrots, bell peppers, green onions, chicken broth, low sodium soy sauce, honey, sesame oil, fresh ginger, garlic, cornstarch, with a sprinkle of sesame seeds",
+    price: 132.00,
+    image: "/images/stirfry/chicken-vegetable.jpg",
+    category: "stirfries",
+    tags: ["Chicken", "Protein", "Popular"],
+    baseOptions: [
+      { id: "base-3-1", name: "Couscous", price: 35.00 },
+      { id: "base-3-2", name: "Quinoa", price: 35.00 },
+      { id: "base-3-3", name: "Bulgur", price: 30.00 },
+      { id: "base-3-4", name: "Millet", price: 30.00 },
+      { id: "base-3-5", name: "Egg noodles", price: 20.00 }
+    ],
     addOns: [
-      { id: "stirfry-addon-9", name: "Extra Tofu", price: 20 },
-      { id: "stirfry-addon-10", name: "Extra Vegetables", price: 15 },
-      { id: "stirfry-addon-11", name: "Fried Egg", price: 12 },
-      { id: "stirfry-addon-12", name: "Extra Sauce", price: 8 },
+      { id: "addon-3-1", name: "Extra chicken", price: 40.00 },
+      { id: "addon-3-2", name: "Extra vegetables", price: 25.00 },
+      { id: "addon-3-3", name: "Extra sauce", price: 15.00 }
     ],
     friesUpsell: [
-      { id: "stirfry-fries-7", name: "No fries", price: 0 },
-      { id: "stirfry-fries-8", name: "Steamed Rice", price: 15 },
-      { id: "stirfry-fries-9", name: "Fried Rice", price: 25 },
+      { id: "fries-3-1", name: "Skinny Potato Chips", price: 45.00 },
+      { id: "fries-3-2", name: "Sweet Potato Fries", price: 59.00 },
     ],
     juiceUpsell: [
-      {
-        size: "250ml",
-        options: [
-          { id: "stirfry-juice-13", name: "Orange Juice", price: 35 },
-          { id: "stirfry-juice-14", name: "Apple Juice", price: 32 },
-          { id: "stirfry-juice-15", name: "Mango Juice", price: 37 },
-        ],
-      },
-      {
-        size: "350ml",
-        options: [
-          { id: "stirfry-juice-16", name: "Orange Juice", price: 45 },
-          { id: "stirfry-juice-17", name: "Apple Juice", price: 42 },
-          { id: "stirfry-juice-18", name: "Mango Juice", price: 47 },
-        ],
-      },
+      { id: "juice-3-1", name: "Orange Juice (250ml)", price: 35.00, size: "250ml" },
+      { id: "juice-3-2", name: "Carrot & Ginger Juice (250ml)", price: 38.00, size: "250ml" },
+      { id: "juice-3-3", name: "Mango Juice (250ml)", price: 37.00, size: "250ml" },
+      { id: "juice-3-4", name: "Apple & Pear Juice (250ml)", price: 36.00, size: "250ml" },
+      { id: "juice-3-5", name: "Green Mile Juice (250ml)", price: 40.00, size: "250ml" },
+      { id: "juice-3-6", name: "Orange Juice (350ml)", price: 45.00, size: "350ml" },
+      { id: "juice-3-7", name: "Carrot & Ginger Juice (350ml)", price: 48.00, size: "350ml" },
+      { id: "juice-3-8", name: "Mango Juice (350ml)", price: 47.00, size: "350ml" },
+      { id: "juice-3-9", name: "Apple & Pear Juice (350ml)", price: 46.00, size: "350ml" },
+      { id: "juice-3-10", name: "Green Mile Juice (350ml)", price: 50.00, size: "350ml" },
     ],
   },
   {
-    id: "4",
-    slug: "shrimp-stirfry",
-    name: "shrimp stirfry",
-    description: "Succulent shrimp with snap peas, bell peppers and ginger",
-    price: 120.00,
-    image: "/images/stirfry/shrimp-stirfry.jpg",
-    tags: ["seafood", "light"],
+    id: "stirfry-4",
+    slug: "vegetable-noodle-stir-fry",
+    name: "Vegetable & Noodle Stir Fry",
+    description: "Broccoli, carrots, bell peppers, green onions, noodles, vegetable broth, low sodium soy sauce, honey, sesame oil, fresh ginger, garlic, cornstarch, with a sprinkle of sesame seeds",
+    price: 132.00,
+    image: "/images/stirfry/vegetable-noodle.jpg",
+    category: "stirfries",
+    tags: ["Vegetarian", "Noodles", "Healthy"],
+    baseOptions: [
+      { id: "base-4-1", name: "Couscous", price: 35.00 },
+      { id: "base-4-2", name: "Quinoa", price: 35.00 },
+      { id: "base-4-3", name: "Bulgur", price: 30.00 },
+      { id: "base-4-4", name: "Millet", price: 30.00 },
+      { id: "base-4-5", name: "Egg noodles", price: 20.00 }
+    ],
     addOns: [
-      { id: "stirfry-addon-13", name: "Extra Shrimp", price: 35 },
-      { id: "stirfry-addon-14", name: "Extra Vegetables", price: 15 },
-      { id: "stirfry-addon-15", name: "Fried Egg", price: 12 },
-      { id: "stirfry-addon-16", name: "Extra Sauce", price: 8 },
+      { id: "addon-4-1", name: "Extra vegetables", price: 25.00 },
+      { id: "addon-4-2", name: "Extra sauce", price: 15.00 },
+      { id: "addon-4-3", name: "Tofu", price: 30.00 }
     ],
     friesUpsell: [
-      { id: "stirfry-fries-10", name: "No fries", price: 0 },
-      { id: "stirfry-fries-11", name: "Steamed Rice", price: 15 },
-      { id: "stirfry-fries-12", name: "Fried Rice", price: 25 },
+      { id: "fries-4-1", name: "Skinny Potato Chips", price: 45.00 },
+      { id: "fries-4-2", name: "Sweet Potato Fries", price: 59.00 },
     ],
     juiceUpsell: [
-      {
-        size: "250ml",
-        options: [
-          { id: "stirfry-juice-19", name: "Orange Juice", price: 35 },
-          { id: "stirfry-juice-20", name: "Apple Juice", price: 32 },
-          { id: "stirfry-juice-21", name: "Mango Juice", price: 37 },
-        ],
-      },
-      {
-        size: "350ml",
-        options: [
-          { id: "stirfry-juice-22", name: "Orange Juice", price: 45 },
-          { id: "stirfry-juice-23", name: "Apple Juice", price: 42 },
-          { id: "stirfry-juice-24", name: "Mango Juice", price: 47 },
-        ],
-      },
+      { id: "juice-4-1", name: "Orange Juice (250ml)", price: 35.00, size: "250ml" },
+      { id: "juice-4-2", name: "Carrot & Ginger Juice (250ml)", price: 38.00, size: "250ml" },
+      { id: "juice-4-3", name: "Mango Juice (250ml)", price: 37.00, size: "250ml" },
+      { id: "juice-4-4", name: "Apple & Pear Juice (250ml)", price: 36.00, size: "250ml" },
+      { id: "juice-4-5", name: "Green Mile Juice (250ml)", price: 40.00, size: "250ml" },
+      { id: "juice-4-6", name: "Orange Juice (350ml)", price: 45.00, size: "350ml" },
+      { id: "juice-4-7", name: "Carrot & Ginger Juice (350ml)", price: 48.00, size: "350ml" },
+      { id: "juice-4-8", name: "Mango Juice (350ml)", price: 47.00, size: "350ml" },
+      { id: "juice-4-9", name: "Apple & Pear Juice (350ml)", price: 46.00, size: "350ml" },
+      { id: "juice-4-10", name: "Green Mile Juice (350ml)", price: 50.00, size: "350ml" },
     ],
   },
-  {
-    id: "5",
-    slug: "vegetable-stirfry",
-    name: "vegetable stirfry",
-    description: "Seasonal vegetables stir-fried with garlic and soy sauce",
-    price: 85.00,
-    image: "/images/stirfry/vegetable-stirfry.jpg",
-    tags: ["vegan", "vegetarian"],
-    addOns: [
-      { id: "stirfry-addon-17", name: "Extra Tofu", price: 20 },
-      { id: "stirfry-addon-18", name: "Extra Vegetables", price: 15 },
-      { id: "stirfry-addon-19", name: "Cashew Nuts", price: 18 },
-      { id: "stirfry-addon-20", name: "Extra Sauce", price: 8 },
-    ],
-    friesUpsell: [
-      { id: "stirfry-fries-13", name: "No fries", price: 0 },
-      { id: "stirfry-fries-14", name: "Steamed Rice", price: 15 },
-      { id: "stirfry-fries-15", name: "Fried Rice", price: 25 },
-    ],
-    juiceUpsell: [
-      {
-        size: "250ml",
-        options: [
-          { id: "stirfry-juice-25", name: "Orange Juice", price: 35 },
-          { id: "stirfry-juice-26", name: "Apple Juice", price: 32 },
-          { id: "stirfry-juice-27", name: "Mango Juice", price: 37 },
-        ],
-      },
-      {
-        size: "350ml",
-        options: [
-          { id: "stirfry-juice-28", name: "Orange Juice", price: 45 },
-          { id: "stirfry-juice-29", name: "Apple Juice", price: 42 },
-          { id: "stirfry-juice-30", name: "Mango Juice", price: 47 },
-        ],
-      },
-    ],
-  },
-  {
-    id: "6",
-    slug: "pork-stirfry",
-    name: "pork stirfry",
-    description: "Tender pork strips with mushrooms and green beans",
-    price: 115.00,
-    image: "/images/stirfry/pork-stirfry.jpg",
-    tags: ["high-protein", "hearty"],
-    addOns: [
-      { id: "stirfry-addon-21", name: "Extra Pork", price: 28 },
-      { id: "stirfry-addon-22", name: "Extra Vegetables", price: 15 },
-      { id: "stirfry-addon-23", name: "Fried Egg", price: 12 },
-      { id: "stirfry-addon-24", name: "Extra Sauce", price: 8 },
-    ],
-    friesUpsell: [
-      { id: "stirfry-fries-16", name: "No fries", price: 0 },
-      { id: "stirfry-fries-17", name: "Steamed Rice", price: 15 },
-      { id: "stirfry-fries-18", name: "Fried Rice", price: 25 },
-    ],
-    juiceUpsell: [
-      {
-        size: "250ml",
-        options: [
-          { id: "stirfry-juice-31", name: "Orange Juice", price: 35 },
-          { id: "stirfry-juice-32", name: "Apple Juice", price: 32 },
-          { id: "stirfry-juice-33", name: "Mango Juice", price: 37 },
-        ],
-      },
-      {
-        size: "350ml",
-        options: [
-          { id: "stirfry-juice-34", name: "Orange Juice", price: 45 },
-          { id: "stirfry-juice-35", name: "Apple Juice", price: 42 },
-          { id: "stirfry-juice-36", name: "Mango Juice", price: 47 },
-        ],
-      },
-    ],
-  }
 ];
 
-// Export as stirFryItems for compatibility with dynamic pages
-export const stirFryItems = stirfries;
+// Common add-ons for stirfries
+export const stirfryAddOns: AddOn[] = [
+  { id: "extra-sesame-seeds", name: "Extra Sesame Seeds", price: 5.00 },
+  { id: "chili-oil", name: "Chili Oil", price: 8.00 },
+  { id: "fresh-ginger", name: "Fresh Ginger", price: 10.00 },
+];

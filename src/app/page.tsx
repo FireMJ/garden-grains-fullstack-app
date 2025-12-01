@@ -74,8 +74,8 @@ const bannerFallbacks = [
 
 // -------------------- Floating Buttons --------------------
 function FloatingCartButton() {
-  const { state: { items: cart } } = useCart();
-  const itemCount = cart ? cart.reduce((total, item) => total + (item.quantity || 1), 0) : 0;
+  const { cartItems } = useCart();
+  const itemCount = cartItems.reduce((total, item) => total + (item.quantity || 1), 0);
 
   return (
     <Link
@@ -127,8 +127,8 @@ function VerticalPromoBanner() {
 // -------------------- Single Fixed Header --------------------
 function FixedHeader() {
   const [isScrolled, setIsScrolled] = useState(false);
-  const { state: { items: cart } } = useCart();
-  const itemCount = cart ? cart.reduce((total, item) => total + (item.quantity || 1), 0) : 0;
+  const { cartItems } = useCart();
+  const itemCount = cartItems.reduce((total, item) => total + (item.quantity || 1), 0);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);

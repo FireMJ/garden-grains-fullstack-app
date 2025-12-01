@@ -5,43 +5,16 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
+import { wraps } from "@/data/wrapsData";
 
-export default function WrapsListPage() {
+export default function WrapsPage() {
   const router = useRouter();
-  const { state } = useCart();
+  const { cartItems, totalItems, totalPrice } = useCart();
 
-  // TODO: Replace with actual data import for wraps
-  const menuItems = [
-    {
-      id: "1",
-      name: "Sample Fresh Wraps Item 1",
-      description: "Delicious wraps item description with fresh ingredients",
-      price: 45.00,
-      image: "/images/menu/wraps/item1.jpg"
-    },
-    {
-      id: "2", 
-      name: "Sample Fresh Wraps Item 2",
-      description: "Premium wraps item description made to perfection",
-      price: 55.00,
-      image: "/images/menu/wraps/item2.jpg"
-    },
-    {
-      id: "3",
-      name: "Sample Fresh Wraps Item 3", 
-      description: "Special wraps item description with unique flavors",
-      price: 65.00,
-      image: "/images/menu/wraps/item3.jpg"
-    }
-  ];
-
-  const handleNavigate = (name: string) => {
-    const slug = name.replace(/\s+/g, "-").toLowerCase();
+  const handleNavigate = (slug: string) => {
     router.push(`/menu/wraps/${slug}`);
   };
 
-  const totalItems = state.itemCount;
-  const totalPrice = state.total;
 
   return (
     <main className="min-h-screen bg-[#1E4259] text-white pt-20">
@@ -78,12 +51,12 @@ export default function WrapsListPage() {
             Fresh Wraps
           </h1>
           <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-            Fresh, flavorful wraps perfect for lunch on the go, packed with quality ingredients
+            Delicious tortilla wraps filled with premium ingredients
           </p>
         </div>
 
         {/* Cart Summary */}
-        {state.items.length > 0 && (
+        {cartItems.length > 0 && (
           <div className="bg-[#6c8665] rounded-lg p-4 mb-8 max-w-4xl mx-auto">
             <div className="flex justify-between items-center">
               <div>
@@ -114,8 +87,8 @@ export default function WrapsListPage() {
 
         {/* Menu Items Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {menuItems.map((item) => {
-            const inCart = state.items.filter(
+          {wraps.map((item) => {
+            const inCart = cartItems.filter(
               (c) => c.name.toLowerCase() === item.name.toLowerCase()
             );
             const itemCount = inCart.reduce((sum, i) => sum + i.quantity, 0);
@@ -127,7 +100,7 @@ export default function WrapsListPage() {
             return (
               <div
                 key={item.id}
-                onClick={() => handleNavigate(item.name)}
+                onClick={() => handleNavigate(item.slug)}
                 className="bg-white/10 rounded-2xl shadow-lg cursor-pointer overflow-hidden transition transform hover:scale-105 hover:shadow-xl backdrop-blur-sm"
               >
                 <div className="relative w-full h-52">
@@ -136,16 +109,7 @@ export default function WrapsListPage() {
                     alt={item.name}
                     fill
                     className="object-cover"
-                    onError={(e) => {
-                      // Fallback if image doesn't exist
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                      target.nextElementSibling?.classList.remove('hidden');
-                    }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#6C7B58] to-[#8A9B6E] hidden items-center justify-center">
-                    <span className="text-white/80 text-sm">Fresh Wraps Image</span>
-                  </div>
                 </div>
 
                 <div className="p-6 flex flex-col gap-2">
@@ -159,7 +123,6 @@ export default function WrapsListPage() {
                     R{item.price.toFixed(2)}
                   </span>
 
-                  {/* Show live cart count for this item */}
                   {itemCount > 0 && (
                     <div className="text-sm bg-green-200 text-green-900 rounded-md px-3 py-1 mt-1 font-semibold">
                       ✅ In Cart: {itemCount} item{itemCount > 1 ? "s" : ""} • R
@@ -170,7 +133,7 @@ export default function WrapsListPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleNavigate(item.name);
+                      handleNavigate(item.slug);
                     }}
                     className="mt-3 bg-[#F4A261] hover:bg-[#e68e42] text-white font-semibold py-2 px-4 rounded-lg transition"
                   >
@@ -180,41 +143,6 @@ export default function WrapsListPage() {
               </div>
             );
           })}
-        </div>
-
-        {/* Quick Navigation */}
-        <div className="mt-12 text-center">
-          <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm max-w-2xl mx-auto">
-            <h3 className="text-xl font-bold text-white mb-4">
-              Explore Other Categories
-            </h3>
-            <div className="flex flex-wrap justify-center gap-3">
-              <Link
-                href="/menu/breakfast"
-                className="bg-[#F4A261] text-white px-4 py-2 rounded-lg hover:bg-[#e68e42] transition text-sm"
-              >
-                Breakfast
-              </Link>
-              <Link
-                href="/menu/bowls"
-                className="bg-[#6C7B58] text-white px-4 py-2 rounded-lg hover:bg-[#5a6a4d] transition text-sm"
-              >
-                Bowls
-              </Link>
-              <Link
-                href="/menu/juices"
-                className="bg-[#2A5568] text-white px-4 py-2 rounded-lg hover:bg-[#1E4259] transition text-sm"
-              >
-                Juices
-              </Link>
-              <Link
-                href="/menu"
-                className="border border-white text-white px-4 py-2 rounded-lg hover:bg-white hover:text-[#1E4259] transition text-sm"
-              >
-                All Categories
-              </Link>
-            </div>
-          </div>
         </div>
       </div>
     </main>

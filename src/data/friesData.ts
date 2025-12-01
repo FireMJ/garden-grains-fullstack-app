@@ -4,242 +4,126 @@ export interface AddOn {
   price: number;
 }
 
-export interface JuiceOption {
+export interface JuiceUpsell {
   id: string;
   name: string;
   price: number;
-}
-
-export interface JuiceGroup {
   size: string;
-  options: JuiceOption[];
 }
 
-export interface SauceOption {
-  id: string;
-  name: string;
-  price: number;
-}
-
-export interface FriesItem {
+export interface MenuItem {
   id: string;
   slug: string;
   name: string;
   description: string;
   price: number;
   image: string;
-  addOns?: AddOn[];
-  sauceOptions?: SauceOption[];
-  juiceUpsell?: JuiceGroup[];
+  category: string;
   tags?: string[];
+  addOns?: AddOn[];
+  dipOptions?: AddOn[];
+  juiceUpsell?: JuiceUpsell[];
 }
 
-export const fries: FriesItem[] = [
+export const fries: MenuItem[] = [
   {
-    id: "fries1",
-    slug: "classic-fries",
-    name: "Classic Fries",
-    description: "Crispy golden fries with sea salt, perfectly cooked to golden perfection.",
+    id: "fries-1",
+    slug: "skinny-potato-chips",
+    name: "Skinny Potato Chips",
+    description: "Lightly seasoned skinny potato chips, perfectly crispy and golden",
     price: 45,
-    image: "/images/fries/classic-fries.jpg",
-    addOns: [
-      { id: "fries-addon-1", name: "Cheese Sauce", price: 15 },
-      { id: "fries-addon-2", name: "Chili Mayo", price: 12 },
-      { id: "fries-addon-3", name: "Garlic Aioli", price: 12 },
+    image: "/images/fries/skinny-potato-chips.jpg",
+    category: "fries",
+    tags: ["Classic", "Popular", "Vegetarian"],
+    dipOptions: [
+      { id: "no-sauce", name: "No Sauce", price: 0 },
+      { id: "garden-mayo", name: "Garden & Grains Mayo Dip", price: 0 },
+      { id: "tomato-sauce", name: "Tomato Sauce", price: 0 },
+      { id: "peri-peri", name: "Fiery Peri-peri Sauce", price: 15 },
     ],
     juiceUpsell: [
-      {
-        size: "250ml",
-        options: [
-          { id: "fries-juice-1", name: "Orange Juice", price: 35 },
-          { id: "fries-juice-2", name: "Carrot & Ginger Juice", price: 38 },
-          { id: "fries-juice-3", name: "Mango Juice", price: 37 },
-        ],
-      },
-      {
-        size: "350ml",
-        options: [
-          { id: "fries-juice-4", name: "Orange Juice", price: 45 },
-          { id: "fries-juice-5", name: "Carrot & Ginger Juice", price: 48 },
-          { id: "fries-juice-6", name: "Mango Juice", price: 47 },
-        ],
-      },
-      {
-        size: "500ml",
-        options: [
-          { id: "fries-juice-7", name: "Orange Juice", price: 55 },
-          { id: "fries-juice-8", name: "Carrot & Ginger Juice", price: 58 },
-          { id: "fries-juice-9", name: "Mango Juice", price: 57 },
-        ],
-      },
+      { id: "fresh-orange-250", name: "Fresh Orange Juice (250ml)", price: 60, size: "250ml" },
+      { id: "apple-carrot-250", name: "Apple Carrot Ginger (250ml)", price: 70, size: "250ml" },
+      { id: "green-detox-250", name: "Green Detox (250ml)", price: 75, size: "250ml" },
     ],
-    tags: ["classic", "popular"]
   },
   {
-    id: "fries2",
+    id: "fries-2",
     slug: "sweet-potato-fries",
     name: "Sweet Potato Fries",
-    description: "Crispy sweet potato fries served with a hint of paprika and sea salt.",
-    price: 55,
+    description: "Lightly seasoned sweet potato fries, naturally sweet and crispy",
+    price: 59,
     image: "/images/fries/sweet-potato-fries.jpg",
-    addOns: [
-      { id: "fries-addon-4", name: "Garlic Mayo", price: 12 },
-      { id: "fries-addon-5", name: "Avocado Dip", price: 18 },
-      { id: "fries-addon-6", name: "Sweet Chili Sauce", price: 10 },
+    category: "fries",
+    tags: ["Healthy", "Gluten Free", "Popular"],
+    dipOptions: [
+      { id: "no-sauce", name: "No Sauce", price: 0 },
+      { id: "garden-mayo", name: "Garden & Grains Mayo Dip", price: 0 },
+      { id: "tomato-sauce", name: "Tomato Sauce", price: 0 },
+      { id: "peri-peri", name: "Fiery Peri-peri Sauce", price: 15 },
     ],
     juiceUpsell: [
-      {
-        size: "250ml",
-        options: [
-          { id: "fries-juice-10", name: "Orange Juice", price: 35 },
-          { id: "fries-juice-11", name: "Carrot & Ginger Juice", price: 38 },
-          { id: "fries-juice-12", name: "Mango Juice", price: 37 },
-        ],
-      },
-      {
-        size: "350ml",
-        options: [
-          { id: "fries-juice-13", name: "Orange Juice", price: 45 },
-          { id: "fries-juice-14", name: "Carrot & Ginger Juice", price: 48 },
-          { id: "fries-juice-15", name: "Mango Juice", price: 47 },
-        ],
-      },
-      {
-        size: "500ml",
-        options: [
-          { id: "fries-juice-16", name: "Orange Juice", price: 55 },
-          { id: "fries-juice-17", name: "Carrot & Ginger Juice", price: 58 },
-          { id: "fries-juice-18", name: "Mango Juice", price: 57 },
-        ],
-      },
+      { id: "fresh-orange-250", name: "Fresh Orange Juice (250ml)", price: 60, size: "250ml" },
+      { id: "apple-carrot-250", name: "Apple Carrot Ginger (250ml)", price: 70, size: "250ml" },
+      { id: "green-detox-250", name: "Green Detox (250ml)", price: 75, size: "250ml" },
     ],
-    tags: ["vegetarian"]
   },
   {
-    id: "fries3",
-    slug: "loaded-fries",
-    name: "Loaded Fries",
-    description: "Fries topped with melted vegan cheese, jalapeños, and spicy sauce for the ultimate indulgence.",
-    price: 75,
-    image: "/images/fries/loaded-fries.jpg",
+    id: "fries-3",
+    slug: "chicken-strips-skinny-fries",
+    name: "Grilled Chicken Strips with Skinny Fries",
+    description: "Grilled chicken fillet strips served with a heap of skinny fries",
+    price: 95,
+    image: "/images/fries/chicken-strips-skinny.jpg",
+    category: "fries",
+    tags: ["Protein", "Meal", "Popular"],
+    dipOptions: [
+      { id: "no-sauce", name: "No Sauce", price: 0 },
+      { id: "garden-mayo", name: "Garden & Grains Mayo Dip", price: 0 },
+      { id: "tomato-sauce", name: "Tomato Sauce", price: 0 },
+      { id: "peri-peri", name: "Fiery Peri-peri Sauce", price: 15 },
+    ],
     addOns: [
-      { id: "fries-addon-7", name: "Extra Cheese", price: 20 },
-      { id: "fries-addon-8", name: "Extra Jalapeños", price: 10 },
-      { id: "fries-addon-9", name: "Bacon Bits", price: 15 },
+      { id: "extra-chicken", name: "Extra Chicken Strips", price: 25 },
+      { id: "extra-fries", name: "Extra Fries", price: 20 },
     ],
     juiceUpsell: [
-      {
-        size: "250ml",
-        options: [
-          { id: "fries-juice-19", name: "Orange Juice", price: 35 },
-          { id: "fries-juice-20", name: "Carrot & Ginger Juice", price: 38 },
-          { id: "fries-juice-21", name: "Mango Juice", price: 37 },
-        ],
-      },
-      {
-        size: "350ml",
-        options: [
-          { id: "fries-juice-22", name: "Orange Juice", price: 45 },
-          { id: "fries-juice-23", name: "Carrot & Ginger Juice", price: 48 },
-          { id: "fries-juice-24", name: "Mango Juice", price: 47 },
-        ],
-      },
-      {
-        size: "500ml",
-        options: [
-          { id: "fries-juice-25", name: "Orange Juice", price: 55 },
-          { id: "fries-juice-26", name: "Carrot & Ginger Juice", price: 58 },
-          { id: "fries-juice-27", name: "Mango Juice", price: 57 },
-        ],
-      },
+      { id: "fresh-orange-350", name: "Fresh Orange Juice (350ml)", price: 70, size: "350ml" },
+      { id: "apple-carrot-350", name: "Apple Carrot Ginger (350ml)", price: 80, size: "350ml" },
+      { id: "green-detox-350", name: "Green Detox (350ml)", price: 85, size: "350ml" },
     ],
-    tags: ["loaded", "spicy"]
   },
   {
-    id: "fries4",
-    slug: "grilled-chicken-fillet-strips",
-    name: "Grilled Chicken Fillet Strips",
-    description: "Tender grilled chicken breast strips, perfectly seasoned and served with your choice of dipping sauce.",
-    price: 85,
-    image: "/images/fries/grilled-chicken-strips.jpg",
-    sauceOptions: [
-      { id: "sauce-1", name: "BBQ Sauce", price: 0 },
-      { id: "sauce-2", name: "Garlic Mayo", price: 0 },
-      { id: "sauce-3", name: "Sweet Chili", price: 0 },
-      { id: "sauce-4", name: "Peri-Peri", price: 0 },
-      { id: "sauce-5", name: "Honey Mustard", price: 0 },
+    id: "fries-4",
+    slug: "chicken-strips-sweet-potato-fries",
+    name: "Grilled Chicken Strips with Sweet Potato Fries",
+    description: "Grilled chicken fillet strips served with golden crispy gluten free sweet potato fries",
+    price: 115,
+    image: "/images/fries/chicken-strips-sweet-potato.jpg",
+    category: "fries",
+    tags: ["Protein", "Gluten Free", "Healthy"],
+    dipOptions: [
+      { id: "no-sauce", name: "No Sauce", price: 0 },
+      { id: "garden-mayo", name: "Garden & Grains Mayo Dip", price: 0 },
+      { id: "tomato-sauce", name: "Tomato Sauce", price: 0 },
+      { id: "peri-peri", name: "Fiery Peri-peri Sauce", price: 15 },
     ],
     addOns: [
-      { id: "chicken-addon-1", name: "Extra Chicken Strips", price: 25 },
-      { id: "chicken-addon-2", name: "Side of Fries", price: 35 },
-      { id: "chicken-addon-3", name: "Side Salad", price: 30 },
+      { id: "extra-chicken", name: "Extra Chicken Strips", price: 25 },
+      { id: "extra-fries", name: "Extra Sweet Potato Fries", price: 30 },
     ],
     juiceUpsell: [
-      {
-        size: "250ml",
-        options: [
-          { id: "fries-juice-28", name: "Orange Juice", price: 35 },
-          { id: "fries-juice-29", name: "Carrot & Ginger Juice", price: 38 },
-          { id: "fries-juice-30", name: "Mango Juice", price: 37 },
-        ],
-      },
-      {
-        size: "350ml",
-        options: [
-          { id: "fries-juice-31", name: "Orange Juice", price: 45 },
-          { id: "fries-juice-32", name: "Carrot & Ginger Juice", price: 48 },
-          { id: "fries-juice-33", name: "Mango Juice", price: 47 },
-        ],
-      },
-      {
-        size: "500ml",
-        options: [
-          { id: "fries-juice-34", name: "Orange Juice", price: 55 },
-          { id: "fries-juice-35", name: "Carrot & Ginger Juice", price: 58 },
-          { id: "fries-juice-36", name: "Mango Juice", price: 57 },
-        ],
-      },
+      { id: "fresh-orange-350", name: "Fresh Orange Juice (350ml)", price: 70, size: "350ml" },
+      { id: "apple-carrot-350", name: "Apple Carrot Ginger (350ml)", price: 80, size: "350ml" },
+      { id: "green-detox-350", name: "Green Detox (350ml)", price: 85, size: "350ml" },
     ],
-    tags: ["chicken", "protein", "popular"]
   },
-  {
-    id: "fries5",
-    slug: "wedges",
-    name: "Seasoned Wedges",
-    description: "Thick-cut potato wedges with rosemary and garlic seasoning, crispy on the outside and fluffy inside.",
-    price: 50,
-    image: "/images/fries/wedges.jpg",
-    addOns: [
-      { id: "fries-addon-10", name: "Sour Cream", price: 12 },
-      { id: "fries-addon-11", name: "Sweet Chili Dip", price: 10 },
-      { id: "fries-addon-12", name: "Cheese Sauce", price: 15 },
-    ],
-    juiceUpsell: [
-      {
-        size: "250ml",
-        options: [
-          { id: "fries-juice-37", name: "Orange Juice", price: 35 },
-          { id: "fries-juice-38", name: "Carrot & Ginger Juice", price: 38 },
-          { id: "fries-juice-39", name: "Mango Juice", price: 37 },
-        ],
-      },
-      {
-        size: "350ml",
-        options: [
-          { id: "fries-juice-40", name: "Orange Juice", price: 45 },
-          { id: "fries-juice-41", name: "Carrot & Ginger Juice", price: 48 },
-          { id: "fries-juice-42", name: "Mango Juice", price: 47 },
-        ],
-      },
-      {
-        size: "500ml",
-        options: [
-          { id: "fries-juice-43", name: "Orange Juice", price: 55 },
-          { id: "fries-juice-44", name: "Carrot & Ginger Juice", price: 58 },
-          { id: "fries-juice-45", name: "Mango Juice", price: 57 },
-        ],
-      },
-    ],
-    tags: ["vegetarian", "seasoned"]
-  }
+];
+
+// Common add-ons for fries
+export const friesAddOns: AddOn[] = [
+  { id: "extra-cheese", name: "Extra Cheese", price: 12 },
+  { id: "macon-pieces", name: "Macon Pieces", price: 18 },
+  { id: "chili-flakes", name: "Chili Flakes", price: 5 },
+  { id: "herbs", name: "Fresh Herbs", price: 8 },
 ];

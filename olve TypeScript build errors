@@ -1,0 +1,113 @@
+warning: in the working copy of 'src/app/auth/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/cart/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/checkout/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/layout.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/bowls/[slug]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/bowls/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/breakfast/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/data.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/fries/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/juices/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/pastas/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/salads/[slug]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/salads/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/smoothies/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/soups/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/stirfry/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/toasties/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/wraps/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/order-confirmation/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/schedule-order/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/staff/dashboard/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/CartDrawer.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/CheckoutSummary.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/FixedHeader.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/FloatingCart.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/FloatingCartButton.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/GoToCartButton.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/LogoutButton.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/cart/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/context/AuthContext.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/context/CartContext.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/context/UserDataContext.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/data/addOns.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/data/bowlsData.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/data/friesData.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/data/juicesData.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/data/optionalExtras.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/data/pastasData.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/data/saladsData.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/data/smoothiesData.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/data/soupsData.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/data/stirfryData.ts', LF will be replaced by CRLF the next time Git touches it
+src/app/ClientLayoutWrapper.tsx
+src/app/admin/dashboard/page.tsx
+src/app/auth/page.tsx
+src/app/cart/page.tsx
+src/app/checkout/page.tsx
+src/app/dashboard/admin/page.tsx
+src/app/dashboard/admin/stats/route.ts
+src/app/dashboard/client/page.tsx
+src/app/dashboard/page.tsx
+src/app/dashboard/staff/page.tsx
+src/app/layout.tsx
+src/app/menu/bowls/[slug]/page.tsx
+src/app/menu/bowls/page.tsx
+src/app/menu/breakfast/page.tsx
+src/app/menu/data.ts
+src/app/menu/fries/page.tsx
+src/app/menu/juices/juiceData.ts
+src/app/menu/juices/page.tsx
+src/app/menu/page.tsx
+src/app/menu/pastas/page.tsx
+src/app/menu/salads/[slug]/page.tsx
+src/app/menu/salads/page.tsx
+src/app/menu/smoothies/page.tsx
+src/app/menu/soups/page.tsx
+src/app/menu/soups/soupData.ts
+src/app/menu/stirfry/page.tsx
+src/app/menu/toasties/page.tsx
+src/app/menu/toasties/toastieData.ts
+src/app/menu/wraps/page.tsx
+src/app/order-confirmation/page.tsx
+src/app/page.tsx
+src/app/schedule-order/page.tsx
+src/app/staff/dashboard/page.tsx
+src/components/CartDrawer.tsx
+src/components/CheckoutSummary.tsx
+src/components/FixedHeader.tsx
+src/components/FloatingCart.tsx
+src/components/FloatingCartButton.tsx
+src/components/GoToCartButton.tsx
+src/components/LogoutButton.tsx
+src/components/cart/page.tsx
+src/components/menu/bowls/BowlsDetailClient.tsx
+src/components/menu/fries/FriesDetailClient.tsx
+src/components/menu/pastas/PastaDetailClient.tsx
+src/components/menu/pastas/PastasDetailClient.tsx
+src/components/menu/salads/SaladsDetailClient.tsx
+src/components/menu/smoothies/SmoothiesDetailClient.tsx
+src/components/menu/soups/[slug]/SoupDetailClient.tsx
+src/components/menu/stirfry/StirfryDetailClient.tsx
+src/components/menu/stirfry/[slug]/StirFryDetailClient.tsx
+src/components/menu/toasties/ToastieDetailClient.tsx
+src/components/menu/toasties/ToastiesDetailClient.tsx
+src/components/menu/wraps/WrapDetailClient.tsx
+src/components/menu/wraps/WrapsDetailClient.tsx
+src/context/AuthContext.tsx
+src/context/CartContext.tsx
+src/context/UserDataContext.tsx
+src/data/addOns.ts
+src/data/bowlsData.ts
+src/data/friesData.ts
+src/data/juicesData.ts
+src/data/optionalExtras.ts
+src/data/pastasData.ts
+src/data/saladsData.ts
+src/data/smoothiesData.ts
+src/data/soupsData.ts
+src/data/stirfryData.ts
+src/data/toastiesData.ts
+src/data/wrapsData.ts

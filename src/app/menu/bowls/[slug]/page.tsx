@@ -4,16 +4,7 @@ import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
-import { bowls, bowlDressings, bowlBases, commonAddOns, friesUpsell, juiceGroup } from "@/data/bowlsData";
-
-interface SelectedOptions {
-  base: string;
-  dressing: string;
-  addOns: string[];
-  fries: string | null;
-  juice: { size: string; option: string } | null;
-  specialInstructions: string;
-}
+import { allBowls } from "@/data/bowlsData";
 
 export default function BowlDetailPage() {
   const params = useParams();
@@ -21,16 +12,15 @@ export default function BowlDetailPage() {
   const { addToCart } = useCart();
   
   const slug = params.slug as string;
-  const bowlItem = bowls.find(item => item.slug === slug);
+  const bowlItem = allBowls.find(bowl => bowl.slug === slug);
 
-  const [selectedOptions, setSelectedOptions] = useState<SelectedOptions>({
-    base: "",
-    dressing: "",
-    addOns: [],
-    fries: null,
-    juice: null,
-    specialInstructions: ""
-  });
+  // State for customization
+  const [selectedBase, setSelectedBase] = useState(bowlItem?.bases[0] || null);
+  const [selectedDressing, setSelectedDressing] = useState(bowlItem?.dressings[0] || null);
+  const [selectedAddOns, setSelectedAddOns] = useState<any[]>([]);
+  const [selectedFries, setSelectedFries] = useState<any>(null);
+  const [selectedJuice, setSelectedJuice] = useState<any>(null);
+  const [specialInstructions, setSpecialInstructions] = useState("");
   const [quantity, setQuantity] = useState(1);
 
   if (!bowlItem) {
@@ -49,85 +39,63 @@ export default function BowlDetailPage() {
     );
   }
 
-  // Calculate total price
+  const toggleAddOn = (addOn: any) => {
+    setSelectedAddOns(prev => 
+      prev.find(a => a.id === addOn.id) 
+        ? prev.filter(a => a.id !== addOn.id)
+        : [...prev, addOn]
+    );
+  };
+
+  // Calculate total price INCLUDING all selections
   const basePrice = bowlItem.price;
-  const addOnsTotal = selectedOptions.addOns.reduce((sum, addOnId) => {
-    const addOn = commonAddOns.find(a => a.id === addOnId);
-    return sum + (addOn?.price || 0);
-  }, 0);
-  const friesTotal = selectedOptions.fries ? friesUpsell.find(f => f.id === selectedOptions.fries)?.price || 0 : 0;
-  const juiceTotal = selectedOptions.juice ? juiceGroup.flatMap(g => g.options).find(j => j.id === selectedOptions.juice?.option)?.price || 0 : 0;
+  const baseExtra = selectedBase?.price || 0;
+  const addOnsTotal = selectedAddOns.reduce((sum, addOn) => sum + addOn.price, 0);
+  const friesTotal = selectedFries ? selectedFries.price : 0;
+  const juiceTotal = selectedJuice ? selectedJuice.price : 0;
   
-  const itemTotal = (basePrice + addOnsTotal + friesTotal + juiceTotal) * quantity;
+  const itemTotal = (basePrice + baseExtra + addOnsTotal + friesTotal + juiceTotal) * quantity;
 
   const handleAddToCart = () => {
-    if (!selectedOptions.base || !selectedOptions.dressing) {
-      alert("Please select a base and dressing before adding to cart");
+    if (!selectedBase) {
+      alert("Please select a base");
+      return;
+    }
+    if (!selectedDressing) {
+      alert("Please select a dressing");
       return;
     }
 
-    const selectedBase = bowlBases.find(b => b.id === selectedOptions.base);
-    const selectedDressing = bowlDressings.find(d => d.id === selectedOptions.dressing);
-    const selectedFries = friesUpsell.find(f => f.id === selectedOptions.fries);
+    const allAddOns = [...selectedAddOns];
     
-    // ✅ Fix: Ensure juice option is defined before adding to cart
-    const selectedJuiceOption = selectedOptions.juice 
-      ? juiceGroup.flatMap(g => g.options).find(j => j.id === selectedOptions.juice?.option)
-      : null;
-
-    const selectedJuice = selectedJuiceOption ? {
-      size: selectedOptions.juice!.size,
-      option: selectedJuiceOption // ✅ Now definitely defined
-    } : null;
-
-    // ✅ Fix: Properly filter out undefined addOns and cast to correct type
-    const selectedAddOns = selectedOptions.addOns
-      .map(id => commonAddOns.find(a => a.id === id))
-      .filter((addOn): addOn is NonNullable<typeof addOn> => addOn !== undefined);
-
-    const cartItem = {
+    addToCart({
       id: `${bowlItem.id}-${Date.now()}`,
       name: bowlItem.name,
       description: bowlItem.description,
-      price: bowlItem.price,
+      price: bowlItem.price + (selectedBase?.price || 0),
       quantity: quantity,
       total: itemTotal,
+      image: bowlItem.image,
+      category: bowlItem.category,
       base: selectedBase?.name || "",
       dressing: selectedDressing?.name || "",
-      addOns: selectedAddOns,
+      addOns: allAddOns,
       fries: selectedFries,
       juice: selectedJuice,
-      specialInstructions: selectedOptions.specialInstructions,
-      image: bowlItem.image,
-      category: "bowls"
-    };
-
-    addToCart(cartItem);
+      specialInstructions: specialInstructions
+    });
+    
     router.push("/cart");
   };
 
-  const toggleAddOn = (addOnId: string) => {
-    setSelectedOptions(prev => ({
-      ...prev,
-      addOns: prev.addOns.includes(addOnId)
-        ? prev.addOns.filter(id => id !== addOnId)
-        : [...prev.addOns, addOnId]
-    }));
-  };
-
-  const toggleFries = (friesId: string) => {
-    setSelectedOptions(prev => ({
-      ...prev,
-      fries: prev.fries === friesId ? null : friesId
-    }));
-  };
-
-  const toggleJuice = (size: string, optionId: string) => {
-    setSelectedOptions(prev => ({
-      ...prev,
-      juice: prev.juice?.option === optionId ? null : { size, option: optionId }
-    }));
-  };
+  // Group juices by type for better display
+  const groupedJuices = bowlItem.juiceUpsell?.reduce((acc, juice) => {
+    if (!acc[juice.name]) {
+      acc[juice.name] = [];
+    }
+    acc[juice.name].push(juice);
+    return acc;
+  }, {} as Record<string, any[]>);
 
   return (
     <main className="min-h-screen bg-[#1E4259] text-white pt-20">
@@ -150,34 +118,189 @@ export default function BowlDetailPage() {
         <div className="grid md:grid-cols-2 gap-8">
           {/* Image */}
           <div className="relative h-80 md:h-96 rounded-2xl overflow-hidden">
-            <Image
-              src={bowlItem.image}
-              alt={bowlItem.name}
-              fill
-              className="object-cover"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-              }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-br from-[#6C7B58] to-[#8A9B6E] flex items-center justify-center">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#2A5568] to-[#6C7B58] flex items-center justify-center">
               <span className="text-white/80 text-lg">Bowl Image</span>
             </div>
           </div>
 
-          {/* Details & Customization */}
+          {/* Details */}
           <div className="space-y-6">
             <div>
               <h1 className="text-3xl font-bold text-[#F4A261] mb-2">
                 {bowlItem.name}
               </h1>
-              <p className="text-gray-300 mb-4 leading-relaxed">
+              <p className="text-gray-300 mb-4">
                 {bowlItem.description}
               </p>
-              <div className="text-2xl font-bold text-green-300">
-                R{bowlItem.price.toFixed(2)}
+              
+              {/* Base Price */}
+              <div className="text-2xl font-bold text-green-300 mb-4">
+                Base Price: R{bowlItem.price}
               </div>
             </div>
+
+            {/* Included Ingredients */}
+            <div className="bg-white/5 rounded-lg p-4 space-y-3">
+              <h3 className="text-lg font-semibold text-[#F4A261]">What's Included</h3>
+              
+              <div>
+                <h4 className="text-sm font-medium text-gray-300 mb-1">Proteins:</h4>
+                <p className="text-sm text-gray-400">{bowlItem.includedIngredients.proteins.join(", ")}</p>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium text-gray-300 mb-1">Vegetables:</h4>
+                <p className="text-sm text-gray-400">{bowlItem.includedIngredients.veggies.join(", ")}</p>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium text-gray-300 mb-1">Toppings:</h4>
+                <p className="text-sm text-gray-400">{bowlItem.includedIngredients.toppings.join(", ")}</p>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium text-gray-300 mb-1">Finishes:</h4>
+                <p className="text-sm text-gray-400">{bowlItem.includedIngredients.finishes.join(" + ")}</p>
+              </div>
+            </div>
+
+            {/* Base Selection - REQUIRED */}
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold text-[#F4A261]">
+                Choose Your Base <span className="text-red-400 text-sm">*Required</span>
+              </h3>
+              <div className="space-y-2">
+                {bowlItem.bases.map((base) => (
+                  <label key={base.id} className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="base"
+                      value={base.id}
+                      checked={selectedBase?.id === base.id}
+                      onChange={() => setSelectedBase(base)}
+                      className="w-4 h-4 text-[#F4A261] rounded"
+                      required
+                    />
+                    <span className="flex-1">{base.name}</span>
+                    <span className="text-green-300">
+                      {base.price > 0 ? `+R${base.price}` : "Included"}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Dressing Selection - REQUIRED */}
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold text-[#F4A261]">
+                Choose Your Dressing <span className="text-red-400 text-sm">*Required</span>
+              </h3>
+              <div className="space-y-2">
+                {bowlItem.dressings.map((dressing) => (
+                  <label key={dressing.id} className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="dressing"
+                      value={dressing.id}
+                      checked={selectedDressing?.id === dressing.id}
+                      onChange={() => setSelectedDressing(dressing)}
+                      className="w-4 h-4 text-[#F4A261] rounded"
+                      required
+                    />
+                    <span className="flex-1">{dressing.name}</span>
+                    <span className="text-green-300">
+                      {dressing.price > 0 ? `+R${dressing.price}` : "Included"}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Add-Ons */}
+            {bowlItem.addOns && bowlItem.addOns.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-[#F4A261]">Additional Add-Ons</h3>
+                <div className="space-y-2">
+                  {bowlItem.addOns.map((addOn) => (
+                    <label key={addOn.id} className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedAddOns.some(a => a.id === addOn.id)}
+                        onChange={() => toggleAddOn(addOn)}
+                        className="w-4 h-4 text-[#F4A261] rounded"
+                      />
+                      <span className="flex-1">{addOn.name}</span>
+                      <span className="text-green-300">+R{addOn.price}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Fries Upsell */}
+            {bowlItem.friesUpsell && bowlItem.friesUpsell.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-[#F4A261]">Add Fries</h3>
+                <div className="space-y-2">
+                  {bowlItem.friesUpsell.map((fries) => (
+                    <label key={fries.id} className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="fries"
+                        value={fries.id}
+                        checked={selectedFries?.id === fries.id}
+                        onChange={() => setSelectedFries(fries)}
+                        className="w-4 h-4 text-[#F4A261] rounded"
+                      />
+                      <span className="flex-1">{fries.name}</span>
+                      <span className="text-green-300">+R{fries.price}</span>
+                    </label>
+                  ))}
+                  <button
+                    onClick={() => setSelectedFries(null)}
+                    className="text-sm text-gray-400 hover:text-white transition ml-7"
+                  >
+                    No fries, thanks
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Juice Upsell */}
+            {bowlItem.juiceUpsell && bowlItem.juiceUpsell.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-[#F4A261]">Add a Juice</h3>
+                <div className="space-y-4">
+                  {groupedJuices && Object.entries(groupedJuices).map(([juiceName, sizes]) => (
+                    <div key={juiceName}>
+                      <h4 className="font-medium mb-2 text-gray-300">{juiceName}</h4>
+                      <div className="space-y-2">
+                        {sizes.map((juice) => (
+                          <label key={juice.id} className="flex items-center gap-3 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="juice"
+                              value={juice.id}
+                              checked={selectedJuice?.id === juice.id}
+                              onChange={() => setSelectedJuice(juice)}
+                              className="w-4 h-4 text-[#F4A261] rounded"
+                            />
+                            <span className="flex-1">{juice.size}</span>
+                            <span className="text-green-300">+R{juice.price}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => setSelectedJuice(null)}
+                    className="text-sm text-gray-400 hover:text-white transition ml-7"
+                  >
+                    No juice, thanks
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Quantity Selector */}
             <div className="space-y-2">
@@ -201,154 +324,41 @@ export default function BowlDetailPage() {
               </div>
             </div>
 
-            {/* Base Selection - REQUIRED */}
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-[#F4A261]">
-                Choose Your Base *
-              </h3>
-              <div className="space-y-2">
-                {bowlBases.map((base) => (
-                  <label key={base.id} className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="base"
-                      checked={selectedOptions.base === base.id}
-                      onChange={() => setSelectedOptions(prev => ({ ...prev, base: base.id }))}
-                      className="w-4 h-4 text-[#F4A261]"
-                      required
-                    />
-                    <span className="flex-1 capitalize">{base.name}</span>
-                    <span className="text-green-300 text-sm">Included</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Dressing Selection - REQUIRED */}
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-[#F4A261]">
-                Choose Your Dressing *
-              </h3>
-              <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto">
-                {bowlDressings.map((dressing) => (
-                  <label key={dressing.id} className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="dressing"
-                      checked={selectedOptions.dressing === dressing.id}
-                      onChange={() => setSelectedOptions(prev => ({ ...prev, dressing: dressing.id }))}
-                      className="w-4 h-4 text-[#F4A261]"
-                      required
-                    />
-                    <span className="flex-1 capitalize text-sm">{dressing.name}</span>
-                    <span className="text-green-300 text-sm">Included</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Add-ons */}
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-[#F4A261]">Extra Add-ons</h3>
-              <div className="space-y-2">
-                {commonAddOns.map((addOn) => (
-                  <label key={addOn.id} className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedOptions.addOns.includes(addOn.id)}
-                      onChange={() => toggleAddOn(addOn.id)}
-                      className="w-4 h-4 text-[#F4A261] rounded"
-                    />
-                    <span className="flex-1 capitalize">{addOn.name}</span>
-                    <span className="text-green-300">+R{addOn.price.toFixed(2)}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Fries Upsell */}
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-[#F4A261]">Add Some Fries</h3>
-              <div className="space-y-2">
-                {friesUpsell.map((fries) => (
-                  <label key={fries.id} className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="fries"
-                      checked={selectedOptions.fries === fries.id}
-                      onChange={() => toggleFries(fries.id)}
-                      className="w-4 h-4 text-[#F4A261]"
-                    />
-                    <span className="flex-1 capitalize">{fries.name}</span>
-                    <span className="text-green-300">+R{fries.price.toFixed(2)}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Juice Upsell */}
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-[#F4A261]">Fresh Juice</h3>
-              <div className="space-y-3">
-                {juiceGroup.map((group) => (
-                  <div key={group.size} className="space-y-2">
-                    <h4 className="font-medium text-gray-300 text-sm">{group.size}</h4>
-                    {group.options.map((juice) => (
-                      <label key={juice.id} className="flex items-center gap-3 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="juice"
-                          checked={selectedOptions.juice?.option === juice.id}
-                          onChange={() => toggleJuice(group.size, juice.id)}
-                          className="w-4 h-4 text-[#F4A261]"
-                        />
-                        <span className="flex-1 capitalize text-sm">{juice.name}</span>
-                        <span className="text-green-300 text-sm">+R{juice.price.toFixed(2)}</span>
-                      </label>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-
             {/* Special Instructions */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-300">
                 Special Instructions
               </label>
               <textarea
-                value={selectedOptions.specialInstructions}
-                onChange={(e) => setSelectedOptions(prev => ({ ...prev, specialInstructions: e.target.value }))}
-                placeholder="Any special requests, allergies, or dietary requirements..."
+                value={specialInstructions}
+                onChange={(e) => setSpecialInstructions(e.target.value)}
+                placeholder="Any allergies, dietary restrictions, or special requests..."
                 className="w-full h-20 px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-[#F4A261] resize-none"
               />
             </div>
 
             {/* Total and Add to Cart */}
-            <div className="space-y-4 pt-4 border-t border-white/20">
+            <div className="space-y-4">
               <div className="flex justify-between items-center text-lg">
                 <span className="font-semibold">Total:</span>
                 <span className="text-2xl font-bold text-[#F4A261]">
-                  R{itemTotal.toFixed(2)}
+                  R{itemTotal}
                 </span>
               </div>
               
               <button
                 onClick={handleAddToCart}
-                disabled={!selectedOptions.base || !selectedOptions.dressing}
-                className="w-full bg-[#F4A261] hover:bg-[#e68e42] disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-lg transition text-lg"
+                disabled={!selectedBase || !selectedDressing}
+                className={`w-full font-bold py-4 px-6 rounded-lg transition text-lg ${
+                  !selectedBase || !selectedDressing
+                    ? "bg-gray-500 cursor-not-allowed"
+                    : "bg-[#F4A261] hover:bg-[#e68e42] text-white"
+                }`}
               >
-                {!selectedOptions.base || !selectedOptions.dressing 
-                  ? "Select Base and Dressing" 
-                  : `Add to Cart - R${itemTotal.toFixed(2)}`
-                }
+                {!selectedBase || !selectedDressing
+                  ? "Select Base & Dressing First"
+                  : `Add to Cart - R${itemTotal}`}
               </button>
-              
-              {(!selectedOptions.base || !selectedOptions.dressing) && (
-                <p className="text-yellow-400 text-sm text-center">
-                  * Please select a base and dressing to continue
-                </p>
-              )}
             </div>
           </div>
         </div>

@@ -1,10 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  User
+} from "firebase/auth";
+import { auth } from "@/lib/auth";
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -12,20 +19,25 @@ export default function AuthPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  
-  const { user, signIn, signUp, signInWithGoogle, loading: authLoading } = useAuth();
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const router = useRouter();
 
-  // Redirect if user is already logged in
+  // Listen for auth state changes
   useEffect(() => {
-    if (user && !authLoading) {
-      router.push("/");
-    }
-  }, [user, authLoading, router]);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      setAuthLoading(false);
+      if (user) {
+        router.push("/");
+      }
+    });
+    return () => unsubscribe();
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email || !password) {
       alert("Please fill in all fields");
       return;
@@ -40,15 +52,15 @@ export default function AuthPage() {
 
     try {
       if (isLogin) {
-        await signIn(email, password);
+        await signInWithEmailAndPassword(auth, email, password);
       } else {
-        await signUp(email, password);
+        await createUserWithEmailAndPassword(auth, email, password);
       }
       // Success - user will be redirected via useEffect
     } catch (error: any) {
       console.error("Authentication error:", error);
       let errorMessage = "Authentication failed";
-      
+
       if (error.code === 'auth/invalid-email') {
         errorMessage = "Invalid email address";
       } else if (error.code === 'auth/user-disabled') {
@@ -64,7 +76,7 @@ export default function AuthPage() {
       } else if (error.code === 'auth/network-request-failed') {
         errorMessage = "Network error. Please check your connection.";
       }
-      
+
       alert(errorMessage);
     } finally {
       setLoading(false);
@@ -74,12 +86,13 @@ export default function AuthPage() {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      await signInWithGoogle();
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
       // Success - user will be redirected via useEffect
     } catch (error: any) {
       console.error("Google sign in error:", error);
       let errorMessage = "Google sign in failed";
-      
+
       if (error.code === 'auth/popup-closed-by-user') {
         errorMessage = "Sign in was cancelled";
       } else if (error.code === 'auth/popup-blocked') {
@@ -89,7 +102,7 @@ export default function AuthPage() {
       } else if (error.code === 'auth/operation-not-allowed') {
         errorMessage = "Google sign in is not enabled. Please contact support.";
       }
-      
+
       alert(errorMessage);
     } finally {
       setGoogleLoading(false);
@@ -125,8 +138,8 @@ export default function AuthPage() {
         {/* Header */}
         <div className="text-center">
           <Link href="/" className="inline-block mb-6">
-            <div className="relative h-16 w-48 mx-auto">
-              <Image src="/logo/logo.png" alt="Garden & Grains Logo" fill className="object-contain" />
+            <div className="relative h-16 w-48 mx-auto bg-white/20 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-xl">Garden Grains</span>
             </div>
           </Link>
           <h2 className="text-3xl font-bold text-white">
@@ -263,7 +276,7 @@ export default function AuthPage() {
 
           {/* Continue without account */}
           <div className="text-center pt-4 border-t border-gray-200">
-            <Link 
+            <Link
               href="/"
               className="text-gray-600 hover:text-gray-800 text-sm transition-colors"
             >
@@ -271,20 +284,6 @@ export default function AuthPage() {
             </Link>
           </div>
         </form>
-
-        {/* Delivery Info */}
-        <div className="text-center text-sm text-gray-300 space-y-2 bg-white/10 p-4 rounded-lg">
-          <p className="font-semibold">🚚 Free Delivery</p>
-          <p>Free delivery on orders over R850 within 10km radius</p>
-        </div>
-
-        {/* Features */}
-        <div className="text-center text-sm text-gray-300 space-y-2">
-          <p>🍃 Fresh ingredients daily</p>
-          <p>🚚 Free delivery over R850 (10km)</p>
-          <p>💳 Secure checkout</p>
-          <p>🎁 20% off first order</p>
-        </div>
       </div>
     </div>
   );

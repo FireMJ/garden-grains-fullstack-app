@@ -1,6 +1,7 @@
-const AddOnsData = {
-  common: [],
-  premium: []
-};
+export interface AddOn {
+  id: string;
+  name: string;
+  price: number;
+}
 
-export default AddOnsData;
+export const addOns: AddOn[] = [];

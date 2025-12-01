@@ -5,11 +5,11 @@ import { useCart } from "@/context/CartContext";
 import Link from "next/link";
 
 export default function CartPage() {
-  const { state, removeFromCart, clearCart } = useCart();
-  const cart = state.items;
+  const { cartItems, totalItems, totalPrice, removeFromCart, clearCart } = useCart();
+  const cart = cartItems;
 
   // calculate total
-  const total = state.total || cart.reduce((sum, item) => {
+  const total = totalPrice || cart.reduce((sum, item) => {
     const addOnsTotal = item.addOns?.reduce((a, o) => a + o.price, 0) || 0;
     return sum + (item.price + addOnsTotal) * item.quantity;
   }, 0);

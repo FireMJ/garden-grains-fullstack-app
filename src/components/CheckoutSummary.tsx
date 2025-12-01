@@ -3,10 +3,10 @@
 import { useCart } from "@/context/CartContext";
 
 export default function CheckoutSummary() {
-  const { state } = useCart();
-  const cart = state.items;
-  const cartTotal = state.total;
-  const discountedTotal = state.total; // Assuming no discount logic yet
+  const { cartItems, totalItems, totalPrice } = useCart();
+  const cart = cartItems;
+  const cartTotal = totalPrice;
+  const discountedTotal = totalPrice; // Assuming no discount logic yet
   const appliedVoucher = null; // Assuming no voucher logic yet
   
   const total = discountedTotal || cartTotal;
