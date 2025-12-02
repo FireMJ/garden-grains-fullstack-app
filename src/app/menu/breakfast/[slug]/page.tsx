@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
-import { breakfasts } from "@/data/breakfastBowlsData";
+import { breakfastItems as breakfasts } from "@/data/breakfastData";
 
 interface AddOn {
   id: string;
