@@ -1,37 +1,50 @@
-'use client';
-
-import Link from 'next/link';
+"use client";
 
 export default function OrderConfirmationPage() {
   return (
-    <div className="min-h-screen bg-gray-50 pt-20">
-      <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-        <div className="bg-white rounded-lg shadow-md p-8">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
+    <div className="min-h-screen bg-gradient-to-b from-[#264653] to-[#2A9D8F] py-8">
+      <div className="container mx-auto px-4">
+        <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8 text-center">
+          <div className="flex justify-center mb-6">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
+              <span className="text-green-600 text-3xl">✓</span>
+            </div>
           </div>
           
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Order Confirmed!</h1>
-          <p className="text-gray-600 mb-8">
-            Thank you for your order! We've received your order and will begin preparing it right away.
+          <h1 className="text-3xl font-bold text-gray-800 mb-4">
+            Order Confirmed! 🎉
+          </h1>
+          
+          <p className="text-gray-600 mb-6">
+            Thank you for your order. We're preparing your delicious meal now.
           </p>
           
+          <div className="bg-gray-50 rounded-lg p-6 mb-8">
+            <h2 className="text-lg font-semibold text-gray-700 mb-2">
+              Order Details
+            </h2>
+            <p className="text-gray-600">
+              Order Number: <span className="font-mono font-bold text-[#264653]">ORD-{Date.now().toString().slice(-8)}</span>
+            </p>
+            <p className="text-gray-600 mt-2">
+              Estimated Delivery: 30-45 minutes
+            </p>
+          </div>
+          
           <div className="space-y-4">
-            <Link
+            <a
+              href="/tracking/ORD-123456"
+              className="block w-full py-3 bg-[#E9C46A] text-white font-semibold rounded-lg hover:bg-[#F4A261] transition-colors"
+            >
+              Track Your Order
+            </a>
+            
+            <a
               href="/menu"
-              className="inline-block bg-[#F4A261] text-white px-6 py-3 rounded-lg hover:bg-[#e68e42] transition"
+              className="block w-full py-3 border-2 border-[#E9C46A] text-[#264653] font-semibold rounded-lg hover:bg-[#E9C46A] hover:text-white transition-colors"
             >
-              Order Again
-            </Link>
-            <br />
-            <Link
-              href="/"
-              className="inline-block bg-gray-200 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-300 transition"
-            >
-              Back to Home
-            </Link>
+              Continue Shopping
+            </a>
           </div>
         </div>
       </div>

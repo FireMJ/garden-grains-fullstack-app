@@ -1,15 +1,14 @@
-export default function StaffDashboard() {
+"use client";
+
+export default function StaffPage() {
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Staff Dashboard</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="font-semibold">Order Management</h3>
-          <p className="text-gray-600">View and manage incoming orders</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="font-semibold">Kitchen Display</h3>
-          <p className="text-gray-600">View current orders in progress</p>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="container mx-auto px-4">
+        <h1 className="text-3xl font-bold text-gray-900 mb-6">Staff Portal</h1>
+        <div className="bg-white rounded-lg shadow p-6">
+          <p className="text-gray-600">
+            Staff portal is under construction. Check back soon!
+          </p>
         </div>
       </div>
     </div>

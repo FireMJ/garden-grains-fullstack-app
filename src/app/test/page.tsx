@@ -1,10 +1,13 @@
 export default function TestPage() {
   return (
-    <div className="min-h-screen bg-green-100 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-green-800 mb-4">✅ Test Page Working</h1>
-        <p className="text-lg text-green-700">If you can see this, basic Next.js is working.</p>
-        <p className="mt-4 text-sm text-green-600">Visit: /test</p>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="container mx-auto px-4">
+        <h1 className="text-3xl font-bold text-gray-900 mb-6">Test Page</h1>
+        <div className="bg-white rounded-lg shadow p-6">
+          <p className="text-gray-600">
+            This is a test page.
+          </p>
+        </div>
       </div>
     </div>
   );

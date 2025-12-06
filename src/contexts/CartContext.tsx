@@ -1,31 +1,58 @@
 "use client";
-import { CartItem } from '@/types';
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-
-
-export interface PricedAddon {
+export interface CartItem {
+  id: string;
   name: string;
   price: number;
+  quantity: number;
+  image?: string;
+  addOns?: any[];
+  addons?: any[];
+  bases?: string[];
+  dressings?: string[];
+  fries?: any;
+  friesUpsell?: any;
+  juice?: any;
+  juiceUpsell?: any;
+  specialInstructions?: string;
 }
 
 interface CartContextType {
   cart: CartItem[];
   addToCart: (item: CartItem) => void;
-  removeFromCart: (index: number) => void;
-  updateQuantity: (index: number, quantity: number) => void;
+  removeFromCart: (id: string) => void;
+  updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
   getCartTotal: () => number;
   getDeliveryFee: () => number;
 }
 
-const CartContext = createContext<CartContextType | undefined>(undefined);
+// Create context with default values
+const CartContext = createContext<CartContextType>({
+  cart: [],
+  addToCart: () => {},
+  removeFromCart: () => {},
+  updateQuantity: () => {},
+  clearCart: () => {},
+  getCartTotal: () => 0,
+  getDeliveryFee: () => 30,
+});
 
 export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) {
-    throw new Error("useCart must be used within a CartProvider");
+    console.warn('useCart must be used within a CartProvider');
+    return {
+      cart: [],
+      addToCart: () => {},
+      removeFromCart: () => {},
+      updateQuantity: () => {},
+      clearCart: () => {},
+      getCartTotal: () => 0,
+      getDeliveryFee: () => 30,
+    };
   }
   return context;
 };
@@ -34,50 +61,71 @@ interface CartProviderProps {
   children: ReactNode;
 }
 
-export const CartProvider = ({ children }: CartProviderProps) => {
+export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  const addToCart = (newItem: CartItem) => {
-    setCart((prevCart) => {
-      // Check if item with same customization exists
-      const existingIndex = prevCart.findIndex(
-        (item) =>
-          item.id === newItem.id &&
-          item.base === newItem.base &&
-          item.dressing === newItem.dressing &&
-          JSON.stringify(item.addOns) === JSON.stringify(newItem.addOns) &&
-          item.fries?.name === newItem.fries?.name &&
-          item.juice?.name === newItem.juice?.name &&
-          item.specialInstructions === newItem.specialInstructions
-      );
+  // Load cart from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedCart = localStorage.getItem('garden-grains-cart');
+        if (savedCart) {
+          const parsedCart = JSON.parse(savedCart);
+          setCart(Array.isArray(parsedCart) ? parsedCart : []);
+        }
+      } catch (error) {
+        console.error('Error loading cart from localStorage:', error);
+        setCart([]);
+      }
+      setIsInitialized(true);
+    }
+  }, []);
 
-      if (existingIndex !== -1) {
-        // Update quantity if same item exists
-        const updatedCart = [...prevCart];
-        updatedCart[existingIndex].quantity += newItem.quantity;
-        return updatedCart;
+  // Save cart to localStorage whenever it changes
+  useEffect(() => {
+    if (isInitialized && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('garden-grains-cart', JSON.stringify(cart));
+      } catch (error) {
+        console.error('Error saving cart to localStorage:', error);
+      }
+    }
+  }, [cart, isInitialized]);
+
+  const addToCart = (item: CartItem) => {
+    setCart(prevCart => {
+      const existingItem = prevCart.find(cartItem => cartItem.id === item.id);
+      
+      if (existingItem) {
+        // Update quantity if item already exists
+        return prevCart.map(cartItem =>
+          cartItem.id === item.id
+            ? { ...cartItem, quantity: cartItem.quantity + (item.quantity || 1) }
+            : cartItem
+        );
       } else {
         // Add new item
-        return [...prevCart, newItem];
+        return [...prevCart, { ...item, quantity: item.quantity || 1 }];
       }
     });
   };
 
-  const removeFromCart = (index: number) => {
-    setCart((prevCart) => prevCart.filter((_, i) => i !== index));
+  const removeFromCart = (id: string) => {
+    setCart(prevCart => prevCart.filter(item => item.id !== id));
   };
 
-  const updateQuantity = (index: number, quantity: number) => {
+  const updateQuantity = (id: string, quantity: number) => {
     if (quantity < 1) {
-      removeFromCart(index);
+      removeFromCart(id);
       return;
     }
-
-    setCart((prevCart) => {
-      const updatedCart = [...prevCart];
-      updatedCart[index].quantity = quantity;
-      return updatedCart;
-    });
+    
+    setCart(prevCart =>
+      prevCart.map(item =>
+        item.id === id ? { ...item, quantity } : item
+      )
+    );
   };
 
   const clearCart = () => {
@@ -85,18 +133,30 @@ export const CartProvider = ({ children }: CartProviderProps) => {
   };
 
   const getCartTotal = () => {
-    return cart.reduce((total: number, item) => {
-      const addOnsTotal = item.addOns.reduce((sum: number, addon) => sum + addon.price, 0);
-      const friesTotal = item.fries ? item.fries.price : 0;
-      const juiceTotal = item.juice ? item.juice.price : 0;
-      const itemTotal = (item.basePrice + addOnsTotal + friesTotal + juiceTotal) * item.quantity;
+    return cart.reduce((total, item) => {
+      const basePrice = item.price || 0;
+      
+      // Add-ons
+      const addOns = item.addOns || item.addons || [];
+      const addOnsTotal = addOns.reduce((sum: number, addon: any) => 
+        sum + (addon.price || 0), 0);
+      
+      // Fries
+      const friesItem = item.fries || item.friesUpsell;
+      const friesTotal = friesItem?.price || 0;
+      
+      // Juice
+      const juiceItem = item.juice || item.juiceUpsell;
+      const juiceTotal = juiceItem?.price || 0;
+      
+      const itemTotal = (basePrice + addOnsTotal + friesTotal + juiceTotal) * (item.quantity || 1);
       return total + itemTotal;
     }, 0);
   };
 
   const getDeliveryFee = () => {
-    const cartTotal = getCartTotal();
-    return cartTotal >= 850 ? 0 : 49.99;
+    const total = getCartTotal();
+    return total >= 850 ? 0 : 30;
   };
 
   return (
@@ -116,5 +176,4 @@ export const CartProvider = ({ children }: CartProviderProps) => {
   );
 };
 
-
-export type { CartItem };
+export default CartContext;
