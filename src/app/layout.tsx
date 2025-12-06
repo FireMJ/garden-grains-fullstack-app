@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import "./globals.css";
-import Header from "@/components/Header";
-import { CartProvider } from "@/contexts/CartContext";
-import { AuthProvider } from "@/context/AuthContext";
-import { SpeedInsights } from "@vercel/speed-insights/next";
+import { AuthProvider } from '@/context/AuthContext';
+import { CartProvider } from '@/contexts/CartContext';
+import { SpeedInsights } from '@vercel/speed-insights/next';
+
+// Import the correct Header component
+import Header from '@/components/Header';
 
 export const metadata: Metadata = {
   title: "Garden Grains | Healthy Bowls & Salads",
@@ -22,7 +24,7 @@ export default function RootLayout({
       <body className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}>
         <AuthProvider>
           <CartProvider>
-            {/* Use Header instead of FixedHeader */}
+            {/* SINGLE HEADER - no duplication */}
             <Header />
             <main className="pt-16 md:pt-20">
               {children}

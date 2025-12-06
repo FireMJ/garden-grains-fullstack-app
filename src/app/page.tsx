@@ -143,7 +143,6 @@ function FixedHeader() {
 
   return (
     <header
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
         isScrolled ? "bg-[#1E4259] shadow-lg" : "bg-transparent"
       } h-16`}
     >
