@@ -1,9 +1,10 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { useCart } from "@/context/CartContext";
+import { useCart } from "@/contexts/CartContext";
 import { soups, soupAddOns } from "@/data/soupsData";
 
 interface AddOn {
@@ -57,7 +58,7 @@ export default function SoupDetailPage() {
   }
 
   // Group juice upsells by size for better organization
-  const juiceBySize = soupItem.juiceUpsell?.reduce((acc, juice) => {
+  const juiceBySize = soupItem.juiceUpsell?.reduce((acc: number, juice) => {
     if (!acc[juice.size]) {
       acc[juice.size] = [];
     }
@@ -66,7 +67,7 @@ export default function SoupDetailPage() {
   }, {} as Record<string, JuiceUpsell[]>);
 
   // Calculate total price INCLUDING add-ons and juice upsell
-  const addOnsTotal = selectedAddOns.reduce((sum, addon) => sum + addon.price, 0);
+  const addOnsTotal = selectedAddOns.reduce((sum: number, addon) => sum + addon.price, 0);
   const juiceTotal = selectedJuice ? selectedJuice.price : 0;
   const itemTotal = (soupItem.price + addOnsTotal + juiceTotal) * quantity;
 

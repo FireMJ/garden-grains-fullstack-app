@@ -88,7 +88,7 @@ export default function OrderCard({
       <div className="border-t border-gray-100 my-3" />
 
       <ul className="space-y-1 mb-3">
-        {order.items.map((item, i) => (
+        {order.items.map((item: any, i) => (
           <li key={i} className="flex justify-between text-gray-700 text-sm">
             <span>{item.name}</span>
             <span>x{item.quantity}</span>

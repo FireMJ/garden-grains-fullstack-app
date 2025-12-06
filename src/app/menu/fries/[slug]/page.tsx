@@ -1,9 +1,10 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { useCart } from "@/context/CartContext";
+import { useCart } from "@/contexts/CartContext";
 import { fries, friesAddOns } from "@/data/friesData";
 
 interface AddOn {
@@ -57,7 +58,7 @@ export default function FriesDetailPage() {
   }
 
   // Calculate total price INCLUDING add-ons and selected dip
-  const addOnsTotal = selectedAddOns.reduce((sum, addon) => sum + addon.price, 0);
+  const addOnsTotal = selectedAddOns.reduce((sum: number, addon) => sum + addon.price, 0);
   const dipTotal = selectedDip ? selectedDip.price : 0;
   const juiceTotal = selectedJuice ? selectedJuice.price : 0;
   const itemTotal = (friesItem.price + addOnsTotal + dipTotal + juiceTotal) * quantity;

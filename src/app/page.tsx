@@ -8,7 +8,7 @@ import { FaInstagram, FaFacebook, FaTiktok, FaTwitter, FaWhatsapp } from "react-
 
 import PageWrapper from "@/components/layout/PageWrapper";
 import TestimonialsCarousel from "@/components/TestimonialsCarousel";
-import { useCart } from "@/context/CartContext";
+import { useCart } from "@/contexts/CartContext";
 
 // Banner images - using placeholder images for now
 const bannerImages = [
@@ -74,8 +74,8 @@ const bannerFallbacks = [
 
 // -------------------- Floating Buttons --------------------
 function FloatingCartButton() {
-  const { cartItems } = useCart();
-  const itemCount = cartItems.reduce((total, item) => total + (item.quantity || 1), 0);
+  const { cart } = useCart();
+  const itemCount = (cart || []).reduce((total: number, item) => total + (item.quantity || 1), 0);
 
   return (
     <Link
@@ -127,13 +127,18 @@ function VerticalPromoBanner() {
 // -------------------- Single Fixed Header --------------------
 function FixedHeader() {
   const [isScrolled, setIsScrolled] = useState(false);
-  const { cartItems } = useCart();
-  const itemCount = cartItems.reduce((total, item) => total + (item.quantity || 1), 0);
+  const { cart } = useCart();
+  const itemCount = (cart || []).reduce((total: number, item) => total + (item.quantity || 1), 0);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    if (typeof window !== "undefined") {
+      window.addEventListener("scroll", handleScroll);
+    }
+    return () => { if (typeof window !== "undefined") {
+      window.removeEventListener("scroll", handleScroll);
+    }
+  }
   }, []);
 
   return (
@@ -407,7 +412,7 @@ export default function HomePage() {
           <div className="max-w-6xl mx-auto px-6">
             <h2 className="text-3xl font-bold text-center text-[#1E4259] mb-12">Why Choose Garden & Grains?</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {features.map((feature, index) => (
+              {features.map((feature: any, index) => (
                 <div key={index} className="text-center">
                   <div className="text-4xl mb-4">{feature.icon}</div>
                   <h3 className="text-xl font-semibold text-[#1E4259] mb-2">{feature.title}</h3>
@@ -447,7 +452,7 @@ export default function HomePage() {
           <div className="max-w-6xl mx-auto">
             <h2 className="text-4xl font-bold text-white mb-12 text-center">Customer Favorites</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {favorites.map((item, i) => (
+              {favorites.map((item: any, i) => (
                 <SimpleMenuItemCard key={i} {...item} />
               ))}
             </div>

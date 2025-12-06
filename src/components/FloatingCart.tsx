@@ -1,10 +1,12 @@
 "use client";
 
 import React from "react";
-import { useCart } from "@/context/CartContext";
+import { useCart } from "@/contexts/CartContext";
 
 export default function FloatingCart() {
-  const { cartItems, totalItems, totalPrice } = useCart();
+  const { cart: cartItems } = useCart();
+  const totalItems = (cartItems || []).reduce((total: number, item: any) => total + (item.quantity || 1), 0);
+  const totalPrice = (cartItems || []).reduce((total: number, item: any) => total + (item.price || 0) * (item.quantity || 1), 0);
 
   if (cartItems.length === 0) {
     return null;
@@ -15,7 +17,7 @@ export default function FloatingCart() {
     (total, item) =>
       total +
       item.price * item.quantity +
-      (item.addOns?.reduce((a, o) => a + o.price, 0) ?? 0) * item.quantity +
+      (item.addOns?.reduce((a: number, o) => a + o.price, 0) ?? 0) * item.quantity +
       (item.fries ? item.fries.price : 0) * item.quantity +
       (item.juice ? item.juice.option.price : 0) * item.quantity,
     0

@@ -1,38 +1,63 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { ChevronLeft } from "lucide-react";
 
-export default function GoBackButton() {
-  const pathname = usePathname();
-  const router = useRouter();
+interface GoBackButtonProps {
+  onClick?: () => void;
+}
+
+const GoBackButton = ({ onClick }: GoBackButtonProps) => {
   const [isMobile, setIsMobile] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    setIsClient(true);
+    
+    const checkMobile = () => {
+      if (typeof window !== "undefined") {
+        setIsMobile(window.innerWidth < 768);
+      }
+    };
+
     checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
+    
+    if (typeof window !== "undefined") {
+      window.addEventListener("resize", checkMobile);
+      return () => window.removeEventListener("resize", checkMobile);
+    }
   }, []);
 
-  if (pathname === "/") return null;
-
-  const handleGoHome = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    setTimeout(() => router.push("/"), 300);
+  const handleClick = () => {
+    if (onClick) {
+      onClick();
+    } else if (typeof window !== "undefined") {
+      window.history.back();
+    }
   };
 
-  return (
-    <div className={`fixed ${isMobile ? "bottom-4 left-4" : "top-4 left-4"} z-50`}>
+  if (!isClient) {
+    return (
       <button
-        onClick={handleGoHome}
-        aria-label="Go back to homepage"
-        className="flex items-center gap-2 bg-[#F4A261]/80 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm shadow-md hover:bg-[#F4A261] hover:shadow-lg transition-all duration-300"
+        onClick={handleClick}
+        className="flex items-center text-[#E9C46A] hover:text-[#F4A261] transition-colors"
       >
-        <ArrowLeft size={16} className="text-white" />
-        <span className="font-medium">Home</span>
+        <ChevronLeft className="w-5 h-5" />
+        <span>Back</span>
       </button>
-    </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={handleClick}
+      className="flex items-center text-[#E9C46A] hover:text-[#F4A261] transition-colors"
+      aria-label="Go back"
+    >
+      <ChevronLeft className="w-5 h-5" />
+      <span>{isMobile ? "" : "Back"}</span>
+    </button>
   );
-}
+};
+
+export default GoBackButton;

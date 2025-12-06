@@ -1,15 +1,19 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import React from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { useCart } from "@/context/CartContext";
+import { useCart, type CartItem } from "@/contexts/CartContext";
 import { pastas } from "@/data/pastasData";
 
 export default function PastasListPage() {
   const router = useRouter();
-  const { cartItems, totalItems, totalPrice } = useCart(); // Fixed: using correct cart context properties
+  const { cart: cartItems } = useCart(); // Fixed: using correct cart context properties
+  // Calculate values since they are not provided by CartContext
+  const totalItems = (cartItems || []).reduce((total: number, item: CartItem) => total + (item.quantity || 1), 0);
+  const totalPrice = (cartItems || []).reduce((total: number, item: CartItem) => total + (item.price || 0) * (item.quantity || 1), 0);
 
   const handleNavigate = (slug: string) => {
     router.push(`/menu/pastas/${slug}`);
@@ -71,9 +75,9 @@ export default function PastasListPage() {
         {/* Menu Items Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {pastas.map((item) => {
-            const inCart = cartItems.filter((c) => c.name.toLowerCase() === item.name.toLowerCase());
-            const itemCount = inCart.reduce((sum, i) => sum + i.quantity, 0);
-            const itemTotal = inCart.reduce((sum, i) => sum + ((i.price || 0) * i.quantity), 0);
+            const inCart = cartItems.filter((c: any) => c.name.toLowerCase() === item.name.toLowerCase());
+            const itemCount = inCart.reduce((sum: number, i) => sum + i.quantity, 0);
+            const itemTotal = inCart.reduce((sum: number, i) => sum + ((i.price || 0) * i.quantity), 0);
 
             return (
               <div key={item.id} onClick={() => handleNavigate(item.slug)} className="bg-white/10 rounded-2xl shadow-lg cursor-pointer overflow-hidden transition transform hover:scale-105 hover:shadow-xl backdrop-blur-sm">

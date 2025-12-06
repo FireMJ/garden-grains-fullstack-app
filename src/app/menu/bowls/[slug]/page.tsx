@@ -1,227 +1,218 @@
 "use client";
+export const dynamic = "force-dynamic";
 
-import React, { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import Image from "next/image";
-import { useCart } from "@/context/CartContext";
-import { allBowls } from "@/data/bowlsData";
+import Link from "next/link";
+import { useCart } from "@/contexts/CartContext";
+import { notFound, useParams } from "next/navigation";
+import bowlsData from "@/data/bowlsData";
 
-export default function BowlDetailPage() {
+const BowlPage = () => {
   const params = useParams();
-  const router = useRouter();
-  const { addToCart } = useCart();
-  
   const slug = params.slug as string;
-  const bowlItem = allBowls.find(bowl => bowl.slug === slug);
+  const { addToCart } = useCart();
 
-  // State for customization
-  const [selectedBase, setSelectedBase] = useState(bowlItem?.bases[0] || null);
-  const [selectedDressing, setSelectedDressing] = useState(bowlItem?.dressings[0] || null);
+  const bowlItem = bowlsData.find((bowl) => bowl.slug === slug);
+
+  const [quantity, setQuantity] = useState(1);
+  const [selectedBase, setSelectedBase] = useState<any>(null);
+  const [selectedDressing, setSelectedDressing] = useState<any>(null);
   const [selectedAddOns, setSelectedAddOns] = useState<any[]>([]);
   const [selectedFries, setSelectedFries] = useState<any>(null);
   const [selectedJuice, setSelectedJuice] = useState<any>(null);
   const [specialInstructions, setSpecialInstructions] = useState("");
-  const [quantity, setQuantity] = useState(1);
+
+  useEffect(() => {
+    if (bowlItem) {
+      setSelectedBase(bowlItem.bases[0] || null);
+      setSelectedDressing(bowlItem.dressings[0] || null);
+    }
+  }, [bowlItem]);
 
   if (!bowlItem) {
-    return (
-      <div className="min-h-screen bg-[#1E4259] flex items-center justify-center">
-        <div className="text-center text-white">
-          <h1 className="text-4xl font-bold mb-4">Bowl Not Found</h1>
-          <button 
-            onClick={() => router.push("/menu/bowls")}
-            className="bg-[#F4A261] text-white px-6 py-3 rounded-lg hover:bg-[#e68e42] transition"
-          >
-            Back to Bowls Menu
-          </button>
-        </div>
-      </div>
-    );
+    notFound();
   }
 
   const toggleAddOn = (addOn: any) => {
-    setSelectedAddOns(prev => 
-      prev.find(a => a.id === addOn.id) 
-        ? prev.filter(a => a.id !== addOn.id)
-        : [...prev, addOn]
-    );
+    setSelectedAddOns((prev) => {
+      const isSelected = prev.some((a) => a.id === addOn.id);
+      if (isSelected) {
+        return prev.filter((a: any) => a.id !== addOn.id);
+      } else {
+        // Ensure add-on has both name and price
+        return [...prev, { 
+          id: addOn.id, 
+          name: addOn.name, 
+          price: addOn.price || 0 
+        }];
+      }
+    });
   };
 
-  // Calculate total price INCLUDING all selections
+  const toggleFries = (fries: any) => {
+    setSelectedFries(selectedFries?.id === fries.id ? null : fries);
+  };
+
+  const toggleJuice = (juice: any) => {
+    setSelectedJuice(selectedJuice?.id === juice.id ? null : juice);
+  };
+
+  // Calculate total price
   const basePrice = bowlItem.price;
   const baseExtra = selectedBase?.price || 0;
-  const addOnsTotal = selectedAddOns.reduce((sum, addOn) => sum + addOn.price, 0);
+  const addOnsTotal = selectedAddOns.reduce((sum: number, addOn) => sum + (addOn.price || 0), 0);
   const friesTotal = selectedFries ? selectedFries.price : 0;
   const juiceTotal = selectedJuice ? selectedJuice.price : 0;
-  
+
   const itemTotal = (basePrice + baseExtra + addOnsTotal + friesTotal + juiceTotal) * quantity;
 
   const handleAddToCart = () => {
+    // Validate required selections
     if (!selectedBase) {
       alert("Please select a base");
       return;
     }
-    if (!selectedDressing) {
-      alert("Please select a dressing");
-      return;
-    }
 
-    const allAddOns = [...selectedAddOns];
-    
+    // Format add-ons to match CartContext structure
+    const formattedAddOns = selectedAddOns.map(addOn => ({
+      name: addOn.name,
+      price: addOn.price || 0
+    }));
+
     addToCart({
-      id: `${bowlItem.id}-${Date.now()}`,
+      id: bowlItem.id,
       name: bowlItem.name,
-      description: bowlItem.description,
-      price: bowlItem.price + (selectedBase?.price || 0),
+      price: bowlItem.price,
       quantity: quantity,
-      total: itemTotal,
       image: bowlItem.image,
-      category: bowlItem.category,
       base: selectedBase?.name || "",
       dressing: selectedDressing?.name || "",
-      addOns: allAddOns,
-      fries: selectedFries,
-      juice: selectedJuice,
-      specialInstructions: specialInstructions
+      addOns: formattedAddOns as any,
+      friesUpsell: selectedFries,
+      juiceUpsell: selectedJuice,
+      specialInstructions: specialInstructions,
+      baseExtra: baseExtra
     });
-    
-    router.push("/cart");
+
+    // Show confirmation
+    alert(`Added ${quantity} ${bowlItem.name} to cart!`);
   };
 
-  // Group juices by type for better display
-  const groupedJuices = bowlItem.juiceUpsell?.reduce((acc, juice) => {
-    if (!acc[juice.name]) {
-      acc[juice.name] = [];
-    }
-    acc[juice.name].push(juice);
-    return acc;
-  }, {} as Record<string, any[]>);
-
   return (
-    <main className="min-h-screen bg-[#1E4259] text-white pt-20">
-      {/* Navigation */}
-      <div className="bg-white/10 backdrop-blur-sm border-b border-white/20">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <button
-            onClick={() => router.push("/menu/bowls")}
-            className="flex items-center text-white hover:text-[#F4A261] transition"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Back to Bowls
-          </button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gradient-to-b from-[#264653] to-[#2A9D8F] py-8">
+      <div className="container mx-auto px-4">
+        <Link
+          href="/menu"
+          className="inline-flex items-center text-[#E9C46A] hover:text-[#F4A261] mb-6"
+        >
+          ← Back to Menu
+        </Link>
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="grid md:grid-cols-2 gap-8">
-          {/* Image */}
-          <div className="relative h-80 md:h-96 rounded-2xl overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-[#2A5568] to-[#6C7B58] flex items-center justify-center">
-              <span className="text-white/80 text-lg">Bowl Image</span>
+          {/* Bowl Image */}
+          <div className="bg-white rounded-lg overflow-hidden shadow-lg">
+            <div className="relative h-64 md:h-80">
+              <Image
+                src={bowlItem.image}
+                alt={bowlItem.name}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 50vw"
+              />
+            </div>
+            <div className="p-4">
+              <h1 className="text-2xl font-bold text-gray-800">{bowlItem.name}</h1>
+              <p className="text-gray-600 mt-2">{bowlItem.description}</p>
+              <div className="flex items-center justify-between mt-4">
+                <span className="text-3xl font-bold text-[#264653]">
+                  R{bowlItem.price.toFixed(2)}
+                </span>
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="w-8 h-8 rounded-full bg-[#E9C46A] text-white font-bold hover:bg-[#F4A261]"
+                  >
+                    -
+                  </button>
+                  <span className="text-xl font-semibold">{quantity}</span>
+                  <button
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="w-8 h-8 rounded-full bg-[#E9C46A] text-white font-bold hover:bg-[#F4A261]"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Details */}
+          {/* Customization Options */}
           <div className="space-y-6">
-            <div>
-              <h1 className="text-3xl font-bold text-[#F4A261] mb-2">
-                {bowlItem.name}
-              </h1>
-              <p className="text-gray-300 mb-4">
-                {bowlItem.description}
-              </p>
-              
-              {/* Base Price */}
-              <div className="text-2xl font-bold text-green-300 mb-4">
-                Base Price: R{bowlItem.price}
+            {/* Base Selection */}
+            {bowlItem.bases && bowlItem.bases.length > 0 && (
+              <div className="bg-white rounded-lg p-4 shadow-md">
+                <h3 className="text-lg font-semibold text-[#264653] mb-3">
+                  Choose Your Base
+                </h3>
+                <div className="space-y-2">
+                  {bowlItem.bases.map((base: any) => (
+                    <label key={base.id} className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="base"
+                        checked={selectedBase?.id === base.id}
+                        onChange={() => setSelectedBase(base)}
+                        className="w-4 h-4 text-[#F4A261]"
+                      />
+                      <span className="flex-1">{base.name}</span>
+                      {base.price > 0 && (
+                        <span className="text-[#2A9D8F] font-semibold">
+                          +R{base.price.toFixed(2)}
+                        </span>
+                      )}
+                    </label>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Included Ingredients */}
-            <div className="bg-white/5 rounded-lg p-4 space-y-3">
-              <h3 className="text-lg font-semibold text-[#F4A261]">What's Included</h3>
-              
-              <div>
-                <h4 className="text-sm font-medium text-gray-300 mb-1">Proteins:</h4>
-                <p className="text-sm text-gray-400">{bowlItem.includedIngredients.proteins.join(", ")}</p>
+            {/* Dressing Selection */}
+            {bowlItem.dressings && bowlItem.dressings.length > 0 && (
+              <div className="bg-white rounded-lg p-4 shadow-md">
+                <h3 className="text-lg font-semibold text-[#264653] mb-3">
+                  Choose Your Dressing
+                </h3>
+                <div className="space-y-2">
+                  {bowlItem.dressings.map((dressing: any) => (
+                    <label key={dressing.id} className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="dressing"
+                        checked={selectedDressing?.id === dressing.id}
+                        onChange={() => setSelectedDressing(dressing)}
+                        className="w-4 h-4 text-[#F4A261]"
+                      />
+                      <span className="flex-1">{dressing.name}</span>
+                      {dressing.price > 0 && (
+                        <span className="text-[#2A9D8F] font-semibold">
+                          +R{dressing.price.toFixed(2)}
+                        </span>
+                      )}
+                    </label>
+                  ))}
+                </div>
               </div>
-              
-              <div>
-                <h4 className="text-sm font-medium text-gray-300 mb-1">Vegetables:</h4>
-                <p className="text-sm text-gray-400">{bowlItem.includedIngredients.veggies.join(", ")}</p>
-              </div>
-              
-              <div>
-                <h4 className="text-sm font-medium text-gray-300 mb-1">Toppings:</h4>
-                <p className="text-sm text-gray-400">{bowlItem.includedIngredients.toppings.join(", ")}</p>
-              </div>
-              
-              <div>
-                <h4 className="text-sm font-medium text-gray-300 mb-1">Finishes:</h4>
-                <p className="text-sm text-gray-400">{bowlItem.includedIngredients.finishes.join(" + ")}</p>
-              </div>
-            </div>
-
-            {/* Base Selection - REQUIRED */}
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-[#F4A261]">
-                Choose Your Base <span className="text-red-400 text-sm">*Required</span>
-              </h3>
-              <div className="space-y-2">
-                {bowlItem.bases.map((base) => (
-                  <label key={base.id} className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="base"
-                      value={base.id}
-                      checked={selectedBase?.id === base.id}
-                      onChange={() => setSelectedBase(base)}
-                      className="w-4 h-4 text-[#F4A261] rounded"
-                      required
-                    />
-                    <span className="flex-1">{base.name}</span>
-                    <span className="text-green-300">
-                      {base.price > 0 ? `+R${base.price}` : "Included"}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Dressing Selection - REQUIRED */}
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-[#F4A261]">
-                Choose Your Dressing <span className="text-red-400 text-sm">*Required</span>
-              </h3>
-              <div className="space-y-2">
-                {bowlItem.dressings.map((dressing) => (
-                  <label key={dressing.id} className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="dressing"
-                      value={dressing.id}
-                      checked={selectedDressing?.id === dressing.id}
-                      onChange={() => setSelectedDressing(dressing)}
-                      className="w-4 h-4 text-[#F4A261] rounded"
-                      required
-                    />
-                    <span className="flex-1">{dressing.name}</span>
-                    <span className="text-green-300">
-                      {dressing.price > 0 ? `+R${dressing.price}` : "Included"}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
+            )}
 
             {/* Add-Ons */}
             {bowlItem.addOns && bowlItem.addOns.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-[#F4A261]">Additional Add-Ons</h3>
+              <div className="bg-white rounded-lg p-4 shadow-md">
+                <h3 className="text-lg font-semibold text-[#F4A261] mb-3">
+                  Additional Add-Ons
+                </h3>
                 <div className="space-y-2">
-                  {bowlItem.addOns.map((addOn) => (
+                  {bowlItem.addOns.map((addOn: any) => (
                     <label key={addOn.id} className="flex items-center gap-3 cursor-pointer">
                       <input
                         type="checkbox"
@@ -230,139 +221,133 @@ export default function BowlDetailPage() {
                         className="w-4 h-4 text-[#F4A261] rounded"
                       />
                       <span className="flex-1">{addOn.name}</span>
-                      <span className="text-green-300">+R{addOn.price}</span>
+                      <span className="text-[#2A9D8F] font-semibold">
+                        +R{(addOn.price || 0).toFixed(2)} each
+                      </span>
                     </label>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Fries Upsell */}
-            {bowlItem.friesUpsell && bowlItem.friesUpsell.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-[#F4A261]">Add Fries</h3>
+            {/* Fries */}
+            {(bowlItem as any).fries && (bowlItem as any).fries.length > 0 && (
+              <div className="bg-white rounded-lg p-4 shadow-md">
+                <h3 className="text-lg font-semibold text-[#264653] mb-3">
+                  Add Fries
+                </h3>
                 <div className="space-y-2">
-                  {bowlItem.friesUpsell.map((fries) => (
-                    <label key={fries.id} className="flex items-center gap-3 cursor-pointer">
+                  {(bowlItem as any).fries.map((fry: any) => (
+                    <label key={fry.id} className="flex items-center gap-3 cursor-pointer">
                       <input
-                        type="radio"
-                        name="fries"
-                        value={fries.id}
-                        checked={selectedFries?.id === fries.id}
-                        onChange={() => setSelectedFries(fries)}
+                        type="checkbox"
+                        checked={selectedFries?.id === fry.id}
+                        onChange={() => toggleFries(fry)}
                         className="w-4 h-4 text-[#F4A261] rounded"
                       />
-                      <span className="flex-1">{fries.name}</span>
-                      <span className="text-green-300">+R{fries.price}</span>
+                      <span className="flex-1">{fry.name}</span>
+                      <span className="text-[#2A9D8F] font-semibold">
+                        +R{fry.price.toFixed(2)} each
+                      </span>
                     </label>
                   ))}
-                  <button
-                    onClick={() => setSelectedFries(null)}
-                    className="text-sm text-gray-400 hover:text-white transition ml-7"
-                  >
-                    No fries, thanks
-                  </button>
                 </div>
               </div>
             )}
 
-            {/* Juice Upsell */}
-            {bowlItem.juiceUpsell && bowlItem.juiceUpsell.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-[#F4A261]">Add a Juice</h3>
-                <div className="space-y-4">
-                  {groupedJuices && Object.entries(groupedJuices).map(([juiceName, sizes]) => (
-                    <div key={juiceName}>
-                      <h4 className="font-medium mb-2 text-gray-300">{juiceName}</h4>
-                      <div className="space-y-2">
-                        {sizes.map((juice) => (
-                          <label key={juice.id} className="flex items-center gap-3 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="juice"
-                              value={juice.id}
-                              checked={selectedJuice?.id === juice.id}
-                              onChange={() => setSelectedJuice(juice)}
-                              className="w-4 h-4 text-[#F4A261] rounded"
-                            />
-                            <span className="flex-1">{juice.size}</span>
-                            <span className="text-green-300">+R{juice.price}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
+            {/* Juice */}
+            {(bowlItem as any).juices && (bowlItem as any).juices.length > 0 && (
+              <div className="bg-white rounded-lg p-4 shadow-md">
+                <h3 className="text-lg font-semibold text-[#264653] mb-3">
+                  Add Juice
+                </h3>
+                <div className="space-y-2">
+                  {(bowlItem as any).juices.map((juice: any) => (
+                    <label key={juice.id} className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedJuice?.id === juice.id}
+                        onChange={() => toggleJuice(juice)}
+                        className="w-4 h-4 text-[#F4A261] rounded"
+                      />
+                      <span className="flex-1">{juice.name} ({juice.size})</span>
+                      <span className="text-[#2A9D8F] font-semibold">
+                        +R{juice.price.toFixed(2)} each
+                      </span>
+                    </label>
                   ))}
-                  <button
-                    onClick={() => setSelectedJuice(null)}
-                    className="text-sm text-gray-400 hover:text-white transition ml-7"
-                  >
-                    No juice, thanks
-                  </button>
                 </div>
               </div>
             )}
-
-            {/* Quantity Selector */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">
-                Quantity
-              </label>
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
-                  className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"
-                >
-                  -
-                </button>
-                <span className="text-xl font-bold w-8 text-center">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(prev => prev + 1)}
-                  className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"
-                >
-                  +
-                </button>
-              </div>
-            </div>
 
             {/* Special Instructions */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">
+            <div className="bg-white rounded-lg p-4 shadow-md">
+              <h3 className="text-lg font-semibold text-[#264653] mb-3">
                 Special Instructions
-              </label>
+              </h3>
               <textarea
                 value={specialInstructions}
                 onChange={(e) => setSpecialInstructions(e.target.value)}
-                placeholder="Any allergies, dietary restrictions, or special requests..."
-                className="w-full h-20 px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-[#F4A261] resize-none"
+                className="w-full h-24 p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#F4A261] focus:border-transparent"
+                placeholder="Any special requests or allergies..."
               />
             </div>
 
-            {/* Total and Add to Cart */}
-            <div className="space-y-4">
-              <div className="flex justify-between items-center text-lg">
-                <span className="font-semibold">Total:</span>
-                <span className="text-2xl font-bold text-[#F4A261]">
-                  R{itemTotal}
-                </span>
+            {/* Price Breakdown */}
+            <div className="bg-white rounded-lg p-4 shadow-md">
+              <h3 className="text-lg font-semibold text-[#264653] mb-3">
+                Price Breakdown
+              </h3>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span>Base Bowl:</span>
+                  <span>R{basePrice.toFixed(2)} × {quantity}</span>
+                </div>
+                {baseExtra > 0 && (
+                  <div className="flex justify-between text-[#2A9D8F]">
+                    <span>{selectedBase?.name}:</span>
+                    <span>+R{baseExtra.toFixed(2)} × {quantity}</span>
+                  </div>
+                )}
+                {selectedAddOns.length > 0 && (
+                  <div className="flex justify-between text-[#2A9D8F]">
+                    <span>Add-ons:</span>
+                    <span>+R{addOnsTotal.toFixed(2)} × {quantity}</span>
+                  </div>
+                )}
+                {selectedFries && (
+                  <div className="flex justify-between text-[#2A9D8F]">
+                    <span>{selectedFries.name}:</span>
+                    <span>+R{selectedFries.price.toFixed(2)} × {quantity}</span>
+                  </div>
+                )}
+                {selectedJuice && (
+                  <div className="flex justify-between text-[#2A9D8F]">
+                    <span>{selectedJuice.name}:</span>
+                    <span>+R{selectedJuice.price.toFixed(2)} × {quantity}</span>
+                  </div>
+                )}
+                <div className="border-t pt-2 mt-2">
+                  <div className="flex justify-between text-xl font-bold text-[#264653]">
+                    <span>Total:</span>
+                    <span>R{itemTotal.toFixed(2)}</span>
+                  </div>
+                </div>
               </div>
-              
-              <button
-                onClick={handleAddToCart}
-                disabled={!selectedBase || !selectedDressing}
-                className={`w-full font-bold py-4 px-6 rounded-lg transition text-lg ${
-                  !selectedBase || !selectedDressing
-                    ? "bg-gray-500 cursor-not-allowed"
-                    : "bg-[#F4A261] hover:bg-[#e68e42] text-white"
-                }`}
-              >
-                {!selectedBase || !selectedDressing
-                  ? "Select Base & Dressing First"
-                  : `Add to Cart - R${itemTotal}`}
-              </button>
             </div>
+
+            {/* Add to Cart Button */}
+            <button
+              onClick={handleAddToCart}
+              className="w-full py-4 bg-gradient-to-r from-[#E9C46A] to-[#F4A261] text-white text-lg font-bold rounded-lg hover:from-[#F4A261] hover:to-[#E76F51] transition-all duration-300 shadow-lg hover:shadow-xl"
+            >
+              Add to Cart - R{itemTotal.toFixed(2)}
+            </button>
           </div>
         </div>
       </div>
-    </main>
+    </div>
   );
-}
+};
+
+export default BowlPage;

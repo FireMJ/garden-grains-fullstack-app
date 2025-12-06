@@ -1,9 +1,10 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { useCart } from "@/context/CartContext";
+import { useCart } from "@/contexts/CartContext";
 import { stirfries, stirfryAddOns } from "@/data/stirfryData";
 
 interface AddOn {
@@ -72,7 +73,7 @@ export default function StirfryDetailPage() {
   }
 
   // Group juice upsells by size for better organization
-  const juiceBySize = stirfryItem.juiceUpsell?.reduce((acc, juice) => {
+  const juiceBySize = stirfryItem.juiceUpsell?.reduce((acc: number, juice) => {
     if (!acc[juice.size]) {
       acc[juice.size] = [];
     }
@@ -82,7 +83,7 @@ export default function StirfryDetailPage() {
 
   // Calculate total price INCLUDING base, add-ons, fries upsell, and juice upsell
   const baseTotal = selectedBase ? selectedBase.price : 0;
-  const addOnsTotal = selectedAddOns.reduce((sum, addon) => sum + addon.price, 0);
+  const addOnsTotal = selectedAddOns.reduce((sum: number, addon) => sum + addon.price, 0);
   const friesTotal = selectedFries ? selectedFries.price : 0;
   const juiceTotal = selectedJuice ? selectedJuice.price : 0;
   const itemTotal = (stirfryItem.price + baseTotal + addOnsTotal + friesTotal + juiceTotal) * quantity;

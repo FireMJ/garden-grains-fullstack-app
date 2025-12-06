@@ -1,9 +1,10 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { useCart } from "@/context/CartContext";
+import { useCart } from "@/contexts/CartContext";
 import { wraps } from "@/app/menu/data";
 
 export default function WrapDetailPage() {
@@ -40,7 +41,7 @@ export default function WrapDetailPage() {
   const friesOptions = wrapItem.friesUpsell.filter(item => item.price > 0);
   const dipOptions = wrapItem.friesUpsell.filter(item => item.price === 0 && item.optional);
 
-  const addOnsTotal = selectedAddOns.reduce((sum, addon) => sum + addon.price, 0);
+  const addOnsTotal = selectedAddOns.reduce((sum: number, addon) => sum + addon.price, 0);
   const friesTotal = selectedFries ? selectedFries.price : 0;
   const juiceTotal = selectedJuice ? selectedJuice.option.price : 0;
   const itemTotal = (wrapItem.price + addOnsTotal + friesTotal + juiceTotal) * quantity;

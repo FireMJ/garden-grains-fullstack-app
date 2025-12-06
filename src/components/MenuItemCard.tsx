@@ -62,8 +62,8 @@ const MenuItemCard = ({
         : 0;
     const addonsTotal = Array.isArray(addOns)
       ? addOns
-          .filter((a) => selectedAddOns.includes(a.name))
-          .reduce((sum, a) => sum + a.price, 0)
+          .filter((a: any) => selectedAddOns.includes(a.name))
+          .reduce((sum: number, a) => sum + a.price, 0)
       : 0;
     return basePrice + sizePrice + addonsTotal;
   };
@@ -179,7 +179,7 @@ const MenuItemCard = ({
         {/* ✅ Tags */}
         {hasTags && (
           <div className="flex flex-wrap gap-2 mt-2">
-            {tags.map((tag, i) => (
+            {tags.map((tag: any, i) => (
               <span
                 key={i}
                 className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full"

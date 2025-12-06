@@ -1,35 +1,50 @@
-"use client";
+'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useAuth } from './AuthContext';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { useAuth } from '@/context/AuthContext';
 
 interface UserData {
-  uid: string;
+  id: string;
+  name: string;
   email: string;
-  role?: string;
-  displayName?: string;
-  photoURL?: string;
-  preferences?: any;
+  phone?: string;
+  address?: string;
+  pastOrdersCount: number;
 }
 
 interface UserDataContextType {
   userData: UserData | null;
   loading: boolean;
+  refreshUserData: () => void;
 }
 
 const UserDataContext = createContext<UserDataContextType>({
   userData: null,
   loading: true,
+  refreshUserData: () => {},
 });
 
-export const useUserData = () => useContext(UserDataContext);
+export function useUserData() {
+  return useContext(UserDataContext);
+}
 
-export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export function UserDataProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const refreshUserData = () => {
+    if (!user) {
+      setUserData(null);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    // Force re-fetch by toggling loading state
+    setTimeout(() => setLoading(false), 100);
+  };
 
   useEffect(() => {
     if (!user) {
@@ -40,11 +55,25 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     const unsubscribe = onSnapshot(
       doc(db, 'users', user.uid),
-      (doc) => {
-        if (doc.exists()) {
-          setUserData(doc.data() as UserData);
+      (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          const data = docSnapshot.data();
+          setUserData({
+            id: docSnapshot.id,
+            name: data.name || user.displayName || '',
+            email: data.email || user.email || '',
+            phone: data.phone || '',
+            address: data.address || '',
+            pastOrdersCount: data.pastOrdersCount || 0,
+          });
         } else {
-          setUserData(null);
+          // Create default user data
+          setUserData({
+            id: user.uid,
+            name: user.displayName || '',
+            email: user.email || '',
+            pastOrdersCount: 0,
+          });
         }
         setLoading(false);
       },
@@ -58,8 +87,8 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [user]);
 
   return (
-    <UserDataContext.Provider value={{ userData, loading }}>
+    <UserDataContext.Provider value={{ userData, loading, refreshUserData }}>
       {children}
     </UserDataContext.Provider>
   );
-};
+}

@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
 
     // Calculate statistics
     const totalOrders = orders.length;
-    const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+    const totalRevenue = orders.reduce((sum: number, order) => sum + (order.total || 0), 0);
     const pendingOrders = orders.filter(order => order.status === 'PENDING').length;
     const completedOrders = orders.filter(order => order.status === 'DELIVERED').length;
     const recentOrders = orders.slice(0, 5);

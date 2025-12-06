@@ -1,9 +1,10 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { useCart } from "@/context/CartContext";
+import { useCart } from "@/contexts/CartContext";
 import { stirfries, stirfryAddOns } from "@/data/stirfryData";
 
 interface AddOn {
@@ -67,7 +68,7 @@ export default function StirfryDetailPage() {
   // Calculate total price INCLUDING all selections
   const basePrice = stirfryItem.price;
   const baseExtra = selectedBase?.price || 0;
-  const addOnsTotal = selectedAddOns.reduce((sum, addon) => sum + addon.price, 0);
+  const addOnsTotal = selectedAddOns.reduce((sum: number, addon) => sum + addon.price, 0);
   const friesTotal = selectedFries ? selectedFries.price : 0;
   const juiceTotal = selectedJuice ? selectedJuice.price : 0;
   
@@ -103,7 +104,7 @@ export default function StirfryDetailPage() {
   };
 
   // Group juices by size for better display
-  const groupedJuices = stirfryItem.juiceUpsell?.reduce((acc, juice) => {
+  const groupedJuices = stirfryItem.juiceUpsell?.reduce((acc: number, juice) => {
     if (!acc[juice.size]) {
       acc[juice.size] = [];
     }
@@ -165,7 +166,7 @@ export default function StirfryDetailPage() {
               {/* Tags */}
               {stirfryItem.tags && stirfryItem.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {stirfryItem.tags.map((tag, index) => (
+                  {stirfryItem.tags.map((tag: any, index) => (
                     <span key={index} className="bg-[#6C7B58] text-white text-xs px-2 py-1 rounded">
                       {tag}
                     </span>

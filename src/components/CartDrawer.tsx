@@ -1,6 +1,6 @@
 "use client";
 
-import { useCart } from "@/context/CartContext";
+import { useCart, type CartItem } from "@/contexts/CartContext";
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -8,7 +8,7 @@ interface CartDrawerProps {
 }
 
 export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
-  const { cartItems, totalItems, totalPrice, removeFromCart, updateQuantity } = useCart();
+  const { cart: cartItems, removeFromCart, updateQuantity } = useCart();
   const cart = cartItems;
 
   if (!isOpen) return null;

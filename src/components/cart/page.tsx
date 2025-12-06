@@ -1,16 +1,19 @@
 import Image from "next/image";
 "use client";
 import React from "react";
-import { useCart } from "@/context/CartContext";
+import { useCart, type CartItem } from "@/contexts/CartContext";
 import Link from "next/link";
 
 export default function CartPage() {
-  const { cartItems, totalItems, totalPrice, removeFromCart, clearCart } = useCart();
+  const { cart: cartItems, removeFromCart, clearCart } = useCart();
+  // Calculate values since they are not provided by CartContext
+  const totalItems = (cartItems || []).reduce((total: number, item: CartItem) => total + (item.quantity || 1), 0);
+  const totalPrice = (cartItems || []).reduce((total: number, item: CartItem) => total + (item.price || 0) * (item.quantity || 1), 0);
   const cart = cartItems;
 
   // calculate total
-  const total = totalPrice || cart.reduce((sum, item) => {
-    const addOnsTotal = item.addOns?.reduce((a, o) => a + o.price, 0) || 0;
+  const total = totalPrice || cart.reduce((sum: number, item) => {
+    const addOnsTotal = item.addOns?.reduce((a: number, o: { price?: number }) => a + (o.price || 0), 0) || 0;
     return sum + (item.price + addOnsTotal) * item.quantity;
   }, 0);
 
@@ -32,7 +35,7 @@ export default function CartPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          {cart.map((item, index) => (
+          {cart.map((item: any, index) => (
             <div
               key={index}
               className="bg-white rounded-xl shadow-md p-4 flex gap-4"

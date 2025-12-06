@@ -1,9 +1,10 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useCart } from "@/context/CartContext";
+import { useCart, type CartItem } from "@/contexts/CartContext";
 
 const menuCategories = [
   {
@@ -163,7 +164,10 @@ const menuCategories = [
 ];
 
 export default function MenuPage() {
-  const { cartItems, totalItems, totalPrice } = useCart(); // Fixed: using correct cart context properties
+  const { cart: cartItems } = useCart(); // Fixed: using correct cart context properties
+  // Calculate values since they are not provided by CartContext
+  const totalItems = (cartItems || []).reduce((total: number, item: CartItem) => total + (item.quantity || 1), 0);
+  const totalPrice = (cartItems || []).reduce((total: number, item: CartItem) => total + (item.price || 0) * (item.quantity || 1), 0);
 
   return (
     <div className="min-h-screen bg-[#1E4259] pt-20">
@@ -230,7 +234,7 @@ export default function MenuPage() {
 
         {/* Menu Categories Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-          {menuCategories.map((category, index) => (
+          {menuCategories.map((category: any, index) => (
             <Link
               key={category.title}
               href={category.href}
@@ -276,7 +280,7 @@ export default function MenuPage() {
                 <div className="border-t border-gray-100 pt-4">
                   <h4 className="text-sm font-semibold text-gray-700 mb-2">Popular Items:</h4>
                   <ul className="text-sm text-gray-600 space-y-1">
-                    {category.items.slice(0, 3).map((item, i) => (
+                    {category.items.slice(0, 3).map((item: any, i) => (
                       <li key={i} className="flex items-center">
                         <span className="w-1.5 h-1.5 bg-[#F4A261] rounded-full mr-2" />
                         {item}

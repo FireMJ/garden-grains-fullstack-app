@@ -1,9 +1,10 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { useCart } from "@/context/CartContext";
+import { useCart } from "@/contexts/CartContext";
 import { pastas, pastaAddOns } from "@/data/pastasData";
 import { friesUpsellOptions, juiceUpsellOptions } from "@/data/bowlsData";
 
@@ -54,7 +55,7 @@ export default function PastaDetailPage() {
 
   // Calculate total price INCLUDING all selections
   const basePrice = pastaItem.price;
-  const addOnsTotal = selectedAddOns.reduce((sum, addOn) => sum + addOn.price, 0);
+  const addOnsTotal = selectedAddOns.reduce((sum: number, addOn) => sum + addOn.price, 0);
   const friesTotal = selectedFries ? selectedFries.price : 0;
   const juiceTotal = selectedJuice ? selectedJuice.price : 0;
   
@@ -89,7 +90,7 @@ export default function PastaDetailPage() {
   );
 
   // Group juices by type for better display
-  const groupedJuices = juiceUpsellOptions.reduce((acc, juice) => {
+  const groupedJuices = juiceUpsellOptions.reduce((acc: Record<string, any[]>, juice) => {
     if (!acc[juice.name]) {
       acc[juice.name] = [];
     }

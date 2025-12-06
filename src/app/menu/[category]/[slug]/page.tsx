@@ -1,9 +1,10 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { useCart } from "@/context/CartContext";
+import { useCart, type CartItem } from "@/contexts/CartContext";
 
 // This is a generic dynamic page for menu items that don't have specific pages
 // For breakfast and bowls, use their specific pages instead
@@ -47,7 +48,7 @@ export default function MenuItemDetailPage() {
 
   const handleAddToCart = () => {
     // Calculate total including add-ons and size
-    const addOnsTotal = selectedAddOns.reduce((sum, addOn) => sum + addOn.price, 0);
+    const addOnsTotal = selectedAddOns.reduce((sum: number, addOn) => sum + addOn.price, 0);
     const sizePrice = availableSizes.find(size => size.id === selectedSize)?.price || 0;
     const itemTotal = (menuItem.price + addOnsTotal + sizePrice) * quantity;
 

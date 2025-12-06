@@ -1,9 +1,12 @@
 "use client";
 
-import { useCart } from "@/context/CartContext";
+import { useCart, type CartItem } from "@/contexts/CartContext";
 
 export default function CheckoutSummary() {
-  const { cartItems, totalItems, totalPrice } = useCart();
+  const { cart: cartItems } = useCart();
+  // Calculate values since they are not provided by CartContext
+  const totalItems = (cartItems || []).reduce((total: number, item: CartItem) => total + (item.quantity || 1), 0);
+  const totalPrice = (cartItems || []).reduce((total: number, item: CartItem) => total + (item.price || 0) * (item.quantity || 1), 0);
   const cart = cartItems;
   const cartTotal = totalPrice;
   const discountedTotal = totalPrice; // Assuming no discount logic yet

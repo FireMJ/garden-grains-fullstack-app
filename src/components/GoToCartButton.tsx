@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useCart } from "@/context/CartContext";
+import { useCart } from "@/contexts/CartContext";
 import { ShoppingCart } from "lucide-react";
 import CartDrawer from "@/components/CartDrawer";
 
@@ -11,17 +11,19 @@ interface GoToCartButtonProps {
 }
 
 const GoToCartButton: React.FC<GoToCartButtonProps> = ({ visible, duration = 4000 }) => {
-  const { cartItems, totalItems, totalPrice } = useCart();
+  const { cart: cartItems } = useCart();
+  const totalItems = (cartItems || []).reduce((total: number, item: any) => total + (item.quantity || 1), 0);
+  const totalPrice = (cartItems || []).reduce((total: number, item: any) => total + (item.price || 0) * (item.quantity || 1), 0);
   const cart = cartItems;
   const [show, setShow] = useState(visible);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const itemCount = cart.reduce((sum: number, item) => sum + item.quantity, 0);
   const total = cart.reduce(
     (sum, item) =>
       sum +
       item.price * item.quantity +
-      (item.addOns?.reduce((a, o) => a + o.price, 0) ?? 0),
+      (item.addOns?.reduce((a: number, o) => a + o.price, 0) ?? 0),
     0
   );
 

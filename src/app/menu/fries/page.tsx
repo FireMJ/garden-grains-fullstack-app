@@ -1,15 +1,19 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import React from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { useCart } from "@/context/CartContext";
+import { useCart, type CartItem } from "@/contexts/CartContext";
 import { fries } from "@/data/friesData";
 
 export default function FriesListPage() {
   const router = useRouter();
-  const { cartItems, totalItems, totalPrice } = useCart(); // Fixed: using correct cart context properties
+  const { cart: cartItems } = useCart(); // Fixed: using correct cart context properties
+  // Calculate totals since they are not provided by CartContext
+  const totalItems = (cartItems || []).reduce((total: number, item: CartItem) => total + (item.quantity || 1), 0);
+  const totalPrice = (cartItems || []).reduce((total: number, item: CartItem) => total + (item.price || 0) * (item.quantity || 1), 0);
 
   const handleNavigate = (slug: string) => {
     router.push(`/menu/fries/${slug}`);
@@ -90,7 +94,7 @@ export default function FriesListPage() {
             const inCart = cartItems.filter(
               (c) => c.name.toLowerCase() === item.name.toLowerCase()
             );
-            const itemCount = inCart.reduce((sum, i) => sum + i.quantity, 0);
+            const itemCount = inCart.reduce((sum: number, i) => sum + i.quantity, 0);
             const itemTotal = inCart.reduce(
               (sum, i) => sum + ((i.price || 0) * i.quantity),
               0

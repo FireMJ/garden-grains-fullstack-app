@@ -1,4 +1,3 @@
-import { getAuth } from "firebase/auth";
-import { app } from "./firebase"; // make sure this points to your firebase.ts
-
-export const auth = getAuth(app);
+// Re-export auth from the main Firebase configuration
+import { auth } from './firebase';
+export { auth };

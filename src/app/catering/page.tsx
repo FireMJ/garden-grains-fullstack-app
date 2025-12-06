@@ -169,7 +169,7 @@ export default function CateringPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   >
                     <option value="">Select event type</option>
-                    {eventTypes.map((event, index) => (
+                    {eventTypes.map((event: any, index) => (
                       <option key={index} value={event.title}>
                         {event.title}
                       </option>
@@ -189,7 +189,7 @@ export default function CateringPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   >
                     <option value="">Select meal course</option>
-                    {mealCourses.map((course, index) => (
+                    {mealCourses.map((course: any, index) => (
                       <option key={index} value={course.title}>
                         {course.title}
                       </option>

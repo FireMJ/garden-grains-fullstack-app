@@ -1,24 +1,28 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
-import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
+export const dynamic = "force-dynamic";
 
-import { app } from "@/lib/firebase"; // ✅ Make sure this points to your Firebase config
+import React, { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
 
 export default function SignInPage() {
-  const auth = getAuth(app);
-  const db = getFirestore(app);
   const router = useRouter();
-
+  const searchParams = useSearchParams();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -26,6 +30,8 @@ export default function SignInPage() {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isClient) return;
+    
     setError("");
     setLoading(true);
 
@@ -50,8 +56,9 @@ export default function SignInPage() {
         await setDoc(userRef, { firstOrderDiscountApplied: false }, { merge: true });
       }
 
-      // ✅ Redirect to homepage
-      router.push("/");
+      // ✅ Redirect to homepage or returnUrl
+      const returnUrl = searchParams.get("returnUrl") || "/";
+      router.push(returnUrl);
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Sign in failed. Please try again.");
@@ -59,6 +66,19 @@ export default function SignInPage() {
       setLoading(false);
     }
   };
+
+  // Show loading state on server
+  if (!isClient) {
+    return (
+      <main className="min-h-screen bg-[#1E4259] flex items-center justify-center px-4 py-10 text-white">
+        <div className="bg-[#FAF7F2] text-[#1E4259] rounded-2xl shadow-xl p-8 w-full max-w-md">
+          <div className="flex flex-col items-center mb-6">
+            <h1 className="text-3xl font-bold mb-1">Loading...</h1>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#1E4259] flex items-center justify-center px-4 py-10 text-white">
@@ -76,6 +96,7 @@ export default function SignInPage() {
             name="email"
             placeholder="Email Address"
             required
+            value={formData.email}
             onChange={handleChange}
             className="border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#F4A261]"
           />
@@ -84,6 +105,7 @@ export default function SignInPage() {
             name="password"
             placeholder="Password"
             required
+            value={formData.password}
             onChange={handleChange}
             className="border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#F4A261]"
           />
@@ -92,8 +114,8 @@ export default function SignInPage() {
 
           <button
             type="submit"
-            disabled={loading}
-            className="bg-[#F4A261] hover:bg-[#e68e42] text-white font-semibold py-3 rounded-lg transition duration-300 shadow-lg"
+            disabled={loading || !isClient}
+            className="bg-[#F4A261] hover:bg-[#e68e42] text-white font-semibold py-3 rounded-lg transition duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Signing in..." : "Sign In"}
           </button>

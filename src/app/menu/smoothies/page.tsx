@@ -1,15 +1,19 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import React from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { useCart } from "@/context/CartContext";
+import { useCart, type CartItem } from "@/contexts/CartContext";
 import { smoothies } from "@/data/smoothiesData";
 
 export default function SmoothiesListPage() {
   const router = useRouter();
-  const { cartItems, totalItems, totalPrice } = useCart(); // Fixed: using correct cart context properties
+  const { cart: cartItems } = useCart(); // Fixed: using correct cart context properties
+  // Calculate values since they are not provided by CartContext
+  const totalItems = (cartItems || []).reduce((total: number, item: CartItem) => total + (item.quantity || 1), 0);
+  const totalPrice = (cartItems || []).reduce((total: number, item: CartItem) => total + (item.price || 0) * (item.quantity || 1), 0);
 
   const handleNavigate = (slug: string) => {
     router.push(`/menu/smoothies/${slug}`);
@@ -71,9 +75,9 @@ export default function SmoothiesListPage() {
         {/* Menu Items Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {smoothies.map((item) => {
-            const inCart = cartItems.filter((c) => c.name.toLowerCase() === item.name.toLowerCase());
-            const itemCount = inCart.reduce((sum, i) => sum + i.quantity, 0);
-            const itemTotal = inCart.reduce((sum, i) => sum + ((i.price || 0) * i.quantity), 0);
+            const inCart = cartItems.filter((c: any) => c.name.toLowerCase() === item.name.toLowerCase());
+            const itemCount = inCart.reduce((sum: number, i) => sum + i.quantity, 0);
+            const itemTotal = inCart.reduce((sum: number, i) => sum + ((i.price || 0) * i.quantity), 0);
 
             // Show medium price as base price (350ml)
             const basePrice = item.sizes.find(s => s.label === "350ml")?.price ?? item.sizes[0].price;

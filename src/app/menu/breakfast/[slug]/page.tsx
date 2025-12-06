@@ -1,9 +1,10 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { useCart } from "@/context/CartContext";
+import { useCart } from "@/contexts/CartContext";
 import { breakfastItems as breakfasts } from "@/data/breakfastData";
 
 interface AddOn {
@@ -54,7 +55,7 @@ export default function BreakfastDetailPage() {
   }
 
   // Calculate total price INCLUDING add-ons and upsells
-  const addOnsTotal = selectedAddOns.reduce((sum, addon) => sum + addon.price, 0);
+  const addOnsTotal = selectedAddOns.reduce((sum: number, addon) => sum + addon.price, 0);
   const juiceTotal = selectedJuice ? selectedJuice.option.price : 0;
   const itemTotal = (breakfastItem.price + addOnsTotal + juiceTotal) * quantity;
 
@@ -96,10 +97,10 @@ export default function BreakfastDetailPage() {
 
   // Sample add-ons
   const availableAddOns: AddOn[] = [
-    { id: "extra-honey", name: "Extra Honey", price: 5.00 },
-    { id: "extra-nuts", name: "Extra Nuts & Seeds", price: 10.00 },
-    { id: "protein-powder", name: "Protein Powder", price: 15.00 },
-    { id: "extra-fruit", name: "Extra Fresh Fruit", price: 12.00 }
+    { id: "extra-honey", name: "Extra Honey", price: 10.00 },
+    { id: "extra-nuts", name: "Extra Nuts & Seeds", price: 20.00 },
+    { id: "protein-powder", name: "Protein Powder", price: 20.00 },
+    { id: "extra-fruit", name: "Extra Fresh Berries", price: 12.00 }
   ];
 
   // Sample juice upsells
@@ -107,9 +108,9 @@ export default function BreakfastDetailPage() {
     {
       size: "Regular",
       options: [
-        { id: "fresh-orange", name: "Fresh Orange Juice", price: 25.00 },
-        { id: "apple-carrot", name: "Apple Carrot Ginger", price: 30.00 },
-        { id: "green-detox", name: "Green Detox", price: 35.00 }
+        { id: "fresh-orange", name: "Fresh Orange Juice", price: 55.00 },
+        { id: "apple-carrot", name: "Apple Carrot Ginger", price: 55.00 },
+        { id: "green-detox", name: "The Green Mile Juice", price: 55.00 }
       ]
     }
   ];

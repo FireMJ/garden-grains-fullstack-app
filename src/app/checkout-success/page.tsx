@@ -1,80 +1,72 @@
 "use client";
 
-import { Suspense } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { CheckCircle } from "lucide-react";
 
-function CheckoutSuccessContent() {
+const CheckoutSuccessPage = () => {
+  const [orderNumber, setOrderNumber] = useState("");
+
+  useEffect(() => {
+    // Generate order number on client only
+    setOrderNumber(`ORD-${Date.now().toString().slice(-8)}`);
+  }, []);
+
   return (
-    <main className="min-h-screen bg-[#1E4259] text-white py-12 px-4">
-      <div className="max-w-2xl mx-auto text-center">
-        <div className="bg-[#6c8665] rounded-2xl p-8 shadow-lg">
-          <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg
-              className="w-8 h-8 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
+    <div className="min-h-screen bg-gradient-to-b from-[#264653] to-[#2A9D8F] py-8">
+      <div className="container mx-auto px-4">
+        <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8 text-center">
+          <div className="flex justify-center mb-6">
+            <CheckCircle className="w-20 h-20 text-green-500" />
           </div>
           
-          <h1 className="text-3xl font-bold mb-4 text-[#F4A261]">
-            Order Successful!
+          <h1 className="text-3xl font-bold text-gray-800 mb-4">
+            Order Confirmed! 🎉
           </h1>
           
-          <p className="text-lg mb-6 text-gray-100">
-            Thank you for your order. Your order has been placed successfully.
+          <p className="text-gray-600 mb-6">
+            Thank you for your order. We're preparing your delicious meal now.
           </p>
-
-          <div className="bg-[#1E4259] rounded-lg p-4 mb-6">
-            <p className="text-sm opacity-75">Order Reference</p>
-            <p className="font-mono text-sm">ORD-{Date.now().toString().slice(-8)}</p>
-          </div>
-
-          <div className="space-y-4">
-            <p className="text-gray-200">
-              You will receive an order confirmation shortly.
+          
+          <div className="bg-gray-50 rounded-lg p-6 mb-8">
+            <h2 className="text-lg font-semibold text-gray-700 mb-2">
+              Order Details
+            </h2>
+            <p className="text-gray-600">
+              Order Number:{" "}
+              <span className="font-mono font-bold text-[#264653]">
+                {orderNumber || "Loading..."}
+              </span>
             </p>
+            <p className="text-gray-600 mt-2">
+              Estimated Delivery: 30-45 minutes
+            </p>
+          </div>
+          
+          <div className="space-y-4">
+            <Link
+              href="/tracking/ORD-123456"
+              className="block w-full py-3 bg-[#E9C46A] text-white font-semibold rounded-lg hover:bg-[#F4A261] transition-colors"
+            >
+              Track Your Order
+            </Link>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
-              <Link
-                href="/menu"
-                className="bg-[#F4A261] text-white px-6 py-3 rounded-lg hover:bg-[#e68e42] transition font-semibold"
-              >
-                Continue Shopping
-              </Link>
-              
-              <Link
-                href="/"
-                className="bg-transparent border border-[#F4A261] text-[#F4A261] px-6 py-3 rounded-lg hover:bg-[#F4A261] hover:text-white transition font-semibold"
-              >
-                Return Home
-              </Link>
-            </div>
+            <Link
+              href="/menu"
+              className="block w-full py-3 border-2 border-[#E9C46A] text-[#264653] font-semibold rounded-lg hover:bg-[#E9C46A] hover:text-white transition-colors"
+            >
+              Continue Shopping
+            </Link>
+            
+            <p className="text-sm text-gray-500 mt-6">
+              A confirmation email has been sent to your inbox.
+              For any questions, contact us at support@gardengrains.com
+            </p>
           </div>
         </div>
       </div>
-    </main>
+    </div>
   );
-}
+};
 
-export default function CheckoutSuccessPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#1E4259] text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-[#F4A261] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p>Loading order details...</p>
-        </div>
-      </div>
-    }>
-      <CheckoutSuccessContent />
-    </Suspense>
-  );
-}
+export default CheckoutSuccessPage;

@@ -36,14 +36,13 @@ export interface BreakfastItem {
 
 // ✅ Common add-ons for breakfast
 export const breakfastAddOns: AddOn[] = [
-  { id: "breakfast-addon1", name: "extra bacon", price: 25 },
+  { id: "breakfast-addon1", name: "extra macon", price: 25 },
   { id: "breakfast-addon2", name: "extra egg", price: 15 },
   { id: "breakfast-addon3", name: "extra avocado", price: 20 },
-  { id: "breakfast-addon4", name: "extra cheese", price: 18 },
+  { id: "breakfast-addon4", name: "extra cheese", price: 25 },
   { id: "breakfast-addon5", name: "extra toast", price: 12 },
   { id: "breakfast-addon6", name: "extra mushrooms", price: 15 },
   { id: "breakfast-addon7", name: "extra tomato", price: 10 },
-  { id: "breakfast-addon8", name: "hash browns", price: 18 },
   { id: "breakfast-addon9", name: "extra honey", price: 8 },
   { id: "breakfast-addon10", name: "extra nuts", price: 15 },
   { id: "breakfast-addon11", name: "extra seeds", price: 12 },
@@ -55,8 +54,8 @@ export const breakfastAddOns: AddOn[] = [
 // ✅ Fries upsell options for breakfast
 export const breakfastFriesUpsell: FriesUpsell[] = [
   { id: "breakfast-fries1", name: "No fries", price: 0 },
-  { id: "breakfast-fries2", name: "Regular Fries", price: 25 },
-  { id: "breakfast-fries3", name: "Sweet Potato Fries", price: 35 },
+  { id: "breakfast-fries2", name: "Regular Fries", price: 39 },
+  { id: "breakfast-fries3", name: "Sweet Potato Fries", price: 49 },
 ];
 
 // ✅ Juice upsell options for breakfast
@@ -64,28 +63,28 @@ export const breakfastJuiceUpsell: JuiceUpsell[] = [
   {
     size: "250ml",
     options: [
-      { id: "breakfast-juice1", name: "Orange Juice", price: 35 },
-      { id: "breakfast-juice2", name: "Apple Juice", price: 32 },
-      { id: "breakfast-juice3", name: "Carrot & Ginger Juice", price: 38 },
-      { id: "breakfast-juice4", name: "Mango Juice", price: 37 },
+      { id: "breakfast-juice1", name: "Orange Juice", price: 55 },
+      { id: "breakfast-juice2", name: "Apple & Lemon Juice", price: 55 },
+      { id: "breakfast-juice3", name: "The Green Mile", price: 55 },
+      { id: "breakfast-juice4", name: "Upbeat Juice", price: 56 },
     ],
   },
   {
     size: "350ml",
     options: [
-      { id: "breakfast-juice5", name: "Orange Juice", price: 45 },
-      { id: "breakfast-juice6", name: "Apple Juice", price: 42 },
-      { id: "breakfast-juice7", name: "Carrot & Ginger Juice", price: 48 },
-      { id: "breakfast-juice8", name: "Mango Juice", price: 47 },
+      { id: "breakfast-juice5", name: "Orange Juice", price: 69 },
+      { id: "breakfast-juice6", name: "Apple Juice", price: 69 },
+      { id: "breakfast-juice7", name: "The Green Mile", price: 69 },
+      { id: "breakfast-juice8", name: "Upbeat Juice", price: 69 },
     ],
   },
   {
     size: "500ml",
     options: [
-      { id: "breakfast-juice9", name: "Orange Juice", price: 55 },
-      { id: "breakfast-juice10", name: "Apple Juice", price: 52 },
-      { id: "breakfast-juice11", name: "Carrot & Ginger Juice", price: 58 },
-      { id: "breakfast-juice12", name: "Mango Juice", price: 57 },
+      { id: "breakfast-juice9", name: "Orange Juice", price: 89 },
+      { id: "breakfast-juice10", name: "Apple Juice", price: 89 },
+      { id: "breakfast-juice11", name: "The Green Mile", price: 89 },
+      { id: "breakfast-juice12", name: "Upbeat Juice", price: 89 },
     ],
   },
 ];
@@ -154,8 +153,8 @@ export const breakfastItems: BreakfastItem[] = [
   {
     id: "breakfast6",
     name: "Classic Breakfast",
-    description: "Two free-range eggs, crispy bacon, grilled tomato, toast, and roasted mushrooms. A traditional favorite to start your day right.",
-    price: 85,
+    description: "Two free-range eggs, crispy macon, grilled tomato, toast, roasted mushrooms and two slices of toasted sourdough bread. A traditional favorite to start your day right.",
+    price: 115,
     image: "/images/breakfast/classic-breakfast.jpg",
     slug: "classic-breakfast",
     tags: ["popular", "protein", "traditional"],
@@ -166,8 +165,8 @@ export const breakfastItems: BreakfastItem[] = [
   {
     id: "breakfast7",
     name: "Avocado Toast",
-    description: "Smashed avocado on artisan bread with cherry tomatoes and microgreens. Simple, fresh, and delicious.",
-    price: 65,
+    description: "Smashed avocado on sourdough bread with cherry tomatoes and microgreens. Simple, fresh, and delicious.",
+    price: 95,
     image: "/images/breakfast/avocado-toast.jpg",
     slug: "avocado-toast",
     tags: ["vegetarian", "healthy", "fresh"],
@@ -179,7 +178,7 @@ export const breakfastItems: BreakfastItem[] = [
     id: "breakfast8",
     name: "Breakfast Burrito",
     description: "Scrambled eggs, black beans, cheese, and salsa wrapped in a tortilla. Portable and protein-packed.",
-    price: 80,
+    price: 117,
     image: "/images/breakfast/breakfast-burrito.jpg",
     slug: "breakfast-burrito",
     tags: ["hearty", "protein", "portable"],

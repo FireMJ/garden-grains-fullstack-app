@@ -1,11 +1,11 @@
 "use client";
 
 import Link from 'next/link';
-import { useCart } from '@/context/CartContext';
+import { useCart } from "@/contexts/CartContext"';
 
 export default function FloatingCartButton() {
-  const { cartItems, totalItems, totalPrice } = useCart();
-  const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const { cart: cartItems, totalItems, totalPrice } = useCart();
+  const itemCount = cartItems.reduce((sum: number, item) => sum + item.quantity, 0);
 
   // Don't show if cart is empty
   if (itemCount === 0) {

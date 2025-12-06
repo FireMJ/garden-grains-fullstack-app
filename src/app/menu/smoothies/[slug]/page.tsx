@@ -1,9 +1,10 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { useCart } from "@/context/CartContext";
+import { useCart } from "@/contexts/CartContext";
 import { smoothies, smoothieAddOns } from "@/data/smoothiesData";
 
 interface AddOn {
@@ -57,7 +58,7 @@ export default function SmoothieDetailPage() {
 
   // Calculate total price INCLUDING add-ons and selected size
   const basePrice = selectedSize ? smoothieItem.sizes.find(s => s.label === selectedSize)?.price || smoothieItem.sizes[0].price : smoothieItem.sizes[0].price;
-  const addOnsTotal = selectedAddOns.reduce((sum, addon) => sum + addon.price, 0);
+  const addOnsTotal = selectedAddOns.reduce((sum: number, addon) => sum + addon.price, 0);
   const itemTotal = (basePrice + addOnsTotal) * quantity;
 
   const handleAddToCart = () => {

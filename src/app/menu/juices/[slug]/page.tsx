@@ -1,9 +1,10 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { useCart } from "@/context/CartContext";
+import { useCart } from "@/contexts/CartContext";
 import { juices, juiceAddOns } from "@/data/juicesData";
 
 interface AddOn {
@@ -44,7 +45,7 @@ export default function JuiceDetailPage() {
 
   // Calculate total price INCLUDING add-ons and selected size
   const basePrice = selectedSize ? juiceItem.prices[selectedSize] : Object.values(juiceItem.prices)[0];
-  const addOnsTotal = selectedAddOns.reduce((sum, addon) => sum + addon.price, 0);
+  const addOnsTotal = selectedAddOns.reduce((sum: number, addon) => sum + addon.price, 0);
   const itemTotal = (basePrice + addOnsTotal) * quantity;
 
   const handleAddToCart = () => {
@@ -147,7 +148,7 @@ export default function JuiceDetailPage() {
                 <div className="mb-4">
                   <h4 className="text-sm font-semibold text-gray-300 mb-2">Benefits:</h4>
                   <div className="flex flex-wrap gap-2">
-                    {juiceItem.benefits.map((benefit, index) => (
+                    {juiceItem.benefits.map((benefit: any, index) => (
                       <span key={index} className="bg-green-500/20 text-green-300 text-xs px-2 py-1 rounded">
                         {benefit}
                       </span>

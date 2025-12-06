@@ -1,33 +1,47 @@
-'use client';
+"use client";
+
+import { useState } from "react";
 
 interface CartItemProps {
-  item: {
-    id: string;
-    name: string;
-    price: number;
-    quantity: number;
-    image?: string;
-  };
+  item: any;
 }
 
 export default function CartItem({ item }: CartItemProps) {
+    const calculateItemTotal = () => {
+    const itemPrice = item.price || 0;
+    const addons = (item as any).addOns || (item as any).addons || [];
+    const addOnsTotal = addons.reduce((sum: number, addOn: any) => sum + (addOn.price || 0), 0) || 0;
+    return (itemPrice + addOnsTotal) * (item.quantity || 1);
+  };
+
+  // Get addons for display
+  const displayAddons = (item as any).addOns || (item as any).addons || [];
+
   return (
-    <div className="flex items-center justify-between p-4 border-b border-gray-200">
-      <div className="flex items-center space-x-4">
-        {item.image && (
-          <img 
-            src={item.image} 
-            alt={item.name}
-            className="w-16 h-16 object-cover rounded-md"
-          />
+    <div className="flex items-center">
+      <div className="flex-1">
+        <h3 className="font-semibold text-lg">{item.name}</h3>
+        {item.description && (
+          <p className="text-sm text-gray-600">{item.description}</p>
         )}
-        <div>
-          <h3 className="font-medium text-gray-900">{item.name}</h3>
-          <p className="text-green-600 font-semibold">R{item.price.toFixed(2)}</p>
-        </div>
+        <p className="text-sm text-gray-500 mt-1">
+          R {(item.price || 0).toFixed(2)} each
+        </p>
+        {displayAddons.length > 0 && (
+          <div className="mt-2">
+            <p className="text-xs text-gray-500">Add-ons:</p>
+            <ul className="text-xs text-gray-600">
+              {displayAddons.map((addOn: any, index: number) => (
+                <li key={index}>• {addOn.name} (+R{addOn.price?.toFixed(2) || "0.00"})</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
-      <div className="flex items-center space-x-2">
-        <span className="text-gray-600">Qty: {item.quantity}</span>
+      
+      <div className="text-right">
+        <p className="font-semibold text-lg">R {calculateItemTotal().toFixed(2)}</p>
+        <p className="text-sm text-gray-500">Quantity: {item.quantity || 1}</p>
       </div>
     </div>
   );

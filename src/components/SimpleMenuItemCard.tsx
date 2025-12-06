@@ -25,7 +25,7 @@ const SimpleMenuItemCard: React.FC<MenuItemProps> = ({ name, price, tags, image,
         <h3 className="font-semibold text-gray-800">{name}</h3>
         <p className="text-[#F4A261] font-bold">R{price}</p>
         <div className="flex flex-wrap gap-1 mt-2">
-          {tags?.map((tag, i) => (
+          {tags?.map((tag: any, i) => (
             <span key={i} className="bg-[#6C7B58] text-white text-xs px-2 py-1 rounded">
               {tag}
             </span>

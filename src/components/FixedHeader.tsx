@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { useCart } from '@/context/CartContext';
+import { useCart } from "@/contexts/CartContext"';
 
 export default function FixedHeader() {
   const { user } = useAuth();

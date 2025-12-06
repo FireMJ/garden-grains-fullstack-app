@@ -286,3 +286,6 @@ export const pokeBowls: BowlItem[] = [
 ];
 
 export const allBowls = [...chipotleBowls, ...pokeBowls];
+
+// Default export
+export default allBowls;

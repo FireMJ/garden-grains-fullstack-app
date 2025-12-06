@@ -1,15 +1,19 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import React from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { useCart } from "@/context/CartContext";
+import { useCart, type CartItem } from "@/contexts/CartContext";
 import { stirfries } from "@/data/stirfryData";
 
 export default function StirfriesListPage() {
   const router = useRouter();
-  const { cartItems, totalItems, totalPrice } = useCart();
+  const { cart: cartItems } = useCart();
+  // Calculate values since they are not provided by CartContext
+  const totalItems = (cartItems || []).reduce((total: number, item: CartItem) => total + (item.quantity || 1), 0);
+  const totalPrice = (cartItems || []).reduce((total: number, item: CartItem) => total + (item.price || 0) * (item.quantity || 1), 0);
 
   const handleNavigate = (slug: string) => {
     router.push(`/menu/stirfries/${slug}`);
@@ -90,7 +94,7 @@ export default function StirfriesListPage() {
             const inCart = cartItems.filter(
               (c) => c.name.toLowerCase() === item.name.toLowerCase()
             );
-            const itemCount = inCart.reduce((sum, i) => sum + i.quantity, 0);
+            const itemCount = inCart.reduce((sum: number, i) => sum + i.quantity, 0);
             const itemTotal = inCart.reduce(
               (sum, i) => sum + ((i.price || 0) * i.quantity),
               0
@@ -161,7 +165,7 @@ export default function StirfriesListPage() {
                   {/* Tags */}
                   {item.tags && (
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {item.tags.filter(tag => tag !== "Popular" && tag !== "Vegetarian").map((tag, index) => (
+                      {item.tags.filter(tag => tag !== "Popular" && tag !== "Vegetarian").map((tag: any, index) => (
                         <span key={index} className="bg-gray-500/50 text-gray-200 text-xs px-2 py-1 rounded">
                           {tag}
                         </span>
