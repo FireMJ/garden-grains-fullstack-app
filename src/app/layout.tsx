@@ -14,12 +14,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className="scroll-smooth">
       <body className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}>
         <AuthProvider>
           <CartProvider>
             <FixedHeader />
-            <main className="pt-16">
+            <main className="pt-16 md:pt-20">
               {children}
             </main>
             <SpeedInsights />
