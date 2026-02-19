@@ -14,5 +14,6 @@
       "NEXT_DISABLE_ESLINT": "true",
       "NEXT_IGNORE_TYPECHECK": "true"
     }
-  }
+  },
+  "alias": ["gardengrains.co.za", "gardengrains.vercel.app"]
 }
