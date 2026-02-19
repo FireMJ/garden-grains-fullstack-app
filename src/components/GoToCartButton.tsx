@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useCart } from "@/contexts/CartContext";
+import { useCart } from "@/context/CartContext";
 import { ShoppingCart } from "lucide-react";
 import CartDrawer from "@/components/CartDrawer";
 

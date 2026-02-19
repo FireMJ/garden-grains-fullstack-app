@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useCart } from "@/contexts/CartContext";
+import { useCart } from "@/context/CartContext";
 
 export default function FloatingCart() {
   const { cart: cartItems } = useCart();

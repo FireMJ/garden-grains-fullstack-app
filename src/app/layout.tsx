@@ -1,35 +1,31 @@
 import type { Metadata } from "next";
-import { GeistSans } from 'geist/font/sans';
-import { GeistMono } from 'geist/font/mono';
+import { Inter } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from '@/context/AuthContext';
-import { CartProvider } from '@/contexts/CartContext';
-import { SpeedInsights } from '@vercel/speed-insights/next';
+import { AuthProvider } from "@/context/AuthContext";
+import { CartProvider } from "@/context/CartContext";
+import Header from "@/components/Header";
 
-// Import the correct Header component
-import Header from '@/components/Header';
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Garden Grains | Healthy Bowls & Salads",
-  description: "Fresh, healthy bowls and salads delivered to your door",
+  title: "Garden & Grains - Fresh Farm Dining",
+  description: "Organic meals crafted with love at Uitsig Wine Farm. Experience farm-to-table dining with delivery & pickup available.",
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
-    <html lang="en" className="scroll-smooth">
-      <body className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}>
+    <html lang="en">
+      <body className={inter.className}>
         <AuthProvider>
           <CartProvider>
-            {/* SINGLE HEADER - no duplication */}
             <Header />
-            <main className="pt-16 md:pt-20">
+            <main className="pt-16">
               {children}
             </main>
-            <SpeedInsights />
           </CartProvider>
         </AuthProvider>
       </body>

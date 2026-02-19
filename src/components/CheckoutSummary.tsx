@@ -1,6 +1,6 @@
 "use client";
 
-import { useCart, type CartItem } from "@/contexts/CartContext";
+import { useCart, type CartItem } from "@/context/CartContext";
 
 export default function CheckoutSummary() {
   const { cart: cartItems } = useCart();

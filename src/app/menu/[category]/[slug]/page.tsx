@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { useCart, type CartItem } from "@/contexts/CartContext";
+import { useCart, type CartItem } from "@/context/CartContext";
 
 // This is a generic dynamic page for menu items that don't have specific pages
 // For breakfast and bowls, use their specific pages instead

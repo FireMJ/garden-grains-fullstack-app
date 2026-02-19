@@ -1,204 +1,86 @@
-"use client";
-
-import React, { useState } from "react";
+import React from "react";
 import Image from "next/image";
+import Link from "next/link";
 
-export interface SizeOption {
-  size: string;
-  price: number;
-}
-
-export interface AddOn {
-  name: string;
-  price: number;
-}
-
-export interface MenuItemCardProps {
-  id?: string | number;
-  name: string;
-  description?: string;
-  price?: number; // ✅ Added price property
-  sizes?: SizeOption[]; // optional — soups or drinks might not use this
-  tags?: string[];
-  image?: string;
-  addOns?: AddOn[];
-  selectedSize?: string;
-  selectedAddOns?: string[];
-  specialInstructions?: string;
-  onSizeSelect?: (size: string) => void;
-  onToggleAddOn?: (addOnName: string) => void;
-  onSpecialInstructionsChange?: (instructions: string) => void;
-  showAddOns?: boolean;
-}
-
-const MenuItemCard = ({
-  name,
-  description,
-  price, // ✅ Added price parameter
-  sizes = [],
-  tags = [],
-  image,
-  addOns = [],
-  selectedSize = "",
-  selectedAddOns = [],
-  specialInstructions = "",
-  onSizeSelect,
-  onToggleAddOn,
-  onSpecialInstructionsChange,
-  showAddOns = false,
-}: MenuItemCardProps) => {
-  const [customizeOpen, setCustomizeOpen] = useState(false);
-
-  const handleInstructionsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onSpecialInstructionsChange?.(e.target.value);
+interface MenuItemCardProps {
+  item: {
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    category: string;
+    slug: string;
+    image?: string;
+    tags?: string[];
+    popular?: boolean;
   };
+}
 
-  const calculateTotal = () => {
-    // Use the base price if provided, otherwise calculate from sizes
-    const basePrice = price || 0;
-    const sizePrice =
-      Array.isArray(sizes) && sizes.length > 0
-        ? sizes.find((s) => s.size === selectedSize)?.price || sizes[0]?.price || 0
-        : 0;
-    const addonsTotal = Array.isArray(addOns)
-      ? addOns
-          .filter((a: any) => selectedAddOns.includes(a.name))
-          .reduce((sum: number, a) => sum + a.price, 0)
-      : 0;
-    return basePrice + sizePrice + addonsTotal;
-  };
-
-  const hasSizes = Array.isArray(sizes) && sizes.length > 0;
-  const hasAddOns = Array.isArray(addOns) && addOns.length > 0;
-  const hasTags = Array.isArray(tags) && tags.length > 0;
-
+const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
+  // Fallback image if none provided
+  const imageUrl = item.image || `https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80`;
+  
   return (
-    <div className="rounded-2xl shadow-lg bg-white p-4 flex flex-col justify-between border border-gray-100 hover:shadow-xl transition-shadow duration-300">
-      {/* 🖼️ Image */}
-      {image && (
-        <div className="relative w-full h-48 rounded-xl overflow-hidden">
+    <Link href={`/menu/${item.category}/${item.slug}`}>
+      <div className="group bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 border border-gray-100 cursor-pointer">
+        {/* Image Section */}
+        <div className="relative h-48 w-full overflow-hidden">
           <Image
-            src={image}
-            alt={name}
+            src={imageUrl}
+            alt={item.name}
             fill
-            className="transition-transform duration-500 hover:scale-105 object-cover"
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
+          
+          {/* Popular Badge */}
+          {item.popular && (
+            <div className="absolute top-4 right-4 bg-[#94aa4d] text-white text-xs px-3 py-1 rounded-full font-medium">
+              Popular
+            </div>
+          )}
         </div>
-      )}
 
-      {/* ℹ️ Info */}
-      <div className="flex-1 mt-4">
-        <h3 className="text-lg font-semibold text-gray-800">{name}</h3>
-        {description && <p className="text-sm text-gray-600 mt-1">{description}</p>}
-
-        {/* ✅ Display base price if available and no sizes */}
-        {price && !hasSizes && (
-          <div className="mt-2">
-            <span className="text-lg font-bold text-green-600">R{price.toFixed(2)}</span>
+        {/* Content Section */}
+        <div className="p-6">
+          <div className="flex justify-between items-start mb-3">
+            <h3 className="text-lg font-bold text-gray-900 group-hover:text-[#94aa4d] transition-colors">
+              {item.name}
+            </h3>
+            <span className="text-xl font-bold text-[#94aa4d]">
+              R{item.price.toFixed(2)}
+            </span>
           </div>
-        )}
+          
+          <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+            {item.description}
+          </p>
 
-        {/* ✅ Only render size selection if available */}
-        {hasSizes && (
-          <div className="mt-3">
-            <label className="font-semibold text-gray-700 mb-2 block">
-              Size <span className="text-red-500">*</span>
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {sizes.map((sizeOption) => (
-                <button
-                  key={sizeOption.size}
-                  onClick={() => onSizeSelect?.(sizeOption.size)}
-                  className={`p-2 border rounded-lg text-sm font-medium transition-all ${
-                    selectedSize === sizeOption.size
-                      ? "bg-green-500 text-white border-green-500"
-                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                  }`}
+          {/* Tags */}
+          {item.tags && item.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {item.tags.map((tag, index) => (
+                <span
+                  key={index}
+                  className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs"
                 >
-                  {sizeOption.size}
-                  <div className="text-xs mt-1">R{sizeOption.price}</div>
-                </button>
+                  {tag}
+                </span>
               ))}
             </div>
-            {!selectedSize && (
-              <p className="text-red-500 text-xs mt-1">Please select a size</p>
-            )}
+          )}
+
+          {/* View Details Button */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-500">Click to view details</span>
+            <div className="text-[#94aa4d] font-medium text-sm flex items-center gap-1">
+              View Details
+              <span className="group-hover:translate-x-1 transition-transform">→</span>
+            </div>
           </div>
-        )}
-
-        {/* ✅ Add-ons */}
-        {showAddOns && hasAddOns && (
-          <div className="mt-4">
-            <button
-              className="w-full text-left font-semibold text-gray-700 bg-gray-100 px-3 py-2 rounded-lg hover:bg-gray-200 transition flex justify-between items-center"
-              onClick={() => setCustomizeOpen((prev) => !prev)}
-            >
-              Customize Your Order
-              <span
-                className={`transform transition-transform ${
-                  customizeOpen ? "rotate-180" : ""
-                }`}
-              >
-                ▼
-              </span>
-            </button>
-
-            {customizeOpen && (
-              <div className="mt-2 space-y-2">
-                {addOns.map((addOn) => (
-                  <label
-                    key={addOn.name}
-                    className="flex items-center justify-between p-2 border rounded-lg cursor-pointer hover:bg-gray-50"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={selectedAddOns.includes(addOn.name)}
-                        onChange={() => onToggleAddOn?.(addOn.name)}
-                        className="rounded border-gray-300 text-green-500 focus:ring-green-500"
-                      />
-                      <span className="text-sm text-gray-700">{addOn.name}</span>
-                    </div>
-                    <span className="text-sm text-green-600">+R{addOn.price}</span>
-                  </label>
-                ))}
-
-                {/* ✍️ Special Instructions */}
-                <textarea
-                  value={specialInstructions}
-                  onChange={handleInstructionsChange}
-                  placeholder="Any special requests..."
-                  className="w-full p-2 border border-gray-300 rounded-lg text-sm resize-none focus:ring-2 focus:ring-green-500 focus:border-transparent mt-2"
-                  rows={2}
-                />
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ✅ Tags */}
-        {hasTags && (
-          <div className="flex flex-wrap gap-2 mt-2">
-            {tags.map((tag: any, i) => (
-              <span
-                key={i}
-                className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
+        </div>
       </div>
-
-      {/* ✅ Total (always shown, even if no sizes) */}
-      <div className="mt-4 flex justify-between items-center">
-        <span className="text-sm font-medium text-gray-700">Total:</span>
-        <span className="text-lg font-bold text-green-600">
-          R{calculateTotal().toFixed(2)}
-        </span>
-      </div>
-    </div>
+    </Link>
   );
 };
 

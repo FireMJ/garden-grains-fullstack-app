@@ -6,7 +6,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { useCart } from "@/contexts/CartContext";
+import { useCart } from "@/context/CartContext";
 import { CartItem } from "@/types";
 import { useAuth } from "@/context/AuthContext";
 import { 
@@ -42,14 +42,8 @@ const formatPrice = (price: number) => {
 
 export default function CartPage() {
   const router = useRouter();
-  const {
-    cart, // FIXED: Changed from cartItems to cart
-    updateQuantity,
-    removeFromCart,
-    clearCart,
-    getCartTotal,
-    getDeliveryFee
-  } = useCart();
+  const { cart, updateQuantity, removeFromCart, clearCart, totalPrice, getItemTotal } = useCart();
+  const totalItems = Array.isArray(cart) ? cart.reduce((total, item) => total + (item.quantity || 1), 0) : 0;
   
   const { user, loading: authLoading } = useAuth();
   const [pastOrders, setPastOrders] = useState(0);
@@ -68,27 +62,8 @@ export default function CartPage() {
   }, []);
 
   // Calculate derived values
-  const totalItems = Array.isArray(cart) ? cart.reduce((total, item) => total + (item.quantity || 1), 0) : 0;
-  const totalPrice = getCartTotal();
 
   // Helper function
-  const getItemTotal = (item: CartItem): number => {
-    const basePrice = item.price || 0;
-    
-    // Handle add-ons
-    const addOns = item.addOns || item.addons || [];
-    const addOnsTotal = addOns.reduce((sum: number, addon: any) => sum + (addon.price || 0), 0);
-    
-    // Handle fries upsell
-    const friesItem = item.fries || item.friesUpsell;
-    const friesTotal = friesItem?.price || 0;
-    
-    // Handle juice upsell
-    const juiceItem = item.juice || item.juiceUpsell;
-    const juiceTotal = juiceItem?.price || 0;
-    
-    return (basePrice + addOnsTotal + friesTotal + juiceTotal) * (item.quantity || 1);
-  };
 
   // Get normalized items
   const getNormalizedItems = (): CartItem[] => {

@@ -1,7 +1,7 @@
 import Image from "next/image";
 "use client";
 import React from "react";
-import { useCart, type CartItem } from "@/contexts/CartContext";
+import { useCart, type CartItem } from "@/context/CartContext";
 import Link from "next/link";
 
 export default function CartPage() {

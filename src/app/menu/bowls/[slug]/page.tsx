@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useCart } from "@/contexts/CartContext";
+import { useCart } from "@/context/CartContext";
 import { notFound, useParams } from "next/navigation";
 import bowlsData from "@/data/bowlsData";
 

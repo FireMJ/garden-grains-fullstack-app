@@ -1,6 +1,11 @@
+// src/context/CartContext.tsx - Updated with free delivery
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+
+// Constants for delivery
+const FREE_DELIVERY_THRESHOLD = 850;
+const STANDARD_DELIVERY_FEE = 35;
 
 // Base interface that both structures share
 interface BaseCartItem {
@@ -168,6 +173,13 @@ interface CartContextType {
   cartItems: CartItem[];
   totalItems: number;
   totalPrice: number;
+  // Delivery calculations
+  isFreeDelivery: boolean;
+  deliveryFee: number;
+  amountNeededForFreeDelivery: number;
+  finalTotal: number;
+  deliveryProgress: number;
+  // Methods
   addToCart: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => void;
   updateQuantity: (id: string, quantity: number) => void;
   removeFromCart: (id: string) => void;
@@ -238,6 +250,13 @@ export function CartProvider({ children }: CartProviderProps) {
   };
   
   const totalPrice = cartItems.reduce((sum: number, item) => sum + getItemTotal(item), 0);
+
+  // Calculate delivery-related values
+  const isFreeDelivery = totalPrice >= FREE_DELIVERY_THRESHOLD;
+  const deliveryFee = isFreeDelivery ? 0 : STANDARD_DELIVERY_FEE;
+  const amountNeededForFreeDelivery = Math.max(0, FREE_DELIVERY_THRESHOLD - totalPrice);
+  const finalTotal = totalPrice + deliveryFee;
+  const deliveryProgress = Math.min(100, (totalPrice / FREE_DELIVERY_THRESHOLD) * 100);
 
   // Get detailed price breakdown for an item
   const getItemPriceBreakdown = (item: CartItem) => {
@@ -342,6 +361,13 @@ export function CartProvider({ children }: CartProviderProps) {
         cartItems,
         totalItems,
         totalPrice,
+        // Delivery values
+        isFreeDelivery,
+        deliveryFee,
+        amountNeededForFreeDelivery,
+        finalTotal,
+        deliveryProgress,
+        // Methods
         addToCart,
         updateQuantity,
         removeFromCart,

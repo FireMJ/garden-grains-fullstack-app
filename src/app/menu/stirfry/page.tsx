@@ -1,3 +1,4 @@
+import Header from "../../components/Header";
 "use client";
 export const dynamic = "force-dynamic";
 
@@ -5,12 +6,13 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { useCart, type CartItem } from "@/contexts/CartContext";
+import { useCart, type CartItem } from "@/context/CartContext";
 import { stirfries } from "@/data/stirfryData";
 
 export default function StirfriesListPage() {
   const router = useRouter();
   const { cart: cartItems } = useCart();
+  const safeCartItems = cartItems && Array.isArray(cartItems) ? cartItems : [];
   // Calculate values since they are not provided by CartContext
   const totalItems = (cartItems || []).reduce((total: number, item: CartItem) => total + (item.quantity || 1), 0);
   const totalPrice = (cartItems || []).reduce((total: number, item: CartItem) => total + (item.price || 0) * (item.quantity || 1), 0);
@@ -53,7 +55,7 @@ export default function StirfriesListPage() {
         </div>
 
         {/* Cart Summary */}
-        {cartItems.length > 0 && (
+        {(cartItems && Array.isArray(cartItems) ? safeCartItems.length : 0) > 0 && (
           <div className="bg-[#6c8665] rounded-lg p-4 mb-8 max-w-4xl mx-auto">
             <div className="flex justify-between items-center">
               <div>
@@ -75,7 +77,7 @@ export default function StirfriesListPage() {
         {/* Menu Items Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {stirfries.map((item) => {
-            const inCart = cartItems.filter((c: any) => c.name.toLowerCase() === item.name.toLowerCase());
+            const inCart = safeCartItems.filter((c: any) => c.name.toLowerCase() === item.name.toLowerCase());
             const itemCount = inCart.reduce((sum: number, i) => sum + i.quantity, 0);
             const itemTotal = inCart.reduce((sum: number, i) => sum + ((i.price || 0) * i.quantity), 0);
 

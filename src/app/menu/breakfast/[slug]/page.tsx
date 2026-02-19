@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { useCart } from "@/contexts/CartContext";
+import { useCart } from "@/context/CartContext";
 import { breakfastItems as breakfasts } from "@/data/breakfastData";
 
 interface AddOn {

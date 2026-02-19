@@ -1,0 +1,8 @@
+.next
+node_modules
+out
+dist
+build
+*.d.ts
+src/app/menu.current_backup
+src/types/*.d.ts
