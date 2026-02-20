@@ -16,7 +16,7 @@ export default function AboutPage() {
             </p>
             
             <p className="text-lg text-gray-700 mb-6">
-              With vibrant salads, jam-packed bowls, hearty soups, and everyday favourites 
+              With vibrant salads, jam-packed bowls, hearty soups, and everyday favorites 
               made from locally sourced produce. Every dish is thoughtfully created to 
               nourish and celebrate the abundance of the earth.
             </p>
@@ -56,7 +56,7 @@ export default function AboutPage() {
             <div className="text-3xl mb-4">♻️</div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">Sustainable Practices</h3>
             <p className="text-gray-600">
-              WeWe'reapos;re committed to eco-friendly packaging and minimizing food waste.
+              We're committed to eco-friendly packaging and minimizing food waste.
             </p>
           </div>
         </div>
@@ -67,34 +67,93 @@ export default function AboutPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               <h3 className="text-xl font-bold text-gray-900 mb-4">Our Location</h3>
-              <p className="text-gray-600 mb-2">
-                Uitsig Wine Farm, Stellenbosch
+              <p className="text-gray-600 mb-2 font-semibold">
+                Uitsig Wine Farm
+              </p>
+              <p className="text-gray-600 mb-1">
+                Spaanschemat River Rd
               </p>
               <p className="text-gray-600 mb-4">
-                Nestled in the heart of the Cape Winelands
+                Fir Grove, Cape Town, 7806
+              </p>
+              <p className="text-gray-600 mb-4 italic">
+                Nestled in the heart of the Constantia Wine Valley
               </p>
               
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex items-start">
-                  <span className="text-green-600 mr-3">🕒</span>
+                  <span className="text-green-600 mr-3 text-xl">🕒</span>
                   <div>
                     <h4 className="font-bold text-gray-900">Opening Hours</h4>
-                    <p className="text-gray-600">Monday - Sunday: 7:00 AM - 8:30 PM</p>
+                    <p className="text-gray-600">Sunday - Wednesday: 9:00 AM - 5:30 PM</p>
+                    <p className="text-gray-600">Thursday - Saturday: 9:00 AM - 9:00 PM</p>
+                    <p className="text-gray-500 text-sm mt-1">Closed daily 4:00 PM - 5:00 PM for dinner prep</p>
                   </div>
                 </div>
                 
                 <div className="flex items-start">
-                  <span className="text-green-600 mr-3">📞</span>
+                  <span className="text-green-600 mr-3 text-xl">📞</span>
                   <div>
                     <h4 className="font-bold text-gray-900">Contact</h4>
-                    <p className="text-gray-600">+27 21 887 8765</p>
+                    <p className="text-gray-600">Phone: +27 69 376 5574</p>
+                    <p className="text-gray-600">WhatsApp: +27 69 376 5574</p>
+                    <p className="text-gray-600">Email: info@gardengrains.co.za</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start">
+                  <span className="text-green-600 mr-3 text-xl">📍</span>
+                  <div>
+                    <h4 className="font-bold text-gray-900">Get Directions</h4>
+                    <div className="flex gap-3 mt-2">
+                      <a 
+                        href="https://maps.google.com/?q=Uitsig+Wine+Farm+Spaanschemat+River+Rd+Fir+Grove+Cape+Town" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm inline-block"
+                      >
+                        Google Maps
+                      </a>
+                      <a 
+                        href="https://waze.com/ul?q=Uitsig%20Wine%20Farm%20Cape%20Town" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm inline-block"
+                      >
+                        Waze
+                      </a>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
             
-            <div className="bg-gray-200 rounded-lg h-64 flex items-center justify-center">
-              <p className="text-gray-500">Map Location Here</p>
+            {/* Interactive Map */}
+            <div className="h-80 rounded-lg overflow-hidden shadow-lg">
+              <iframe 
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3309.694312890505!2d18.4167!3d-34.0!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x1dcc676b7c8f8b8f%3A0x8f8b8f8b8f8b8f8b!2sUitsig%20Wine%20Farm!5e0!3m2!1sen!2sza!4v1234567890" 
+                width="100%" 
+                height="100%" 
+                style={{ border: 0 }} 
+                allowFullScreen 
+                loading="lazy" 
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Garden & Grains at Uitsig Wine Farm"
+                className="w-full h-full"
+              />
+            </div>
+          </div>
+
+          {/* Additional Info */}
+          <div className="mt-8 p-4 bg-green-50 rounded-lg">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">🚗</span>
+              <div>
+                <h4 className="font-bold text-gray-900 mb-1">Parking Information</h4>
+                <p className="text-gray-600">
+                  Ample parking available on the farm, with just an entry fee of R30 if you stay for over 30 minutes. Follow the signs to the restaurant area.
+                </p>
+              </div>
             </div>
           </div>
         </div>
