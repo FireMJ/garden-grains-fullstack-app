@@ -97,7 +97,7 @@ export default function AboutPage() {
                     <h4 className="font-bold text-gray-900">Contact</h4>
                     <p className="text-gray-600">Phone: +27 69 376 5574</p>
                     <p className="text-gray-600">WhatsApp: +27 69 376 5574</p>
-                    <p className="text-gray-600">Email: info@gardengrains.co.za</p>
+                    <p className="text-gray-600">Email: hello@gardengrains.co.za</p>
                   </div>
                 </div>
 

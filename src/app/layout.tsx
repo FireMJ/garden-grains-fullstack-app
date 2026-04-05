@@ -3,7 +3,9 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
-import Header from "@/components/Header";
+import { PaymentProvider } from "@/context/PaymentContext";
+import { DriverProvider } from "@/context/DriverContext";
+import MainHeader from "@/components/MainHeader";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,13 +21,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body
+        className={inter.className}
+        suppressHydrationWarning={true}
+      >
         <AuthProvider>
           <CartProvider>
-            <Header />
-            <main className="pt-16">
-              {children}
-            </main>
+            <PaymentProvider>
+              <DriverProvider>
+                <MainHeader />
+                <main className="pt-16">
+                  {children}
+                </main>
+              </DriverProvider>
+            </PaymentProvider>
           </CartProvider>
         </AuthProvider>
       </body>

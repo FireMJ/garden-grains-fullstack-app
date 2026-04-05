@@ -5,23 +5,15 @@ import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
-import { breakfastItems as breakfasts } from "@/data/breakfastData";
+import { breakfastItems, type AddOn, type FriesUpsell, type JuiceUpsell } from "@/data/breakfastData";
 
-interface AddOn {
-  id: string;
-  name: string;
-  price: number;
-}
-
-interface JuiceOption {
-  id: string;
-  name: string;
-  price: number;
-}
-
-interface JuiceGroup {
+interface SelectedJuice {
   size: string;
-  options: JuiceOption[];
+  option: {
+    id: string;
+    name: string;
+    price: number;
+  };
 }
 
 export default function BreakfastDetailPage() {
@@ -30,13 +22,15 @@ export default function BreakfastDetailPage() {
   const { addToCart } = useCart();
   
   const slug = params.slug as string;
-  const breakfastItem = breakfasts.find(item => item.slug === slug);
+  const breakfastItem = breakfastItems.find(item => item.slug === slug);
 
   // State for customization
   const [selectedAddOns, setSelectedAddOns] = useState<AddOn[]>([]);
-  const [selectedJuice, setSelectedJuice] = useState<{ size: string; option: JuiceOption } | null>(null);
+  const [selectedFries, setSelectedFries] = useState<FriesUpsell | null>(null);
+  const [selectedJuice, setSelectedJuice] = useState<SelectedJuice | null>(null);
   const [specialInstructions, setSpecialInstructions] = useState("");
   const [quantity, setQuantity] = useState(1);
+  const [imageError, setImageError] = useState(false);
 
   if (!breakfastItem) {
     return (
@@ -55,9 +49,10 @@ export default function BreakfastDetailPage() {
   }
 
   // Calculate total price INCLUDING add-ons and upsells
-  const addOnsTotal = selectedAddOns.reduce((sum: number, addon) => sum + addon.price, 0);
+  const addOnsTotal = selectedAddOns.reduce((sum, addon) => sum + addon.price, 0);
+  const friesTotal = selectedFries ? selectedFries.price : 0;
   const juiceTotal = selectedJuice ? selectedJuice.option.price : 0;
-  const itemTotal = (breakfastItem.price + addOnsTotal + juiceTotal) * quantity;
+  const itemTotal = (breakfastItem.price + addOnsTotal + friesTotal + juiceTotal) * quantity;
 
   const handleAddToCart = () => {
     const cartItem = {
@@ -68,7 +63,8 @@ export default function BreakfastDetailPage() {
       quantity: quantity,
       total: itemTotal,
       addOns: selectedAddOns,
-      juice: selectedJuice, // ✅ Now matches CartItem interface
+      fries: selectedFries,
+      juice: selectedJuice,
       specialInstructions: specialInstructions,
       image: breakfastItem.image,
       category: "breakfast"
@@ -86,34 +82,15 @@ export default function BreakfastDetailPage() {
     );
   };
 
-  const toggleJuice = (juiceGroup: JuiceGroup, juiceOption: JuiceOption) => {
-    setSelectedJuice(prev => 
-      prev?.option.id === juiceOption.id ? null : {
-        size: juiceGroup.size,
-        option: juiceOption // ✅ Now has the required structure
-      }
-    );
+  const toggleFries = (fries: FriesUpsell) => {
+    setSelectedFries(prev => prev?.id === fries.id ? null : fries);
   };
 
-  // Sample add-ons
-  const availableAddOns: AddOn[] = [
-    { id: "extra-honey", name: "Extra Honey", price: 10.00 },
-    { id: "extra-nuts", name: "Extra Nuts & Seeds", price: 20.00 },
-    { id: "protein-powder", name: "Protein Powder", price: 20.00 },
-    { id: "extra-fruit", name: "Extra Fresh Berries", price: 12.00 }
-  ];
-
-  // Sample juice upsells
-  const availableJuiceUpsells: JuiceGroup[] = [
-    {
-      size: "Regular",
-      options: [
-        { id: "fresh-orange", name: "Fresh Orange Juice", price: 55.00 },
-        { id: "apple-carrot", name: "Apple Carrot Ginger", price: 55.00 },
-        { id: "green-detox", name: "The Green Mile Juice", price: 55.00 }
-      ]
-    }
-  ];
+  const toggleJuice = (size: string, option: { id: string; name: string; price: number }) => {
+    setSelectedJuice(prev => 
+      prev?.option.id === option.id ? null : { size, option }
+    );
+  };
 
   return (
     <main className="min-h-screen bg-[#1E4259] text-white pt-20">
@@ -135,20 +112,20 @@ export default function BreakfastDetailPage() {
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="grid md:grid-cols-2 gap-8">
           {/* Image */}
-          <div className="relative h-80 md:h-96 rounded-2xl overflow-hidden">
-            <Image
-              src={breakfastItem.image}
-              alt={breakfastItem.name}
-              fill
-              className="object-cover"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-              }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-br from-[#6C7B58] to-[#8A9B6E] flex items-center justify-center">
-              <span className="text-white/80 text-lg">Breakfast Image</span>
-            </div>
+          <div className="relative h-80 md:h-96 rounded-2xl overflow-hidden bg-gradient-to-br from-[#6C7B58] to-[#8A9B6E]">
+            {!imageError ? (
+              <Image
+                src={breakfastItem.image}
+                alt={breakfastItem.name}
+                fill
+                className="object-cover"
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-white/80 text-lg">{breakfastItem.name}</span>
+              </div>
+            )}
           </div>
 
           {/* Details */}
@@ -163,6 +140,18 @@ export default function BreakfastDetailPage() {
               <div className="text-2xl font-bold text-green-300">
                 R{breakfastItem.price.toFixed(2)}
               </div>
+            </div>
+
+            {/* Tags */}
+            <div className="flex flex-wrap gap-2">
+              {breakfastItem.tags.map((tag, index) => (
+                <span
+                  key={index}
+                  className="bg-[#6C7B58] text-white text-xs px-3 py-1 rounded-full capitalize"
+                >
+                  {tag}
+                </span>
+              ))}
             </div>
 
             {/* Quantity Selector */}
@@ -187,49 +176,75 @@ export default function BreakfastDetailPage() {
               </div>
             </div>
 
-            {/* Add-ons */}
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-[#F4A261]">Add-ons</h3>
-              <div className="space-y-2">
-                {availableAddOns.map((addOn) => (
-                  <label key={addOn.id} className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedAddOns.some(a => a.id === addOn.id)}
-                      onChange={() => toggleAddOn(addOn)}
-                      className="w-4 h-4 text-[#F4A261] rounded"
-                    />
-                    <span className="flex-1">{addOn.name}</span>
-                    <span className="text-green-300">+R{addOn.price.toFixed(2)}</span>
-                  </label>
-                ))}
+            {/* Add-ons - Using data from breakfastData */}
+            {breakfastItem.addOns && breakfastItem.addOns.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-[#F4A261]">Add-ons</h3>
+                <div className="space-y-2">
+                  {breakfastItem.addOns.map((addOn) => (
+                    <label key={addOn.id} className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedAddOns.some(a => a.id === addOn.id)}
+                        onChange={() => toggleAddOn(addOn)}
+                        className="w-4 h-4 text-[#F4A261] rounded"
+                      />
+                      <span className="flex-1 capitalize">{addOn.name}</span>
+                      <span className="text-green-300">+R{addOn.price.toFixed(2)}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Juice Upsell */}
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-[#F4A261]">Add a Fresh Juice</h3>
-              <div className="space-y-2">
-                {availableJuiceUpsells.map((juiceGroup) => (
-                  <div key={juiceGroup.size} className="space-y-2">
-                    <h4 className="font-medium text-gray-300">{juiceGroup.size}</h4>
-                    {juiceGroup.options.map((juice) => (
-                      <label key={juice.id} className="flex items-center gap-3 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="juice"
-                          checked={selectedJuice?.option.id === juice.id}
-                          onChange={() => toggleJuice(juiceGroup, juice)}
-                          className="w-4 h-4 text-[#F4A261]"
-                        />
-                        <span className="flex-1">{juice.name}</span>
-                        <span className="text-green-300">+R{juice.price.toFixed(2)}</span>
-                      </label>
-                    ))}
-                  </div>
-                ))}
+            {/* Fries Upsell - Using data from breakfastData */}
+            {breakfastItem.friesUpsell && breakfastItem.friesUpsell.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-[#F4A261]">Add Fries</h3>
+                <div className="space-y-2">
+                  {breakfastItem.friesUpsell.map((fries) => (
+                    <label key={fries.id} className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="fries"
+                        checked={selectedFries?.id === fries.id}
+                        onChange={() => toggleFries(fries)}
+                        className="w-4 h-4 text-[#F4A261]"
+                      />
+                      <span className="flex-1">{fries.name}</span>
+                      <span className="text-green-300">+R{fries.price.toFixed(2)}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Juice Upsell - Using data from breakfastData */}
+            {breakfastItem.juiceUpsell && breakfastItem.juiceUpsell.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-[#F4A261]">Add Fresh Juice</h3>
+                <div className="space-y-4">
+                  {breakfastItem.juiceUpsell.map((juiceGroup) => (
+                    <div key={juiceGroup.size} className="space-y-2">
+                      <h4 className="font-medium text-gray-300">{juiceGroup.size}</h4>
+                      {juiceGroup.options.map((juice) => (
+                        <label key={juice.id} className="flex items-center gap-3 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="juice"
+                            checked={selectedJuice?.option.id === juice.id}
+                            onChange={() => toggleJuice(juiceGroup.size, juice)}
+                            className="w-4 h-4 text-[#F4A261]"
+                          />
+                          <span className="flex-1">{juice.name}</span>
+                          <span className="text-green-300">+R{juice.price.toFixed(2)}</span>
+                        </label>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Special Instructions */}
             <div className="space-y-2">
@@ -245,7 +260,7 @@ export default function BreakfastDetailPage() {
             </div>
 
             {/* Total and Add to Cart */}
-            <div className="space-y-4">
+            <div className="space-y-4 pt-4 border-t border-white/10">
               <div className="flex justify-between items-center text-lg">
                 <span className="font-semibold">Total:</span>
                 <span className="text-2xl font-bold text-[#F4A261]">
@@ -255,7 +270,7 @@ export default function BreakfastDetailPage() {
               
               <button
                 onClick={handleAddToCart}
-                className="w-full bg-[#F4A261] hover:bg-[#e68e42] text-white font-bold py-4 px-6 rounded-lg transition text-lg"
+                className="w-full bg-[#F4A261] hover:bg-[#e68e42] text-white font-bold py-4 px-6 rounded-lg transition text-lg hover:scale-105 transform"
               >
                 Add to Cart - R{itemTotal.toFixed(2)}
               </button>

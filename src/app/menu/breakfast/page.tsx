@@ -1,13 +1,34 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { useState } from 'react';
 import { breakfastItems } from '@/data/breakfastData';
 
 export default function BreakfastListPage() {
   const router = useRouter();
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
   const handleNavigate = (slug: string) => {
     router.push(`/menu/breakfast/${slug}`);
+  };
+
+  const handleImageError = (itemId: string) => {
+    setImageErrors(prev => ({ ...prev, [itemId]: true }));
+  };
+
+  // Fallback gradient colors based on item name or tags
+  const getGradientForItem = (item: typeof breakfastItems[0]) => {
+    if (item.tags.includes('healthy') || item.tags.includes('vegetarian')) {
+      return 'from-[#6C7B58] to-[#8A9B6E]'; // Green gradient for healthy items
+    }
+    if (item.tags.includes('protein') || item.tags.includes('high-protein')) {
+      return 'from-[#B66D3B] to-[#D48C5B]'; // Orange/brown for protein-rich
+    }
+    if (item.tags.includes('warm') || item.tags.includes('comfort')) {
+      return 'from-[#C45D42] to-[#E07A5F]'; // Warm red/orange for comfort food
+    }
+    return 'from-[#2A5568] to-[#3F6B82]'; // Default blue gradient
   };
 
   return (
@@ -42,10 +63,33 @@ export default function BreakfastListPage() {
               className="bg-white/5 rounded-2xl p-6 backdrop-blur-sm border border-white/10 hover:border-[#F4A261]/30 transition-all duration-300 cursor-pointer group"
               onClick={() => handleNavigate(item.slug)}
             >
-              {/* Image Placeholder */}
-              <div className="relative h-48 bg-gradient-to-br from-[#2A5568] to-[#6C7B58] rounded-xl mb-4 overflow-hidden group-hover:scale-105 transition-transform duration-300">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-white/80 text-sm">Breakfast Image</span>
+              {/* Image with actual content */}
+              <div className="relative h-48 rounded-xl mb-4 overflow-hidden group-hover:scale-105 transition-transform duration-300">
+                {!imageErrors[item.id] ? (
+                  <Image
+                    src={item.image}
+                    alt={item.name}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    className="object-cover"
+                    onError={() => handleImageError(item.id)}
+                    priority={breakfastItems.indexOf(item) < 3} // Priority load first 3 images
+                  />
+                ) : (
+                  // Fallback gradient with item name
+                  <div className={`absolute inset-0 bg-gradient-to-br ${getGradientForItem(item)} flex items-center justify-center`}>
+                    <div className="text-center p-4">
+                      <span className="text-white/90 text-lg font-semibold block mb-2">{item.name}</span>
+                      <span className="text-white/70 text-sm">{item.tags.join(' • ')}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Optional overlay with tags on hover */}
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                  <span className="text-white text-sm bg-[#F4A261] px-3 py-1 rounded-full">
+                    View Details
+                  </span>
                 </div>
               </div>
 
@@ -60,14 +104,14 @@ export default function BreakfastListPage() {
                   </span>
                 </div>
 
-                <p className="text-gray-300 text-sm leading-relaxed">
+                <p className="text-gray-300 text-sm leading-relaxed line-clamp-2">
                   {item.description}
                 </p>
 
                 {/* Tags */}
                 {item.tags && item.tags.length > 0 && (
                   <div className="flex flex-wrap gap-2 pt-2">
-                    {item.tags.map((tag: any, index) => (
+                    {item.tags.map((tag, index) => (
                       <span
                         key={index}
                         className="bg-[#6C7B58] text-white text-xs px-2 py-1 rounded capitalize"
@@ -84,7 +128,7 @@ export default function BreakfastListPage() {
                     e.stopPropagation();
                     handleNavigate(item.slug);
                   }}
-                  className="w-full mt-4 bg-[#F4A261] text-white py-3 rounded-lg font-semibold hover:bg-[#e68e42] transition group-hover:scale-105"
+                  className="w-full mt-4 bg-[#F4A261] text-white py-3 rounded-lg font-semibold hover:bg-[#e68e42] transition transform group-hover:scale-105 active:scale-95"
                 >
                   Customize & Order
                 </button>
@@ -97,17 +141,17 @@ export default function BreakfastListPage() {
         <div className="mt-16 bg-white/5 rounded-2xl p-8 backdrop-blur-sm border border-white/10">
           <h2 className="text-2xl font-bold text-[#F4A261] mb-6 text-center">Breakfast Made Right</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-            <div className="bg-white/10 p-6 rounded-lg">
+            <div className="bg-white/10 p-6 rounded-lg hover:bg-white/15 transition">
               <div className="text-3xl mb-4">🌅</div>
               <h3 className="font-semibold text-white mb-2">Fresh Daily</h3>
               <p className="text-gray-300 text-sm">Prepared fresh each morning with quality ingredients</p>
             </div>
-            <div className="bg-white/10 p-6 rounded-lg">
+            <div className="bg-white/10 p-6 rounded-lg hover:bg-white/15 transition">
               <div className="text-3xl mb-4">⚡</div>
               <h3 className="font-semibold text-white mb-2">Quick Service</h3>
               <p className="text-gray-300 text-sm">Perfect for busy mornings - ready when you are</p>
             </div>
-            <div className="bg-white/10 p-6 rounded-lg">
+            <div className="bg-white/10 p-6 rounded-lg hover:bg-white/15 transition">
               <div className="text-3xl mb-4">🌱</div>
               <h3 className="font-semibold text-white mb-2">Healthy Options</h3>
               <p className="text-gray-300 text-sm">Nutritious choices to fuel your day</p>

@@ -1,4 +1,3 @@
-// src/context/CartContext.tsx - Updated with free delivery
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
@@ -213,30 +212,51 @@ interface CartProviderProps {
 export function CartProvider({ children }: CartProviderProps) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isClient, setIsClient] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
+  // Set isClient to true when component mounts (client-side only)
   useEffect(() => {
     setIsClient(true);
-    
-    // Load cart from localStorage on client side
-    if (typeof window !== 'undefined') {
-      const savedCart = localStorage.getItem('garden-grains-cart');
-      if (savedCart) {
-        try {
-          const parsed = JSON.parse(savedCart);
-          setCartItems(parsed);
-        } catch (error) {
-          console.error('Error loading cart from localStorage:', error);
-        }
-      }
-    }
   }, []);
+
+  // Load cart from localStorage on mount
+  useEffect(() => {
+    console.log('📦 CartProvider: Loading from localStorage');
+    try {
+      const savedCart = localStorage.getItem('garden-grains-cart');
+      console.log('📦 Raw localStorage:', savedCart);
+      
+      if (savedCart) {
+        const parsed = JSON.parse(savedCart);
+        console.log('📦 Parsed cart:', parsed);
+        console.log('📦 Number of items:', parsed.length);
+        
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setCartItems(parsed);
+          console.log('📦 Cart loaded successfully:', parsed);
+        } else {
+          console.log('📦 Cart is empty array');
+          setCartItems([]);
+        }
+      } else {
+        console.log('📦 No cart in localStorage');
+        setCartItems([]);
+      }
+    } catch (error) {
+      console.error('📦 Error loading cart:', error);
+      setCartItems([]);
+    } finally {
+      setIsInitialized(true);
+    }
+  }, []); // Empty dependency array = run once on mount
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
-    if (isClient && typeof window !== 'undefined') {
+    if (isClient && isInitialized) {
+      console.log('💾 Saving cart to localStorage:', cartItems);
       localStorage.setItem('garden-grains-cart', JSON.stringify(cartItems));
     }
-  }, [cartItems, isClient]);
+  }, [cartItems, isClient, isInitialized]);
 
   // Helper to get normalized items for display
   const getNormalizedItems = (): NewCartItem[] => {
@@ -286,6 +306,7 @@ export function CartProvider({ children }: CartProviderProps) {
   };
 
   const addToCart = (itemData: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
+    console.log('➕ Adding to cart:', itemData);
     const quantity = itemData.quantity || 1;
     
     // Create the cart item with quantity
@@ -302,7 +323,7 @@ export function CartProvider({ children }: CartProviderProps) {
       const existingIndex = prevItems.findIndex(existingItem => {
         const normalizedExisting = normalizeCartItem(existingItem);
         
-        // Basic comparison (could be enhanced)
+        // Basic comparison
         return normalizedExisting.id === normalizedNewItem.id &&
                JSON.stringify(normalizedExisting.addons) === JSON.stringify(normalizedNewItem.addons) &&
                JSON.stringify(normalizedExisting.dressings) === JSON.stringify(normalizedNewItem.dressings) &&
@@ -318,9 +339,11 @@ export function CartProvider({ children }: CartProviderProps) {
           ...existingItem,
           quantity: existingItem.quantity + quantity,
         };
+        console.log('✅ Updated existing item:', updatedItems[existingIndex]);
         return updatedItems;
       } else {
         // Add new item
+        console.log('✅ Added new item');
         return [...prevItems, cartItem];
       }
     });
@@ -340,10 +363,12 @@ export function CartProvider({ children }: CartProviderProps) {
   };
 
   const removeFromCart = (id: string) => {
+    console.log('🗑️ Removing item:', id);
     setCartItems(prevItems => prevItems.filter(item => item.id !== id));
   };
 
   const clearCart = () => {
+    console.log('🧹 Clearing cart');
     setCartItems([]);
   };
 
@@ -354,6 +379,19 @@ export function CartProvider({ children }: CartProviderProps) {
       )
     );
   };
+
+  // Log state changes for debugging
+  useEffect(() => {
+    if (isInitialized) {
+      console.log('🔄 Cart state updated:', {
+        cartItems,
+        totalItems,
+        totalPrice,
+        isFreeDelivery,
+        finalTotal
+      });
+    }
+  }, [cartItems, totalItems, totalPrice, isFreeDelivery, finalTotal, isInitialized]);
 
   return (
     <CartContext.Provider

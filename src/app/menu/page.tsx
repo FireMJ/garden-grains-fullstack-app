@@ -3,7 +3,6 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
-import Header from "@/components/Header";
 import Image from "next/image";
 import { menuCategories } from '@/data/menuItems';
 
@@ -31,7 +30,6 @@ export default function MenuPage() {
 
   return (
     <>
-      <Header />
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pt-16">
         {/* Navigation Header */}
         <div className="sticky top-16 z-40 bg-white shadow-sm border-b">

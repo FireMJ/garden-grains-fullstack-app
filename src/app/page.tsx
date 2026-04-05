@@ -154,7 +154,7 @@ function AnimatedCounter({ value, duration = 1000 }) {
       return;
     }
 
-    const incrementTime = Math.max(30, duration / end); // Minimum 30ms per increment
+    const incrementTime = Math.max(30, duration / end);
     const timer = setInterval(() => {
       start += 1;
       setCount(start);
@@ -321,7 +321,7 @@ function LikeCounterButton() {
 // -------------------- New Client Promo Button with Registration Check --------------------
 function NewClientPromoButton() {
   const [isChecking, setIsChecking] = useState(false);
-  const [isNewClient, setIsNewClient] = useState(true); // Assume new until verified
+  const [isNewClient, setIsNewClient] = useState(true);
 
   // Check if user is already registered
   const checkIfRegistered = async () => {
@@ -338,7 +338,6 @@ function NewClientPromoButton() {
       }
       
       // In a real app, you would check with your backend/authentication
-      // For now, we'll simulate a check
       await new Promise(resolve => setTimeout(resolve, 500));
       
       // Mark as visited for future reference
@@ -347,7 +346,7 @@ function NewClientPromoButton() {
       
     } catch (error) {
       console.error("Error checking registration:", error);
-      setIsNewClient(true); // Default to showing promo on error
+      setIsNewClient(true);
     } finally {
       setIsChecking(false);
     }
@@ -364,7 +363,7 @@ function NewClientPromoButton() {
     } else {
       // Show message that promo is for new clients only
       alert('Welcome back! This 20% discount is for new clients only. Check your email for exclusive offers!');
-      window.location.href = '/signup'; // Still go to signup but without promo
+      window.location.href = '/signup';
     }
   };
 
@@ -435,8 +434,8 @@ function NewClientPromoButton() {
 
 // -------------------- Floating Buttons with Firebase Analytics --------------------
 function FloatingCartButton() {
-  const { cart } = useCart();
-  const itemCount = (cart && Array.isArray(cart) ? cart.reduce((total, item) => total + (item?.quantity || 1), 0) : 0);
+  const { cartItems, totalItems } = useCart(); // FIXED: Use cartItems instead of cart
+  const itemCount = totalItems || (cartItems && Array.isArray(cartItems) ? cartItems.reduce((total, item) => total + (item?.quantity || 1), 0) : 0);
 
   // Track cart button clicks in Firebase
   const trackCartClick = async () => {
@@ -586,9 +585,9 @@ function FloatingReserveButton() {
 
 // -------------------- Updated Header with Auth & Driver Sign-In --------------------
 function EnhancedHeader() {
-  const { cart } = useCart();
+  const { cartItems, totalItems } = useCart(); // FIXED: Use cartItems and totalItems
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const cartCount = cart && Array.isArray(cart) ? cart.reduce((sum, item) => sum + (item?.quantity || 0), 0) : 0;
+  const cartCount = totalItems || (cartItems && Array.isArray(cartItems) ? cartItems.reduce((sum, item) => sum + (item?.quantity || 0), 0) : 0);
   
   // Track navigation clicks in Firebase
   const trackNavClick = async (page: string) => {
@@ -1398,7 +1397,7 @@ function ContactLocationSection() {
                   <p className="text-[#666666] text-sm">
                     <strong>Phone:</strong> (069) 376-5574<br />
                     <strong>WhatsApp:</strong> +27 69 376 5574<br />
-                    <strong>Email:</strong> info@gardengrains.co.za<br />
+                    <strong>Email:</strong> hello@gardengrains.co.za<br />
                     <strong>Website:</strong> https://gardengrains.co.za
                   </p>
                 </div>

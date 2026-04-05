@@ -16,67 +16,67 @@ export const menuCategories = [
     id: "breakfast", 
     name: "Breakfast", 
     description: "Fresh morning meals", 
-    image: "https://images.unsplash.com/photo-1551782450-17144efb9c50?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+    image: "/images/public/breakfast/yoghurt-chia-bowl.jpg", 
   },
   { 
     id: "bowls", 
     name: "Signature Bowls", 
-    description: "Nourishing grain bowls", 
-    image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+    description: "Nourishing poke & chipotle inspired bowls", 
+    image: "/images/public/bowls/yoghurt-chia-bowl.jpg", 
   },
   { 
     id: "salads", 
     name: "Fresh Salads", 
     description: "Crisp and vibrant salads", 
-    image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+    image: "/images/public/bowls/yoghurt-chia-bowl.jpg", 
   },
   { 
     id: "wraps", 
     name: "Fresh Wraps", 
-    description: "Healthy wraps & rolls", 
-    image: "https://images.unsplash.com/photo-1550507997-2b0e1a12c6c9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+    description: "Healthy wraps & quesadillas packed with flavor", 
+    image: "/images/public/bowls/yoghurt-chia-bowl.jpg", 
   },
   { 
     id: "toasties", 
-    name: "Toasties & Melts", 
+    name: "Toasties", 
     description: "Warm pressed sandwiches", 
-    image: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+    image: "/images/public/bowls/yoghurt-chia-bowl.jpg",
   },
   { 
     id: "pastas", 
     name: "Fresh Pastas", 
-    description: "Handmade pasta dishes", 
-    image: "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+    description: "Homemade pasta dishes", 
+    image: "/images/public/bowls/yoghurt-chia-bowl.jpg", 
   },
   { 
     id: "stirfries", 
     name: "Stir Fries", 
     description: "Wok-tossed dishes", 
-    image: "https://images.unsplash.com/photo-1563245372-f21724e3856d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+    image: "/images/public/bowls/yoghurt-chia-bowl.jpg", 
   },
   { 
     id: "soups", 
     name: "Hearty Soups", 
     description: "Warming soups", 
-    image: "https://images.unsplash.com/photo-1547592166-23ac45744acd?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+    image: "/images/public/bowls/yoghurt-chia-bowl.jpg",
   },
   { 
-    id: "fries", 
-    name: "Crispy Fries", 
-    description: "Golden potato fries", 
-    image: "https://images.unsplash.com/photo-1576107232684-1279f390859f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+    id: "Grilled Chicken Strips & fries", 
+    name: "Grilled Chicken Strips & fries", 
+    description: "Smoky chicken & Golden fries", 
+    image: "/images/public/bowls/yoghurt-chia-bowl.jpg" 
   },
   { 
     id: "smoothies", 
     name: "Smoothies", 
     description: "Fresh fruit blends", 
-    image: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+    image: "/images/public/smoothies/smoothie.jpg" 
   },
   { 
     id: "juices", 
     name: "Fresh Juices", 
     description: "Cold-pressed juices", 
-    image: "https://images.unsplash.com/photo-1560512823-829485b8bf24?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+    image: "/images/public/juices/juice.jpg" 
   },
 ];
 
@@ -86,48 +86,48 @@ export const menuItems: MenuItem[] = [
   // Breakfast Items
   {
     id: 'breakfast-1',
-    name: 'Farm Breakfast Platter',
-    description: 'Eggs, boerewors, tomato, mushrooms, toast',
-    price: 89.99,
+    name: 'Wine Maker’s Breakfast',
+    description: 'two scrambled eggs, mushrooms, grilled cherry tomatoes, toasted sourdough bread. A hearty and satisfying way to start your day. served with a glass freshly squeezed lemonade juice.',
+    price: 149.00,
     category: 'breakfast',
     slug: 'farm-breakfast',
-    image: 'https://images.unsplash.com/photo-1551782450-17144efb9c50?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+    image: '/images/public/breakfast/yoghurt-chia-bowl.jpg',
     tags: ['Hearty', 'Traditional'],
     popular: true
   },
   {
     id: 'breakfast-2',
-    name: 'Avo & Egg Toast',
-    description: 'Sourdough, avocado, poached eggs, chili flakes',
-    price: 75.50,
+    name: 'Avo & poached Egg Toast',
+    description: 'poached egg, smashed avo, toasted sourdough bread. A simple yet delicious breakfast option that combines creamy avocado with a perfectly poached egg on top of crispy toast.',
+    price: 99.00,
     category: 'breakfast',
     slug: 'avo-egg-toast',
-    image: 'https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+    image: '/images/public/breakfast/yoghurt-chia-bowl.jpg',
     tags: ['Vegetarian', 'Healthy']
   },
   
   // Bowl Items
-  {
-    id: 'bowls-1',
-    name: 'Rainbow Grain Bowl',
-    description: 'Brown rice, roasted veg, chickpeas, avocado, tahini',
-    price: 115.99,
-    category: 'bowls',
-    slug: 'rainbow-bowl',
-    image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-    tags: ['Vegan', 'Gluten Free'],
-    popular: true
-  },
+{
+  id: 'bowls-1',
+  name: 'Grilled Chicken Poke Bowl',
+  description: 'base: select your base, protein: teriyaki-glazed grilled chicken strips, veggies: cucumber, corn, avocado, edamame, slaw, toppings: pineapple salsa, chopped chives, dressing: served with a dressing of your choice, finish: sesame seeds',
+  price: 115.99,
+  category: 'bowls',
+  slug: 'Grilled Chicken Poke Bowl',
+  image: '/images/public/bowls/yoghurt-chia-bowl.jpg',
+  tags: ['Healthy', 'Gluten Free'],
+  popular: true
+},
   
   // Wrap Items
   {
     id: 'wraps-1',
     name: 'Chicken & Avo Wrap',
     description: 'Grilled chicken, avocado, lettuce, tomato, garlic mayo',
-    price: 85.50,
+    price: 135.00,
     category: 'wraps',
     slug: 'chicken-avo-wrap',
-    image: 'https://images.unsplash.com/photo-1550507997-2b0e1a12c6c9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+    image: '/images/public/bowls/yoghurt-chia-bowl.jpg',
     tags: ['High Protein', 'Popular'],
     popular: true
   },
@@ -135,12 +135,12 @@ export const menuItems: MenuItem[] = [
   // Toasties Items
   {
     id: 'toasties-1',
-    name: 'Three Cheese Toastie',
-    description: 'Cheddar, mozzarella, gouda with tomato and basil',
-    price: 65.99,
+    name: 'Pulled Lamb & Caramelised Onion Toastie',
+    description: 'sourdough, spiced pulled lamb, garlic, caramelised onion, arugula, cheddar cheese & pickled cucumber ribbons',
+    price: 139.00,
     category: 'toasties',
-    slug: 'three-cheese-toastie',
-    image: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+    slug: 'Pulled Lamb & Caramelised Onion Toastie',
+    image: '/images/public/bowls/yoghurt-chia-bowl.jpg',
     tags: ['Vegetarian', 'Classic']
   },
   
