@@ -1,82 +1,61 @@
 "use client";
-export const dynamic = "force-dynamic";
 
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { useCart, type CartItem } from "@/context/CartContext";
 import { toasties } from "@/data/toastiesData";
+import { useCart } from "@/context/CartContext";
+import { FaArrowLeft } from "react-icons/fa";
 
 export default function ToastiesListPage() {
   const router = useRouter();
-  const { cart: cartItems } = useCart();
+  const { cartItems } = useCart();
+  const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
+
   const safeCartItems = cartItems && Array.isArray(cartItems) ? cartItems : [];
   const cartItemsCount = safeCartItems.length;
-  // Calculate values since they are not provided by CartContext
-  const totalItems = (cartItems || []).reduce((total: number, item: CartItem) => total + (item.quantity || 1), 0);
-  const totalPrice = (cartItems || []).reduce((total: number, item: CartItem) => total + (item.price || 0) * (item.quantity || 1), 0);
+  const totalPrice = safeCartItems.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 1)), 0);
 
-  const handleNavigate = (slug: string) => {
-    router.push(`/menu/toasties/${slug}`);
+  const handleImageError = (itemId: string) => {
+    setImgErrors(prev => ({ ...prev, [itemId]: true }));
   };
 
-
   return (
-    <main className="min-h-screen bg-[#1E4259] text-white pt-20">
-      {/* Navigation Header */}
-      <div className="bg-white/10 backdrop-blur-sm border-b border-white/20">
-        <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <Link 
-              href="/menu"
-              className="flex items-center text-white hover:text-[#F4A261] transition"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Back to Menu
-            </Link>
-            <Link 
-              href="/"
-              className="flex items-center text-white hover:text-[#F4A261] transition"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
-              Home
-            </Link>
-          </div>
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="max-w-7xl mx-auto px-4">
+        {/* Back to Menu Button */}
+        <div className="mb-6">
+          <Link
+            href="/menu"
+            className="inline-flex items-center gap-2 text-gray-600 hover:text-green-600 transition group"
+          >
+            <FaArrowLeft className="group-hover:-translate-x-1 transition-transform" />
+            <span>Back to Menu</span>
+          </Link>
         </div>
-      </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-[#F4A261]">
-            Gourmet Toasties
-          </h1>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-            Delicious, crispy toasties made with artisanal sourdough bread and premium ingredients
+          <h1 className="text-4xl font-bold text-[#2F5D50] mb-4">Gourmet Toasties</h1>
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            Delicious, crispy toasties made with artisanal sourdough bread and premium ingredients.
+            Perfect for a quick and satisfying meal.
           </p>
         </div>
 
         {/* Cart Summary */}
-        {(cartItems && Array.isArray(cartItems) && safeCartItems.length > 0) && (
-          <div className="bg-[#6c8665] rounded-lg p-4 mb-8 max-w-4xl mx-auto">
+        {cartItemsCount > 0 && (
+          <div className="bg-amber-50 rounded-lg p-4 mb-8 max-w-4xl mx-auto">
             <div className="flex justify-between items-center">
               <div>
-                <p className="font-semibold text-lg">
-                  Items in cart: {totalItems}
-                </p>
-                <p className="text-[#F4A261] font-bold text-xl">
-                  Total: R {totalPrice.toFixed(2)}
-                </p>
+                <p className="font-semibold text-lg">Items in cart: {cartItemsCount}</p>
+                <p className="text-green-600 font-bold text-xl">Total: R {totalPrice.toFixed(2)}</p>
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => router.push("/cart")}
-                  className="px-4 py-2 bg-[#F4A261] text-white rounded-lg hover:bg-[#e68e42] transition font-semibold"
+                  className="px-4 py-2 bg-[#2F5D50] text-white rounded-lg hover:bg-[#244a3f] transition font-semibold"
                 >
                   View Cart
                 </button>
@@ -91,110 +70,88 @@ export default function ToastiesListPage() {
           </div>
         )}
 
-        {/* Menu Items Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {toasties.map((item) => {
-            const inCart = safeCartItems.filter(
-              (c) => c.name.toLowerCase() === item.name.toLowerCase()
-            );
-            const itemCount = inCart.reduce((sum: number, i) => sum + i.quantity, 0);
-            const itemTotal = inCart.reduce(
-              (sum, i) => sum + ((i.price || 0) * i.quantity),
-              0
-            );
-
-            return (
-              <div
-                key={item.id}
-                onClick={() => handleNavigate(item.slug)}
-                className="bg-white/10 rounded-2xl shadow-lg cursor-pointer overflow-hidden transition transform hover:scale-105 hover:shadow-xl backdrop-blur-sm"
-              >
-                <div className="relative w-full h-52">
+        {/* Toasties Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {toasties.map((item) => (
+            <div
+              key={item.id}
+              className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 cursor-pointer"
+              onClick={() => router.push(`/menu/toasties/${item.slug}`)}
+            >
+              {/* Toastie Image */}
+              <div className="relative h-48 w-full bg-gradient-to-br from-amber-100 to-orange-100">
+                {!imgErrors[item.id] ? (
                   <Image
                     src={item.image}
                     alt={item.name}
                     fill
                     className="object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                      target.nextElementSibling?.classList.remove('hidden');
-                    }}
+                    onError={() => handleImageError(item.id)}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#6C7B58] to-[#8A9B6E] hidden items-center justify-center">
-                    <span className="text-white/80 text-sm">Toastie Image</span>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-4xl">
+                    🥪
                   </div>
+                )}
+                
+                {/* Popular Badge */}
+                {item.popular && (
+                  <div className="absolute top-3 left-3">
+                    <span className="bg-[#F4A261] text-white text-xs px-2 py-1 rounded-full">
+                      Popular
+                    </span>
+                  </div>
+                )}
+                
+                {/* Tags */}
+                <div className="absolute top-3 right-3 flex gap-2">
+                  {item.tags?.slice(0, 2).map((tag, idx) => (
+                    <span key={idx} className="bg-black/60 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
+                      {tag}
+                    </span>
+                  ))}
                 </div>
+              </div>
 
-                <div className="p-6 flex flex-col gap-2">
-                  <h2 className="text-2xl font-bold text-green-200">
-                    {item.name}
-                  </h2>
-                  <p className="text-gray-100 text-sm line-clamp-3">
-                    {item.description}
-                  </p>
-                  <span className="font-bold text-green-300 text-lg">
-                    R{item.price.toFixed(2)}
-                  </span>
+              {/* Toastie Info */}
+              <div className="p-5">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">{item.name}</h3>
+                <p className="text-gray-600 text-sm mb-3 line-clamp-2">{item.description}</p>
 
-                  {/* Show live cart count for this item */}
-                  {itemCount > 0 && (
-                    <div className="text-sm bg-green-200 text-green-900 rounded-md px-3 py-1 mt-1 font-semibold">
-                      ✅ In Cart: {itemCount} item{itemCount > 1 ? "s" : ""} • R
-                      {itemTotal.toFixed(2)}
-                    </div>
-                  )}
-
+                {/* Price and Action */}
+                <div className="flex items-center justify-between mt-4 pt-3 border-t">
+                  <div>
+                    <span className="text-2xl font-bold text-green-600">R{item.price}</span>
+                  </div>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleNavigate(item.slug);
+                      router.push(`/menu/toasties/${item.slug}`);
                     }}
-                    className="mt-3 bg-[#F4A261] hover:bg-[#e68e42] text-white font-semibold py-2 px-4 rounded-lg transition"
+                    className="bg-[#2F5D50] text-white px-4 py-2 rounded-lg hover:bg-[#244a3f] transition text-sm font-medium"
                   >
-                    Customize & Add
+                    Customize
                   </button>
                 </div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
 
-        {/* Quick Navigation */}
-        <div className="mt-12 text-center">
-          <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm max-w-2xl mx-auto">
-            <h3 className="text-xl font-bold text-white mb-4">
-              Explore Other Categories
-            </h3>
-            <div className="flex flex-wrap justify-center gap-3">
-              <Link
-                href="/menu/breakfast"
-                className="bg-[#F4A261] text-white px-4 py-2 rounded-lg hover:bg-[#e68e42] transition text-sm"
-              >
-                Breakfast
-              </Link>
-              <Link
-                href="/menu/bowls"
-                className="bg-[#6C7B58] text-white px-4 py-2 rounded-lg hover:bg-[#5a6a4d] transition text-sm"
-              >
-                Bowls
-              </Link>
-              <Link
-                href="/menu/juices"
-                className="bg-[#2A5568] text-white px-4 py-2 rounded-lg hover:bg-[#1E4259] transition text-sm"
-              >
-                Juices
-              </Link>
-              <Link
-                href="/menu"
-                className="border border-white text-white px-4 py-2 rounded-lg hover:bg-white hover:text-[#1E4259] transition text-sm"
-              >
-                All Categories
-              </Link>
-            </div>
+        {/* Add-ons Info */}
+        <div className="mt-12 p-6 bg-amber-50 rounded-xl text-center">
+          <h3 className="font-bold text-amber-800 mb-2">Customize Your Toastie</h3>
+          <p className="text-amber-700 text-sm">
+            Add extra bacon, cheese, or avocado to make your toastie even more delicious!
+          </p>
+          <div className="flex flex-wrap justify-center gap-2 mt-3">
+            <span className="text-xs bg-white px-2 py-1 rounded-full shadow-sm">+ Extra Bacon (R25)</span>
+            <span className="text-xs bg-white px-2 py-1 rounded-full shadow-sm">+ Extra Cheese (R15)</span>
+            <span className="text-xs bg-white px-2 py-1 rounded-full shadow-sm">+ Avocado (R20)</span>
+            <span className="text-xs bg-white px-2 py-1 rounded-full shadow-sm">+ Poached Egg (R15)</span>
           </div>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

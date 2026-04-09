@@ -148,9 +148,9 @@ export default function CartPage() {
                 {/* Juice */}
                 {item.juice && (
                   <p className="text-sm text-gray-600">
-                    + {item.juice.option?.name || item.juice.name} 
+                    + {(item.juice as any).option?.name || item.juice.name} 
                     {item.juice.size && ` (${item.juice.size})`} 
-                    (+R{item.juice.price?.toFixed(2) || item.juice.option?.price.toFixed(2)})
+                    (+R{item.juice.price?.toFixed(2) || (item.juice as any).option?.price.toFixed(2)})
                   </p>
                 )}
 

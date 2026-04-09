@@ -4,6 +4,26 @@ export interface AddOn {
   price: number;
 }
 
+export interface ProteinOption {
+  id: string;
+  name: string;
+  price: number;
+}
+
+export interface DipOption {
+  id: string;
+  name: string;
+  price: number;
+}
+
+export interface FriesUpsell {
+  id: string;
+  name: string;
+  price: number;
+  dips?: DipOption[];
+  optional?: boolean;
+}
+
 export interface JuiceOption {
   id: string;
   name: string;
@@ -15,13 +35,6 @@ export interface JuiceGroup {
   options: JuiceOption[];
 }
 
-export interface FriesOption {
-  id: string;
-  name: string;
-  price: number;
-  optional?: boolean;
-}
-
 export interface WrapItem {
   id: string;
   slug: string;
@@ -29,395 +42,149 @@ export interface WrapItem {
   description: string;
   price: number;
   image: string;
-  addOns: AddOn[];
-  friesUpsell: FriesOption[];
-  juiceUpsell: JuiceGroup[];
+  tags?: string[];
+  proteinOptions?: ProteinOption[];
+  addOns?: AddOn[];
+  friesUpsell?: FriesUpsell[];
+  juiceUpsell?: JuiceGroup[];
 }
 
+// Fries dip options
+export const friesDips: DipOption[] = [
+  { id: "dip1", name: "Garden Mayo", price: 0 },
+  { id: "dip2", name: "Tomato Ketchup", price: 0 },
+];
+
+// Fries upsell options with dips
+export const friesUpsellOptions: FriesUpsell[] = [
+  { id: "fries1", name: "Skinny French Fries", price: 25, dips: friesDips },
+  { id: "fries2", name: "Sweet Potato Fries", price: 25, dips: friesDips },
+];
+
+// Juice upsell options
+export const juiceUpsellOptions: JuiceGroup[] = [
+  {
+    size: "250ml",
+    options: [
+      { id: "juice1", name: "Orange Juice", price: 55 },
+      { id: "juice2", name: "Apple & Lemon Juice", price: 55 },
+      { id: "juice3", name: "The Green Mile", price: 55 },
+      { id: "juice4", name: "Fruit Punch", price: 55 },
+      { id: "juice5", name: "Up Beet Juice", price: 55 },
+      { id: "juice6", name: "GLOW", price: 55 },
+    ],
+  },
+  {
+    size: "350ml",
+    options: [
+      { id: "juice7", name: "Orange Juice", price: 75 },
+      { id: "juice8", name: "Apple & Lemon Juice", price: 75 },
+      { id: "juice9", name: "The Green Mile", price: 75 },
+      { id: "juice10", name: "Fruit Punch", price: 75 },
+      { id: "juice11", name: "Up Beet Juice", price: 75 },
+      { id: "juice12", name: "GLOW", price: 75 },
+    ],
+  },
+  {
+    size: "500ml",
+    options: [
+      { id: "juice13", name: "Orange Juice", price: 95 },
+      { id: "juice14", name: "Apple & Lemon Juice", price: 95 },
+      { id: "juice15", name: "The Green Mile", price: 95 },
+      { id: "juice16", name: "Fruit Punch", price: 95 },
+      { id: "juice17", name: "Up Beet Juice", price: 95 },
+      { id: "juice18", name: "GLOW", price: 95 },
+    ],
+  },
+];
+
+// Common add-ons for wraps
+export const wrapAddOns: AddOn[] = [
+  { id: "addon1", name: "Extra Chicken", price: 40 },
+  { id: "addon2", name: "Extra Beef", price: 45 },
+  { id: "addon3", name: "Extra Lamb", price: 50 },
+  { id: "addon4", name: "Avocado", price: 20 },
+  { id: "addon5", name: "Feta Cheese", price: 25 },
+  { id: "addon6", name: "Cheddar Cheese", price: 20 },
+  { id: "addon7", name: "Mushrooms", price: 20 },
+];
+
+// Quesadilla protein options - Pulled Lamb added at R20
+export const quesadillaProteins: ProteinOption[] = [
+  { id: "protein1", name: "Avocado", price: 0 },
+  { id: "protein2", name: "Minced Beef", price: 0 },
+  { id: "protein3", name: "Pulled Chicken", price: 0 },
+  { id: "protein4", name: "Pulled Beef", price: 0 },
+  { id: "protein5", name: "Pulled Pork", price: 0 },
+  { id: "protein6", name: "Pulled Lamb +R20", price: 20 },
+  { id: "protein7", name: "Spinach & Feta", price: 0 },
+  { id: "protein8", name: "Tomato & Mushroom", price: 0 },
+];
+
+// Wrap items from the menu
 export const wraps: WrapItem[] = [
   {
     id: "wrap-1",
-    slug: "mediterranean-pulled-lamb",
-    name: "Mediterranean Pulled Lamb Wrap",
-    description: "Tortilla wrap, juicy pulled lamb, hummus, slaw, cucumber, pickled onion, cherry tomatoes, and garlic yoghurt — drizzled with lemon-herb tahini.",
-    price: 125.00,
-    image: "/images/wraps/mediterranean-pulled-lamb.jpg",
-    addOns: [
-      { id: "addon-1-1", name: "Extra pulled lamb", price: 40.00 },
-      { id: "addon-1-2", name: "Extra hummus", price: 15.00 },
-      { id: "addon-1-3", name: "Extra garlic yoghurt", price: 12.00 }
-    ],
-    friesUpsell: [
-      { id: "fries-1-1", name: "Skinny Potato Chips", price: 45.00 },
-      { id: "fries-1-2", name: "Sweet Potato Fries", price: 59.00 },
-      { id: "fries-1-3", name: "No Sauce", price: 0, optional: true },
-      { id: "fries-1-4", name: "Garden & Grains Mayo", price: 0, optional: true },
-      { id: "fries-1-5", name: "Tomato Sauce", price: 0, optional: true },
-      { id: "fries-1-6", name: "Garlic Aioli", price: 5.00, optional: true },
-      { id: "fries-1-7", name: "BBQ Sauce", price: 5.00, optional: true },
-      { id: "fries-1-8", name: "Peri Peri Sauce", price: 5.00, optional: true }
-    ],
-    juiceUpsell: [
-      {
-        size: "250ml",
-        options: [
-          { id: "juice-1-1", name: "Orange Juice", price: 35.00 },
-          { id: "juice-1-2", name: "Carrot & Ginger Juice", price: 38.00 },
-          { id: "juice-1-3", name: "Mango Juice", price: 37.00 },
-          { id: "juice-1-4", name: "Apple & Pear Juice", price: 36.00 },
-          { id: "juice-1-5", name: "Green Mile Juice", price: 40.00 }
-        ]
-      },
-      {
-        size: "350ml",
-        options: [
-          { id: "juice-1-6", name: "Orange Juice", price: 45.00 },
-          { id: "juice-1-7", name: "Carrot & Ginger Juice", price: 48.00 },
-          { id: "juice-1-8", name: "Mango Juice", price: 47.00 },
-          { id: "juice-1-9", name: "Apple & Pear Juice", price: 46.00 },
-          { id: "juice-1-10", name: "Green Mile Juice", price: 50.00 }
-        ]
-      },
-      {
-        size: "500ml",
-        options: [
-          { id: "juice-1-11", name: "Orange Juice", price: 55.00 },
-          { id: "juice-1-12", name: "Carrot & Ginger Juice", price: 58.00 },
-          { id: "juice-1-13", name: "Mango Juice", price: 57.00 },
-          { id: "juice-1-14", name: "Apple & Pear Juice", price: 56.00 },
-          { id: "juice-1-15", name: "Green Mile Juice", price: 60.00 }
-        ]
-      }
-    ]
+    slug: "chicken-avocado-wrap",
+    name: "Chicken Avocado Wrap",
+    description: "Tortilla, sliced chicken breast, avocado, sautéed cherry tomatoes, pickled red onions, baby spinach & Greek yoghurt",
+    price: 135,
+    image: "/images/wraps/chicken-avocado.jpg",
+    tags: ["popular", "protein-rich"],
+    addOns: wrapAddOns,
+    friesUpsell: friesUpsellOptions,
+    juiceUpsell: juiceUpsellOptions,
   },
   {
     id: "wrap-2",
-    slug: "pulled-beef-slaw", 
-    name: "Pulled Beef and Slaw Wrap",
-    description: "Tortilla, pulled beef, slaw (cabbage, onions, carrots, raisins, apple, mayo), cheddar cheese",
-    price: 118.00,
-    image: "/images/wraps/pulled-beef-slaw.jpg",
-    addOns: [
-      { id: "addon-2-1", name: "Extra pulled beef", price: 38.00 },
-      { id: "addon-2-2", name: "Extra slaw", price: 15.00 },
-      { id: "addon-2-3", name: "Extra cheddar cheese", price: 20.00 }
-    ],
-    friesUpsell: [
-      { id: "fries-2-1", name: "Skinny Potato Chips", price: 45.00 },
-      { id: "fries-2-2", name: "Sweet Potato Fries", price: 59.00 },
-      { id: "fries-2-3", name: "No Sauce", price: 0, optional: true },
-      { id: "fries-2-4", name: "Garden & Grains Mayo", price: 0, optional: true },
-      { id: "fries-2-5", name: "Tomato Sauce", price: 0, optional: true },
-      { id: "fries-2-6", name: "Garlic Aioli", price: 5.00, optional: true },
-      { id: "fries-2-7", name: "BBQ Sauce", price: 5.00, optional: true },
-      { id: "fries-2-8", name: "Peri Peri Sauce", price: 5.00, optional: true }
-    ],
-    juiceUpsell: [
-      {
-        size: "250ml",
-        options: [
-          { id: "juice-2-1", name: "Orange Juice", price: 35.00 },
-          { id: "juice-2-2", name: "Carrot & Ginger Juice", price: 38.00 },
-          { id: "juice-2-3", name: "Mango Juice", price: 37.00 },
-          { id: "juice-2-4", name: "Apple & Pear Juice", price: 36.00 },
-          { id: "juice-2-5", name: "Green Mile Juice", price: 40.00 }
-        ]
-      },
-      {
-        size: "350ml",
-        options: [
-          { id: "juice-2-6", name: "Orange Juice", price: 45.00 },
-          { id: "juice-2-7", name: "Carrot & Ginger Juice", price: 48.00 },
-          { id: "juice-2-8", name: "Mango Juice", price: 47.00 },
-          { id: "juice-2-9", name: "Apple & Pear Juice", price: 46.00 },
-          { id: "juice-2-10", name: "Green Mile Juice", price: 50.00 }
-        ]
-      },
-      {
-        size: "500ml",
-        options: [
-          { id: "juice-2-11", name: "Orange Juice", price: 55.00 },
-          { id: "juice-2-12", name: "Carrot & Ginger Juice", price: 58.00 },
-          { id: "juice-2-13", name: "Mango Juice", price: 57.00 },
-          { id: "juice-2-14", name: "Apple & Pear Juice", price: 56.00 },
-          { id: "juice-2-15", name: "Green Mile Juice", price: 60.00 }
-        ]
-      }
-    ]
+    slug: "pulled-beef-slaw",
+    name: "Pulled Beef & Slaw",
+    description: "Tortilla, pulled beef, house-made slaw (cabbage, onions, carrots, raisins, apple, mayo), caramelised onions & cheddar cheese",
+    price: 145,
+    image: "/images/wraps/pulled-beef.jpg",
+    tags: ["bestseller", "protein-rich"],
+    addOns: wrapAddOns,
+    friesUpsell: friesUpsellOptions,
+    juiceUpsell: juiceUpsellOptions,
   },
   {
     id: "wrap-3",
-    slug: "beef-bbq-slaw",
-    name: "Beef & Slaw Wrap",
-    description: "Tortilla, beef strips with BBQ sauce, coleslaw, caramelized onions, & cheddar cheese",
-    price: 115.00,
-    image: "/images/wraps/beef-bbq-slaw.jpg",
-    addOns: [
-      { id: "addon-3-1", name: "Extra beef strips", price: 35.00 },
-      { id: "addon-3-2", name: "Extra BBQ sauce", price: 8.00 },
-      { id: "addon-3-3", name: "Extra cheddar cheese", price: 20.00 }
-    ],
-    friesUpsell: [
-      { id: "fries-3-1", name: "Skinny Potato Chips", price: 45.00 },
-      { id: "fries-3-2", name: "Sweet Potato Fries", price: 59.00 },
-      { id: "fries-3-3", name: "No Sauce", price: 0, optional: true },
-      { id: "fries-3-4", name: "Garden & Grains Mayo", price: 0, optional: true },
-      { id: "fries-3-5", name: "Tomato Sauce", price: 0, optional: true },
-      { id: "fries-3-6", name: "Garlic Aioli", price: 5.00, optional: true },
-      { id: "fries-3-7", name: "BBQ Sauce", price: 5.00, optional: true },
-      { id: "fries-3-8", name: "Peri Peri Sauce", price: 5.00, optional: true }
-    ],
-    juiceUpsell: [
-      {
-        size: "250ml",
-        options: [
-          { id: "juice-3-1", name: "Orange Juice", price: 35.00 },
-          { id: "juice-3-2", name: "Carrot & Ginger Juice", price: 38.00 },
-          { id: "juice-3-3", name: "Mango Juice", price: 37.00 },
-          { id: "juice-3-4", name: "Apple & Pear Juice", price: 36.00 },
-          { id: "juice-3-5", name: "Green Mile Juice", price: 40.00 }
-        ]
-      },
-      {
-        size: "350ml",
-        options: [
-          { id: "juice-3-6", name: "Orange Juice", price: 45.00 },
-          { id: "juice-3-7", name: "Carrot & Ginger Juice", price: 48.00 },
-          { id: "juice-3-8", name: "Mango Juice", price: 47.00 },
-          { id: "juice-3-9", name: "Apple & Pear Juice", price: 46.00 },
-          { id: "juice-3-10", name: "Green Mile Juice", price: 50.00 }
-        ]
-      },
-      {
-        size: "500ml",
-        options: [
-          { id: "juice-3-11", name: "Orange Juice", price: 55.00 },
-          { id: "juice-3-12", name: "Carrot & Ginger Juice", price: 58.00 },
-          { id: "juice-3-13", name: "Mango Juice", price: 57.00 },
-          { id: "juice-3-14", name: "Apple & Pear Juice", price: 56.00 },
-          { id: "juice-3-15", name: "Green Mile Juice", price: 60.00 }
-        ]
-      }
-    ]
+    slug: "mediterranean-veg",
+    name: "Mediterranean Veg (V)",
+    description: "Tortilla, hummus, cucumber, tomatoes, red onions, bell peppers, olives, feta cheese & baby spinach",
+    price: 130,
+    image: "/images/wraps/mediterranean-veg.jpg",
+    tags: ["vegetarian", "healthy"],
+    addOns: wrapAddOns,
+    friesUpsell: friesUpsellOptions,
+    juiceUpsell: juiceUpsellOptions,
   },
   {
     id: "wrap-4",
-    slug: "high-protein-breakfast",
-    name: "High Protein Breakfast Tortilla",
-    description: "Scrambled eggs with spring onion, cottage cheese, avocado, baby spinach, macon, cheddar cheese",
-    price: 98.00,
-    image: "/images/wraps/high-protein-breakfast.jpg",
-    addOns: [
-      { id: "addon-4-1", name: "Extra scrambled eggs", price: 15.00 },
-      { id: "addon-4-2", name: "Extra avocado", price: 18.00 },
-      { id: "addon-4-3", name: "Extra macon", price: 22.00 }
-    ],
-    friesUpsell: [
-      { id: "fries-4-1", name: "Skinny Potato Chips", price: 45.00 },
-      { id: "fries-4-2", name: "Sweet Potato Fries", price: 59.00 },
-      { id: "fries-4-3", name: "No Sauce", price: 0, optional: true },
-      { id: "fries-4-4", name: "Garden & Grains Mayo", price: 0, optional: true },
-      { id: "fries-4-5", name: "Tomato Sauce", price: 0, optional: true },
-      { id: "fries-4-6", name: "Garlic Aioli", price: 5.00, optional: true },
-      { id: "fries-4-7", name: "BBQ Sauce", price: 5.00, optional: true },
-      { id: "fries-4-8", name: "Peri Peri Sauce", price: 5.00, optional: true }
-    ],
-    juiceUpsell: [
-      {
-        size: "250ml",
-        options: [
-          { id: "juice-4-1", name: "Orange Juice", price: 35.00 },
-          { id: "juice-4-2", name: "Carrot & Ginger Juice", price: 38.00 },
-          { id: "juice-4-3", name: "Mango Juice", price: 37.00 },
-          { id: "juice-4-4", name: "Apple & Pear Juice", price: 36.00 },
-          { id: "juice-4-5", name: "Green Mile Juice", price: 40.00 }
-        ]
-      },
-      {
-        size: "350ml",
-        options: [
-          { id: "juice-4-6", name: "Orange Juice", price: 45.00 },
-          { id: "juice-4-7", name: "Carrot & Ginger Juice", price: 48.00 },
-          { id: "juice-4-8", name: "Mango Juice", price: 47.00 },
-          { id: "juice-4-9", name: "Apple & Pear Juice", price: 46.00 },
-          { id: "juice-4-10", name: "Green Mile Juice", price: 50.00 }
-        ]
-      },
-      {
-        size: "500ml",
-        options: [
-          { id: "juice-4-11", name: "Orange Juice", price: 55.00 },
-          { id: "juice-4-12", name: "Carrot & Ginger Juice", price: 58.00 },
-          { id: "juice-4-13", name: "Mango Juice", price: 57.00 },
-          { id: "juice-4-14", name: "Apple & Pear Juice", price: 56.00 },
-          { id: "juice-4-15", name: "Green Mile Juice", price: 60.00 }
-        ]
-      }
-    ]
+    slug: "the-nomad",
+    name: "The Nomad",
+    description: "Tortilla, pulled lamb, house-made slaw (cabbage, onions, carrots, raisins, apple, garlic yoghurt), pickled red onions, cherry tomatoes & tahini",
+    price: 148,
+    image: "/images/wraps/the-nomad.jpg",
+    tags: ["signature", "popular"],
+    addOns: wrapAddOns,
+    friesUpsell: friesUpsellOptions,
+    juiceUpsell: juiceUpsellOptions,
   },
   {
     id: "wrap-5",
-    slug: "mediterranean-veg",
-    name: "Mediterranean Veg Wrap",
-    description: "Tortilla wrap, hummus, with chopped cucumbers, tomatoes, red onions, bell peppers, olives, feta cheese, & baby spinach",
-    price: 95.00,
-    image: "/images/wraps/mediterranean-veg.jpg",
-    addOns: [
-      { id: "addon-5-1", name: "Extra feta cheese", price: 18.00 },
-      { id: "addon-5-2", name: "Extra hummus", price: 15.00 },
-      { id: "addon-5-3", name: "Extra olives", price: 12.00 }
-    ],
-    friesUpsell: [
-      { id: "fries-5-1", name: "Skinny Potato Chips", price: 45.00 },
-      { id: "fries-5-2", name: "Sweet Potato Fries", price: 59.00 },
-      { id: "fries-5-3", name: "No Sauce", price: 0, optional: true },
-      { id: "fries-5-4", name: "Garden & Grains Mayo", price: 0, optional: true },
-      { id: "fries-5-5", name: "Tomato Sauce", price: 0, optional: true },
-      { id: "fries-5-6", name: "Garlic Aioli", price: 5.00, optional: true },
-      { id: "fries-5-7", name: "BBQ Sauce", price: 5.00, optional: true },
-      { id: "fries-5-8", name: "Peri Peri Sauce", price: 5.00, optional: true }
-    ],
-    juiceUpsell: [
-      {
-        size: "250ml",
-        options: [
-          { id: "juice-5-1", name: "Orange Juice", price: 35.00 },
-          { id: "juice-5-2", name: "Carrot & Ginger Juice", price: 38.00 },
-          { id: "juice-5-3", name: "Mango Juice", price: 37.00 },
-          { id: "juice-5-4", name: "Apple & Pear Juice", price: 36.00 },
-          { id: "juice-5-5", name: "Green Mile Juice", price: 40.00 }
-        ]
-      },
-      {
-        size: "350ml",
-        options: [
-          { id: "juice-5-6", name: "Orange Juice", price: 45.00 },
-          { id: "juice-5-7", name: "Carrot & Ginger Juice", price: 48.00 },
-          { id: "juice-5-8", name: "Mango Juice", price: 47.00 },
-          { id: "juice-5-9", name: "Apple & Pear Juice", price: 46.00 },
-          { id: "juice-5-10", name: "Green Mile Juice", price: 50.00 }
-        ]
-      },
-      {
-        size: "500ml",
-        options: [
-          { id: "juice-5-11", name: "Orange Juice", price: 55.00 },
-          { id: "juice-5-12", name: "Carrot & Ginger Juice", price: 58.00 },
-          { id: "juice-5-13", name: "Mango Juice", price: 57.00 },
-          { id: "juice-5-14", name: "Apple & Pear Juice", price: 56.00 },
-          { id: "juice-5-15", name: "Green Mile Juice", price: 60.00 }
-        ]
-      }
-    ]
-  },
-  {
-    id: "wrap-6",
-    slug: "chicken-avocado",
-    name: "Chicken Avocado Wrap",
-    description: "Tortilla wrap, chicken breast sliced, avocado sliced, sautéed cherry tomatoes, pickled red onions, baby spinach, & greek yoghurt",
-    price: 112.00,
-    image: "/images/wraps/chicken-avocado.jpg",
-    addOns: [
-      { id: "addon-6-1", name: "Extra chicken breast", price: 35.00 },
-      { id: "addon-6-2", name: "Extra avocado", price: 18.00 },
-      { id: "addon-6-3", name: "Extra greek yoghurt", price: 12.00 }
-    ],
-    friesUpsell: [
-      { id: "fries-6-1", name: "Skinny Potato Chips", price: 45.00 },
-      { id: "fries-6-2", name: "Sweet Potato Fries", price: 59.00 },
-      { id: "fries-6-3", name: "No Sauce", price: 0, optional: true },
-      { id: "fries-6-4", name: "Garden & Grains Mayo", price: 0, optional: true },
-      { id: "fries-6-5", name: "Tomato Sauce", price: 0, optional: true },
-      { id: "fries-6-6", name: "Garlic Aioli", price: 5.00, optional: true },
-      { id: "fries-6-7", name: "BBQ Sauce", price: 5.00, optional: true },
-      { id: "fries-6-8", name: "Peri Peri Sauce", price: 5.00, optional: true }
-    ],
-    juiceUpsell: [
-      {
-        size: "250ml",
-        options: [
-          { id: "juice-6-1", name: "Orange Juice", price: 35.00 },
-          { id: "juice-6-2", name: "Carrot & Ginger Juice", price: 38.00 },
-          { id: "juice-6-3", name: "Mango Juice", price: 37.00 },
-          { id: "juice-6-4", name: "Apple & Pear Juice", price: 36.00 },
-          { id: "juice-6-5", name: "Green Mile Juice", price: 40.00 }
-        ]
-      },
-      {
-        size: "350ml",
-        options: [
-          { id: "juice-6-6", name: "Orange Juice", price: 45.00 },
-          { id: "juice-6-7", name: "Carrot & Ginger Juice", price: 48.00 },
-          { id: "juice-6-8", name: "Mango Juice", price: 47.00 },
-          { id: "juice-6-9", name: "Apple & Pear Juice", price: 46.00 },
-          { id: "juice-6-10", name: "Green Mile Juice", price: 50.00 }
-        ]
-      },
-      {
-        size: "500ml",
-        options: [
-          { id: "juice-6-11", name: "Orange Juice", price: 55.00 },
-          { id: "juice-6-12", name: "Carrot & Ginger Juice", price: 58.00 },
-          { id: "juice-6-13", name: "Mango Juice", price: 57.00 },
-          { id: "juice-6-14", name: "Apple & Pear Juice", price: 56.00 },
-          { id: "juice-6-15", name: "Green Mile Juice", price: 60.00 }
-        ]
-      }
-    ]
-  },
-  {
-    id: "wrap-7",
     slug: "crunchy-quesadilla",
-    name: "Crunchy Quesadilla Wrap",
-    description: "Tortilla filled with a choice of protein, melted cheese, tangy pickles, roasted peppers, caramelized onions",
-    price: 108.00,
-    image: "/images/wraps/crunchy-quesadilla.jpg",
-    addOns: [
-      { id: "addon-7-1", name: "Seasoned beef mince", price: 30.00 },
-      { id: "addon-7-2", name: "Pulled chicken", price: 35.00 },
-      { id: "addon-7-3", name: "Pulled beef", price: 38.00 }
-    ],
-    friesUpsell: [
-      { id: "fries-7-1", name: "Skinny Potato Chips", price: 45.00 },
-      { id: "fries-7-2", name: "Sweet Potato Fries", price: 59.00 },
-      { id: "fries-7-3", name: "No Sauce", price: 0, optional: true },
-      { id: "fries-7-4", name: "Garden & Grains Mayo", price: 0, optional: true },
-      { id: "fries-7-5", name: "Tomato Sauce", price: 0, optional: true },
-      { id: "fries-7-6", name: "Garlic Aioli", price: 5.00, optional: true },
-      { id: "fries-7-7", name: "BBQ Sauce", price: 5.00, optional: true },
-      { id: "fries-7-8", name: "Peri Peri Sauce", price: 5.00, optional: true }
-    ],
-    juiceUpsell: [
-      {
-        size: "250ml",
-        options: [
-          { id: "juice-7-1", name: "Orange Juice", price: 35.00 },
-          { id: "juice-7-2", name: "Carrot & Ginger Juice", price: 38.00 },
-          { id: "juice-7-3", name: "Mango Juice", price: 37.00 },
-          { id: "juice-7-4", name: "Apple & Pear Juice", price: 36.00 },
-          { id: "juice-7-5", name: "Green Mile Juice", price: 40.00 }
-        ]
-      },
-      {
-        size: "350ml",
-        options: [
-          { id: "juice-7-6", name: "Orange Juice", price: 45.00 },
-          { id: "juice-7-7", name: "Carrot & Ginger Juice", price: 48.00 },
-          { id: "juice-7-8", name: "Mango Juice", price: 47.00 },
-          { id: "juice-7-9", name: "Apple & Pear Juice", price: 46.00 },
-          { id: "juice-7-10", name: "Green Mile Juice", price: 50.00 }
-        ]
-      },
-      {
-        size: "500ml",
-        options: [
-          { id: "juice-7-11", name: "Orange Juice", price: 55.00 },
-          { id: "juice-7-12", name: "Carrot & Ginger Juice", price: 58.00 },
-          { id: "juice-7-13", name: "Mango Juice", price: 57.00 },
-          { id: "juice-7-14", name: "Apple & Pear Juice", price: 56.00 },
-          { id: "juice-7-15", name: "Green Mile Juice", price: 60.00 }
-        ]
-      }
-    ]
-  }
+    name: "Crunchy Quesadilla",
+    description: "Tortilla filled with your choice of protein or veg, cheddar cheese, tangy pickles, roasted peppers, caramelised onions",
+    price: 139,
+    image: "/images/wraps/quesadilla.jpg",
+    tags: ["popular", "cheesy"],
+    proteinOptions: quesadillaProteins,
+    addOns: wrapAddOns,
+    friesUpsell: friesUpsellOptions,
+    juiceUpsell: juiceUpsellOptions,
+  },
 ];
+
+// Export as allWraps for compatibility
+export const allWraps = wraps;

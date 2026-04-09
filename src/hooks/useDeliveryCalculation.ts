@@ -1,164 +1,113 @@
 import { useState, useCallback } from 'react';
-import { getDrivingDistance, getDrivingDistanceFromCoords, DistanceResult } from '@/lib/googleMaps';
+import { getDrivingDistanceFromCoords, loadGoogleMaps, isDeliveryAvailable, geocodeAddress } from '@/lib/googleMaps';
 
 const BASE_DELIVERY_FEE = 35; // R35 for first 5km
 const BASE_DISTANCE_KM = 5; // 5km base
-const EXTRA_RATE_PER_KM = 5; // R5 per additional km
-const FREE_DELIVERY_THRESHOLD = 850; // R850 for free delivery
+const EXTRA_KM_RATE = 5; // R5 per additional km
+const MAX_DELIVERY_DISTANCE = 15; // 15km max
 
 export interface DeliveryInfo {
-  distanceKm: number | null;
-  distanceText: string;
-  durationText: string;
-  deliveryFee: number;
-  isFreeDelivery: boolean;
-  addressValid: boolean;
-  error: string | null;
-  isLoading: boolean;
+  distance: number | null;
+  duration: number | null;
+  fee: number;
+  isAvailable: boolean;
+  address?: string;
+  coordinates?: { lat: number; lng: number };
 }
 
-export function useDeliveryCalculation() {
-  const [deliveryInfo, setDeliveryInfo] = useState<DeliveryInfo>({
-    distanceKm: null,
-    distanceText: '',
-    durationText: '',
-    deliveryFee: 0,
-    isFreeDelivery: false,
-    addressValid: false,
-    error: null,
-    isLoading: false
-  });
+interface UseDeliveryCalculationReturn {
+  deliveryInfo: DeliveryInfo | null;
+  calculateFromAddress: (address: string) => Promise<void>;
+  calculateFromCoordinates: (lat: number, lng: number, address?: string) => Promise<void>;
+  resetDeliveryInfo: () => void;
+  isLoading: boolean;
+  error: string | null;
+}
 
-  const calculateDeliveryFee = useCallback((distanceKm: number): number => {
-    if (distanceKm <= BASE_DISTANCE_KM) {
-      return BASE_DELIVERY_FEE;
-    } else {
-      const extraDistance = distanceKm - BASE_DISTANCE_KM;
-      // Round up to nearest km for billing
-      const extraKmBilled = Math.ceil(extraDistance);
-      return BASE_DELIVERY_FEE + (extraKmBilled * EXTRA_RATE_PER_KM);
-    }
-  }, []);
+export const useDeliveryCalculation = (): UseDeliveryCalculationReturn => {
+  const [deliveryInfo, setDeliveryInfo] = useState<DeliveryInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const calculateFromAddress = useCallback(async (address: string, subtotal: number) => {
-    if (!address || address.length < 10) {
-      setDeliveryInfo(prev => ({
-        ...prev,
-        addressValid: false,
-        error: 'Please enter a valid address',
-        isLoading: false
-      }));
-      return;
-    }
-
-    setDeliveryInfo(prev => ({ ...prev, isLoading: true, error: null }));
-
+  const calculateFromAddress = async (address: string) => {
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      const result = await getDrivingDistance(address);
+      const coordinates = await geocodeAddress(address);
       
-      if (result && result.distance) {
-        // Convert meters to kilometers
-        const distanceKm = result.distance.value / 1000;
-        const deliveryFee = calculateDeliveryFee(distanceKm);
-        const isFree = subtotal >= FREE_DELIVERY_THRESHOLD;
-        
-        setDeliveryInfo({
-          distanceKm,
-          distanceText: result.distance.text,
-          durationText: result.duration.text,
-          deliveryFee: isFree ? 0 : deliveryFee,
-          isFreeDelivery: isFree,
-          addressValid: true,
-          error: null,
-          isLoading: false
-        });
-      } else {
-        setDeliveryInfo({
-          distanceKm: null,
-          distanceText: '',
-          durationText: '',
-          deliveryFee: 0,
-          isFreeDelivery: false,
-          addressValid: false,
-          error: 'Could not calculate distance for this address. Please check and try again.',
-          isLoading: false
-        });
+      if (!coordinates) {
+        throw new Error('Could not find coordinates for this address');
       }
-    } catch (error) {
-      console.error('Error calculating delivery:', error);
-      setDeliveryInfo(prev => ({
-        ...prev,
-        distanceKm: null,
-        addressValid: false,
-        error: 'Error calculating delivery distance. Please try again.',
-        isLoading: false
-      }));
+      
+      await calculateFromCoordinates(coordinates.lat, coordinates.lng, address);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to calculate delivery');
+      setIsLoading(false);
     }
-  }, [calculateDeliveryFee]);
+  };
 
-  const calculateFromCoordinates = useCallback(async (
-    coords: { lat: number; lng: number },
-    subtotal: number
-  ) => {
-    setDeliveryInfo(prev => ({ ...prev, isLoading: true, error: null }));
-
+  const calculateFromCoordinates = async (lat: number, lng: number, address?: string) => {
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      const result = await getDrivingDistanceFromCoords(coords);
+      await loadGoogleMaps();
       
-      if (result && result.distance) {
-        const distanceKm = result.distance.value / 1000;
-        const deliveryFee = calculateDeliveryFee(distanceKm);
-        const isFree = subtotal >= FREE_DELIVERY_THRESHOLD;
-        
+      // Check if delivery is available
+      const availability = await isDeliveryAvailable(lat, lng, MAX_DELIVERY_DISTANCE);
+      
+      if (!availability.available) {
         setDeliveryInfo({
-          distanceKm,
-          distanceText: result.distance.text,
-          durationText: result.duration.text,
-          deliveryFee: isFree ? 0 : deliveryFee,
-          isFreeDelivery: isFree,
-          addressValid: true,
-          error: null,
-          isLoading: false
+          distance: availability.distance || null,
+          duration: availability.duration || null,
+          fee: 0,
+          isAvailable: false,
+          coordinates: { lat, lng },
+          address,
         });
-      } else {
-        setDeliveryInfo({
-          distanceKm: null,
-          distanceText: '',
-          durationText: '',
-          deliveryFee: 0,
-          isFreeDelivery: false,
-          addressValid: false,
-          error: 'Could not calculate distance for this location.',
-          isLoading: false
-        });
+        setError('Delivery not available to this location. Please consider pickup.');
+        setIsLoading(false);
+        return;
       }
-    } catch (error) {
-      console.error('Error calculating delivery from coordinates:', error);
-      setDeliveryInfo(prev => ({
-        ...prev,
-        error: 'Error calculating delivery distance.',
-        isLoading: false
-      }));
+      
+      // Calculate delivery fee based on distance
+      const distance = availability.distance || 0;
+      let fee = BASE_DELIVERY_FEE;
+      
+      if (distance > BASE_DISTANCE_KM) {
+        const extraKm = Math.ceil(distance - BASE_DISTANCE_KM);
+        fee += extraKm * EXTRA_KM_RATE;
+      }
+      
+      setDeliveryInfo({
+        distance: distance,
+        duration: availability.duration || null,
+        fee: fee,
+        isAvailable: true,
+        coordinates: { lat, lng },
+        address,
+      });
+      
+    } catch (err) {
+      console.error('Error calculating delivery:', err);
+      setError('Failed to calculate delivery. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
-  }, [calculateDeliveryFee]);
+  };
 
-  const resetDeliveryInfo = useCallback(() => {
-    setDeliveryInfo({
-      distanceKm: null,
-      distanceText: '',
-      durationText: '',
-      deliveryFee: 0,
-      isFreeDelivery: false,
-      addressValid: false,
-      error: null,
-      isLoading: false
-    });
-  }, []);
+  const resetDeliveryInfo = () => {
+    setDeliveryInfo(null);
+    setError(null);
+  };
 
   return {
     deliveryInfo,
     calculateFromAddress,
     calculateFromCoordinates,
-    resetDeliveryInfo
+    resetDeliveryInfo,
+    isLoading,
+    error,
   };
-}
+};

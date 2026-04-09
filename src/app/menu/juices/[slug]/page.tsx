@@ -1,275 +1,304 @@
 "use client";
-export const dynamic = "force-dynamic";
 
-import React, { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import Image from "next/image";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
+import Image from "next/image";
+import Link from "next/link";
+import { FaArrowLeft, FaPlus, FaMinus } from "react-icons/fa";
 import { juices, juiceAddOns } from "@/data/juicesData";
 
-interface AddOn {
+interface JuiceItem {
   id: string;
+  slug: string;
   name: string;
-  price: number;
+  description: string;
+  sizes: any[];
+  image: string;
+  tags?: string[];
+  addOns?: any[];
 }
 
-export default function JuiceDetailPage() {
-  const params = useParams();
+interface AddOnItem {
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+interface PageProps {
+  params: Promise<{ slug: string }>;
+}
+
+export default function JuiceDetailPage({ params }: PageProps) {
   const router = useRouter();
   const { addToCart } = useCart();
-  
-  const slug = params.slug as string;
-  const juiceItem = juices.find(item => item.slug === slug);
-
-  // State for customization
-  const [selectedAddOns, setSelectedAddOns] = useState<AddOn[]>([]);
-  const [selectedSize, setSelectedSize] = useState<string>("");
+  const [juiceItem, setJuiceItem] = useState<JuiceItem | null>(null);
+  const [selectedSize, setSelectedSize] = useState<any>(null);
+  const [selectedAddOns, setSelectedAddOns] = useState<AddOnItem[]>([]);
   const [specialInstructions, setSpecialInstructions] = useState("");
   const [quantity, setQuantity] = useState(1);
+  const [slug, setSlug] = useState<string>("");
+  const [mounted, setMounted] = useState(false);
 
-  if (!juiceItem) {
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Unwrap params
+  useEffect(() => {
+    const unwrapParams = async () => {
+      const unwrapped = await params;
+      setSlug(unwrapped.slug);
+    };
+    unwrapParams();
+  }, [params]);
+
+  // Load juice data
+  useEffect(() => {
+    if (!slug) return;
+    
+    const item = juices?.find((j: any) => j.slug === slug);
+    if (item) {
+      setJuiceItem(item);
+      if (item.sizes && item.sizes.length > 0) {
+        setSelectedSize(item.sizes[0]);
+      }
+    }
+  }, [slug]);
+
+  const handleAddOnToggle = (addOn: { name: string; price: number }) => {
+    setSelectedAddOns(prev => {
+      const existing = prev.find(a => a.name === addOn.name);
+      if (existing) {
+        return prev.filter(a => a.name !== addOn.name);
+      } else {
+        return [...prev, { ...addOn, quantity: 1 }];
+      }
+    });
+  };
+
+  const updateAddOnQuantity = (addOnName: string, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      setSelectedAddOns(prev => prev.filter(a => a.name !== addOnName));
+    } else {
+      setSelectedAddOns(prev =>
+        prev.map(a =>
+          a.name === addOnName ? { ...a, quantity: newQuantity } : a
+        )
+      );
+    }
+  };
+
+  const calculateTotal = () => {
+    let total = selectedSize?.price || 0;
+    
+    if (selectedAddOns.length > 0) {
+      total += selectedAddOns.reduce((sum, addOn) => sum + (addOn.price * addOn.quantity), 0);
+    }
+    
+    return total * quantity;
+  };
+
+  const handleAddToCart = () => {
+    const cartItem = {
+      id: `${juiceItem?.id}-${selectedSize?.id}-${Date.now()}`,
+      name: juiceItem?.name || "",
+      price: selectedSize?.price || 0,
+      quantity: quantity,
+      image: juiceItem?.image || "",
+      category: "juices",
+      description: juiceItem?.description || "",
+      selectedSize: selectedSize?.name,
+      addOns: selectedAddOns,
+      specialInstructions: specialInstructions,
+    };
+    
+    console.log("Adding juice to cart:", cartItem);
+    addToCart(cartItem);
+    router.push("/cart");
+  };
+
+  if (!mounted || !juiceItem) {
     return (
-      <div className="min-h-screen bg-[#1E4259] flex items-center justify-center">
-        <div className="text-center text-white">
-          <h1 className="text-4xl font-bold mb-4">Juice Not Found</h1>
-          <button 
-            onClick={() => router.push("/menu/juices")}
-            className="bg-[#F4A261] text-white px-6 py-3 rounded-lg hover:bg-[#e68e42] transition"
-          >
-            Back to Juices Menu
-          </button>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading juice details...</p>
         </div>
       </div>
     );
   }
 
-  // Calculate total price INCLUDING add-ons and selected size
-  const basePrice = selectedSize ? juiceItem.prices[selectedSize] : Object.values(juiceItem.prices)[0];
-  const addOnsTotal = selectedAddOns.reduce((sum: number, addon) => sum + addon.price, 0);
-  const itemTotal = (basePrice + addOnsTotal) * quantity;
-
-  const handleAddToCart = () => {
-    if (!selectedSize && Object.keys(juiceItem.prices).length > 1) {
-      alert("Please select a size");
-      return;
-    }
-
-    const finalSize = selectedSize || Object.keys(juiceItem.prices)[0];
-    
-    const cartItem = {
-      id: `${juiceItem.id}-${finalSize}-${Date.now()}`,
-      name: juiceItem.name,
-      description: juiceItem.description,
-      price: basePrice,
-      quantity: quantity,
-      total: itemTotal,
-      addOns: selectedAddOns,
-      size: finalSize,
-      specialInstructions: specialInstructions,
-      image: juiceItem.image,
-      category: "juices"
-    };
-
-    addToCart(cartItem);
-    router.push("/cart");
-  };
-
-  const toggleAddOn = (addOn: AddOn) => {
-    setSelectedAddOns(prev => 
-      prev.find(a => a.id === addOn.id) 
-        ? prev.filter(a => a.id !== addOn.id)
-        : [...prev, addOn]
-    );
-  };
-
-  // Combine item-specific add-ons with common add-ons
-  const allAddOns = [...(juiceItem.addOns || []), ...juiceAddOns];
-  // Remove duplicates based on id
-  const uniqueAddOns = allAddOns.filter((addOn, index, self) => 
-    index === self.findIndex(a => a.id === addOn.id)
-  );
-
   return (
-    <main className="min-h-screen bg-[#1E4259] text-white pt-20">
-      {/* Navigation */}
-      <div className="bg-white/10 backdrop-blur-sm border-b border-white/20">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <button
-            onClick={() => router.push("/menu/juices")}
-            className="flex items-center text-white hover:text-[#F4A261] transition"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-4">
+          <Link href="/menu/juices" className="inline-flex items-center text-gray-600 hover:text-green-600 transition">
+            <FaArrowLeft className="mr-2" />
             Back to Juices
-          </button>
+          </Link>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Image */}
-          <div className="relative h-80 md:h-96 rounded-2xl overflow-hidden">
-            <Image
-              src={juiceItem.image}
-              alt={juiceItem.name}
-              fill
-              className="object-cover"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-              }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-br from-[#2A5568] to-[#6C7B58] flex items-center justify-center">
-              <span className="text-white/80 text-lg">Juice Image</span>
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column - Image */}
+          <div>
+            <div className="relative h-96 rounded-2xl overflow-hidden shadow-lg">
+              <Image
+                src={juiceItem.image}
+                alt={juiceItem.name}
+                fill
+                className="object-cover"
+              />
             </div>
           </div>
 
-          {/* Details */}
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-3xl font-bold text-[#F4A261] mb-2">
-                {juiceItem.name}
-              </h1>
-              <p className="text-gray-300 mb-4">
-                {juiceItem.description}
-              </p>
-              
-              {/* Ingredients */}
-              {juiceItem.ingredients && (
-                <div className="mb-4">
-                  <h4 className="text-sm font-semibold text-gray-300 mb-2">Ingredients:</h4>
-                  <p className="text-sm text-gray-400">{juiceItem.ingredients.join(", ")}</p>
-                </div>
-              )}
-              
-              {/* Benefits */}
-              {juiceItem.benefits && (
-                <div className="mb-4">
-                  <h4 className="text-sm font-semibold text-gray-300 mb-2">Benefits:</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {juiceItem.benefits.map((benefit: any, index) => (
-                      <span key={index} className="bg-green-500/20 text-green-300 text-xs px-2 py-1 rounded">
-                        {benefit}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+          {/* Right Column - Details */}
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">{juiceItem.name}</h1>
+            <p className="text-gray-600 mb-4">{juiceItem.description}</p>
 
-            {/* Size Selection */}
-            {Object.keys(juiceItem.prices).length > 1 && (
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-[#F4A261]">Select Size</h3>
-                <div className="grid grid-cols-3 gap-3">
-                  {Object.entries(juiceItem.prices).map(([size, price]) => (
-                    <button
-                      key={size}
-                      onClick={() => setSelectedSize(size)}
-                      className={`p-3 rounded-lg border-2 text-center transition ${
-                        selectedSize === size
-                          ? "border-[#F4A261] bg-[#F4A261]/20"
-                          : "border-white/20 bg-white/10 hover:border-white/40"
-                      }`}
-                    >
-                      <div className="font-semibold">{size}</div>
-                      <div className="text-green-300">R{price}</div>
-                    </button>
+            {/* Tags */}
+            {juiceItem.tags && juiceItem.tags.length > 0 && (
+              <div className="mb-6">
+                <div className="flex flex-wrap gap-2">
+                  {juiceItem.tags.map((tag, idx) => (
+                    <span key={idx} className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full">
+                      {tag}
+                    </span>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Single Price Display */}
-            {Object.keys(juiceItem.prices).length === 1 && (
-              <div className="text-2xl font-bold text-green-300">
-                R{Object.values(juiceItem.prices)[0]}
-              </div>
-            )}
-
-            {/* Quantity Selector */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">
-                Quantity
-              </label>
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
-                  className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"
-                >
-                  -
-                </button>
-                <span className="text-xl font-bold w-8 text-center">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(prev => prev + 1)}
-                  className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"
-                >
-                  +
-                </button>
+            {/* Size Selection */}
+            <div className="mb-6">
+              <h3 className="font-semibold text-gray-900 mb-2">Select Size</h3>
+              <div className={`grid ${juiceItem.sizes.length === 1 ? 'grid-cols-1' : 'grid-cols-3'} gap-3`}>
+                {juiceItem.sizes.map((size) => (
+                  <button
+                    key={size.id}
+                    onClick={() => setSelectedSize(size)}
+                    className={`p-4 rounded-lg border-2 text-center transition ${
+                      selectedSize?.id === size.id
+                        ? 'border-green-500 bg-green-50 ring-2 ring-green-200'
+                        : 'border-gray-300 hover:border-green-300'
+                    }`}
+                  >
+                    <div className="font-bold text-gray-900">{size.name}</div>
+                    <div className="text-sm text-gray-500">{size.ml}ml</div>
+                    <div className="text-lg font-bold text-green-600">R{size.price}</div>
+                  </button>
+                ))}
               </div>
             </div>
 
             {/* Add-ons */}
-            {uniqueAddOns.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-[#F4A261]">Add-ons</h3>
+            {juiceAddOns && juiceAddOns.length > 0 && (
+              <div className="mb-6">
+                <h3 className="font-semibold text-gray-900 mb-2">Add-ons (Optional)</h3>
                 <div className="space-y-2">
-                  {uniqueAddOns.map((addOn) => (
-                    <label key={addOn.id} className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={selectedAddOns.some(a => a.id === addOn.id)}
-                        onChange={() => toggleAddOn(addOn)}
-                        className="w-4 h-4 text-[#F4A261] rounded"
-                      />
-                      <span className="flex-1">{addOn.name}</span>
-                      <span className="text-green-300">+R{addOn.price.toFixed(2)}</span>
-                    </label>
-                  ))}
+                  {juiceAddOns.map((addOn, index) => {
+                    const selected = selectedAddOns.find(a => a.name === addOn.name);
+                    return (
+                      <div key={`addon-${index}-${addOn.name}`} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <p className="font-medium text-gray-900">{addOn.name}</p>
+                          <p className="text-sm text-green-600">+R{addOn.price}</p>
+                        </div>
+                        {selected ? (
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => updateAddOnQuantity(addOn.name, selected.quantity - 1)}
+                              className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
+                            >
+                              <FaMinus className="text-sm" />
+                            </button>
+                            <span className="w-8 text-center">{selected.quantity}</span>
+                            <button
+                              onClick={() => updateAddOnQuantity(addOn.name, selected.quantity + 1)}
+                              className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
+                            >
+                              <FaPlus className="text-sm" />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleAddOnToggle(addOn)}
+                            className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+                          >
+                            Add
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
             {/* Special Instructions */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">
-                Special Instructions
-              </label>
+            <div className="mb-6">
+              <h3 className="font-semibold text-gray-900 mb-2">Special Instructions</h3>
               <textarea
                 value={specialInstructions}
                 onChange={(e) => setSpecialInstructions(e.target.value)}
-                placeholder="Any special requests or dietary requirements..."
-                className="w-full h-20 px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-[#F4A261] resize-none"
+                placeholder="Any special requests or dietary requirements?"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                rows={2}
               />
             </div>
 
-            {/* Total and Add to Cart */}
-            <div className="space-y-4">
-              <div className="flex justify-between items-center text-lg">
-                <span className="font-semibold">Total:</span>
-                <span className="text-2xl font-bold text-[#F4A261]">
-                  R{itemTotal.toFixed(2)}
-                </span>
+            {/* Quantity */}
+            <div className="mb-6">
+              <h3 className="font-semibold text-gray-900 mb-2">Quantity</h3>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
+                >
+                  <FaMinus />
+                </button>
+                <span className="text-xl font-medium w-12 text-center">{quantity}</span>
+                <button
+                  onClick={() => setQuantity(quantity + 1)}
+                  className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
+                >
+                  <FaPlus />
+                </button>
               </div>
-              
+            </div>
+
+            {/* Total and Add to Cart */}
+            <div className="border-t pt-6">
+              <div className="mb-4">
+                <div className="flex justify-between items-center text-gray-600 mb-2">
+                  <span>Base Price ({selectedSize?.name || "Select size"}):</span>
+                  <span>R{selectedSize?.price || 0}</span>
+                </div>
+                {selectedAddOns.length > 0 && (
+                  <div className="flex justify-between items-center text-gray-600 mb-2">
+                    <span>Add-ons:</span>
+                    <span>+R{selectedAddOns.reduce((sum, addOn) => sum + (addOn.price * addOn.quantity), 0)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center text-gray-600 pt-2 border-t">
+                  <span className="font-semibold">Subtotal ({quantity} item{quantity > 1 ? 's' : ''}):</span>
+                  <span className="font-semibold">R{calculateTotal().toFixed(2)}</span>
+                </div>
+              </div>
               <button
                 onClick={handleAddToCart}
-                disabled={Object.keys(juiceItem.prices).length > 1 && !selectedSize}
-                className={`w-full font-bold py-4 px-6 rounded-lg transition text-lg ${
-                  Object.keys(juiceItem.prices).length > 1 && !selectedSize
-                    ? "bg-gray-500 cursor-not-allowed"
-                    : "bg-[#F4A261] hover:bg-[#e68e42] text-white"
-                }`}
+                className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-medium"
               >
-                {Object.keys(juiceItem.prices).length > 1 && !selectedSize
-                  ? "Select Size First"
-                  : `Add to Cart - R${itemTotal.toFixed(2)}`}
+                Add to Cart - R{calculateTotal().toFixed(2)}
               </button>
             </div>
           </div>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

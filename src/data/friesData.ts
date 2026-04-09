@@ -4,126 +4,132 @@ export interface AddOn {
   price: number;
 }
 
-export interface JuiceUpsell {
+export interface FriesUpsell {
   id: string;
   name: string;
   price: number;
-  size: string;
+  optional?: boolean;
 }
 
-export interface MenuItem {
+export interface JuiceOption {
+  id: string;
+  name: string;
+  price: number;
+}
+
+export interface JuiceGroup {
+  size: string;
+  options: JuiceOption[];
+}
+
+export interface FriesItem {
   id: string;
   slug: string;
   name: string;
   description: string;
   price: number;
   image: string;
-  category: string;
   tags?: string[];
+  popular?: boolean;
   addOns?: AddOn[];
-  dipOptions?: AddOn[];
-  juiceUpsell?: JuiceUpsell[];
+  juiceUpsell?: JuiceGroup[];
 }
 
-export const fries: MenuItem[] = [
+// Fries add-ons (dips)
+export const friesAddOns: AddOn[] = [
+  { id: "addon1", name: "Garden Mayo", price: 10 },
+  { id: "addon2", name: "Tomato Ketchup", price: 10 },
+  { id: "addon3", name: "Cheese Sauce", price: 15 },
+  { id: "addon4", name: "Chilli Sauce", price: 10 },
+  { id: "addon5", name: "Garlic Aioli", price: 12 },
+];
+
+// Juice upsell options
+export const juiceUpsellOptions: JuiceGroup[] = [
+  {
+    size: "250ml",
+    options: [
+      { id: "juice1", name: "Orange Juice", price: 55 },
+      { id: "juice2", name: "Apple & Lemon Juice", price: 55 },
+      { id: "juice3", name: "The Green Mile", price: 55 },
+      { id: "juice4", name: "Fruit Punch", price: 55 },
+      { id: "juice5", name: "Up Beet Juice", price: 55 },
+      { id: "juice6", name: "GLOW", price: 55 },
+    ],
+  },
+  {
+    size: "350ml",
+    options: [
+      { id: "juice7", name: "Orange Juice", price: 75 },
+      { id: "juice8", name: "Apple & Lemon Juice", price: 75 },
+      { id: "juice9", name: "The Green Mile", price: 75 },
+      { id: "juice10", name: "Fruit Punch", price: 75 },
+      { id: "juice11", name: "Up Beet Juice", price: 75 },
+      { id: "juice12", name: "GLOW", price: 75 },
+    ],
+  },
+  {
+    size: "500ml",
+    options: [
+      { id: "juice13", name: "Orange Juice", price: 95 },
+      { id: "juice14", name: "Apple & Lemon Juice", price: 95 },
+      { id: "juice15", name: "The Green Mile", price: 95 },
+      { id: "juice16", name: "Fruit Punch", price: 95 },
+      { id: "juice17", name: "Up Beet Juice", price: 95 },
+      { id: "juice18", name: "GLOW", price: 95 },
+    ],
+  },
+];
+
+// Fries items
+export const fries: FriesItem[] = [
   {
     id: "fries-1",
-    slug: "skinny-potato-chips",
-    name: "Skinny Potato Chips",
-    description: "Lightly seasoned skinny potato chips, perfectly crispy and golden",
-    price: 45,
-    image: "/images/fries/skinny-potato-chips.jpg",
-    category: "fries",
-    tags: ["Classic", "Popular", "Vegetarian"],
-    dipOptions: [
-      { id: "no-sauce", name: "No Sauce", price: 0 },
-      { id: "garden-mayo", name: "Garden & Grains Mayo Dip", price: 0 },
-      { id: "tomato-sauce", name: "Tomato Sauce", price: 0 },
-      { id: "peri-peri", name: "Fiery Peri-peri Sauce", price: 15 },
-    ],
-    juiceUpsell: [
-      { id: "fresh-orange-250", name: "Fresh Orange Juice (250ml)", price: 60, size: "250ml" },
-      { id: "apple-carrot-250", name: "Apple Carrot Ginger (250ml)", price: 70, size: "250ml" },
-      { id: "green-detox-250", name: "Green Detox (250ml)", price: 75, size: "250ml" },
-    ],
+    slug: "skinny-fries",
+    name: "Skinny French Fries",
+    description: "Crispy, golden skinny fries made from premium potatoes. Perfectly salted and served hot.",
+    price: 39,
+    image: "/images/fries/skinny-fries.jpg",
+    tags: ["classic", "popular"],
+    popular: true,
+    addOns: friesAddOns,
+    juiceUpsell: juiceUpsellOptions,
   },
   {
     id: "fries-2",
     slug: "sweet-potato-fries",
     name: "Sweet Potato Fries",
-    description: "Lightly seasoned sweet potato fries, naturally sweet and crispy",
-    price: 59,
+    description: "Crispy sweet potato fries with a hint of sea salt. A healthier, delicious alternative.",
+    price: 45,
     image: "/images/fries/sweet-potato-fries.jpg",
-    category: "fries",
-    tags: ["Healthy", "Gluten Free", "Popular"],
-    dipOptions: [
-      { id: "no-sauce", name: "No Sauce", price: 0 },
-      { id: "garden-mayo", name: "Garden & Grains Mayo Dip", price: 0 },
-      { id: "tomato-sauce", name: "Tomato Sauce", price: 0 },
-      { id: "peri-peri", name: "Fiery Peri-peri Sauce", price: 15 },
-    ],
-    juiceUpsell: [
-      { id: "fresh-orange-250", name: "Fresh Orange Juice (250ml)", price: 60, size: "250ml" },
-      { id: "apple-carrot-250", name: "Apple Carrot Ginger (250ml)", price: 70, size: "250ml" },
-      { id: "green-detox-250", name: "Green Detox (250ml)", price: 75, size: "250ml" },
-    ],
+    tags: ["healthy", "popular"],
+    popular: true,
+    addOns: friesAddOns,
+    juiceUpsell: juiceUpsellOptions,
   },
   {
     id: "fries-3",
-    slug: "chicken-strips-skinny-fries",
-    name: "Grilled Chicken Strips with Skinny Fries",
-    description: "Grilled chicken fillet strips served with a heap of skinny fries",
-    price: 95,
-    image: "/images/fries/chicken-strips-skinny.jpg",
-    category: "fries",
-    tags: ["Protein", "Meal", "Popular"],
-    dipOptions: [
-      { id: "no-sauce", name: "No Sauce", price: 0 },
-      { id: "garden-mayo", name: "Garden & Grains Mayo Dip", price: 0 },
-      { id: "tomato-sauce", name: "Tomato Sauce", price: 0 },
-      { id: "peri-peri", name: "Fiery Peri-peri Sauce", price: 15 },
-    ],
-    addOns: [
-      { id: "extra-chicken", name: "Extra Chicken Strips", price: 25 },
-      { id: "extra-fries", name: "Extra Fries", price: 20 },
-    ],
-    juiceUpsell: [
-      { id: "fresh-orange-350", name: "Fresh Orange Juice (350ml)", price: 70, size: "350ml" },
-      { id: "apple-carrot-350", name: "Apple Carrot Ginger (350ml)", price: 80, size: "350ml" },
-      { id: "green-detox-350", name: "Green Detox (350ml)", price: 85, size: "350ml" },
-    ],
+    slug: "curly-fries",
+    name: "Curly Fries",
+    description: "Fun, curly-cut fries seasoned with special spices. Crispy outside, tender inside.",
+    price: 42,
+    image: "/images/fries/curly-fries.jpg",
+    tags: ["fun", "spicy"],
+    addOns: friesAddOns,
+    juiceUpsell: juiceUpsellOptions,
   },
   {
     id: "fries-4",
-    slug: "chicken-strips-sweet-potato-fries",
-    name: "Grilled Chicken Strips with Sweet Potato Fries",
-    description: "Grilled chicken fillet strips served with golden crispy gluten free sweet potato fries",
-    price: 115,
-    image: "/images/fries/chicken-strips-sweet-potato.jpg",
-    category: "fries",
-    tags: ["Protein", "Gluten Free", "Healthy"],
-    dipOptions: [
-      { id: "no-sauce", name: "No Sauce", price: 0 },
-      { id: "garden-mayo", name: "Garden & Grains Mayo Dip", price: 0 },
-      { id: "tomato-sauce", name: "Tomato Sauce", price: 0 },
-      { id: "peri-peri", name: "Fiery Peri-peri Sauce", price: 15 },
-    ],
-    addOns: [
-      { id: "extra-chicken", name: "Extra Chicken Strips", price: 25 },
-      { id: "extra-fries", name: "Extra Sweet Potato Fries", price: 30 },
-    ],
-    juiceUpsell: [
-      { id: "fresh-orange-350", name: "Fresh Orange Juice (350ml)", price: 70, size: "350ml" },
-      { id: "apple-carrot-350", name: "Apple Carrot Ginger (350ml)", price: 80, size: "350ml" },
-      { id: "green-detox-350", name: "Green Detox (350ml)", price: 85, size: "350ml" },
-    ],
+    slug: "cheddar-bacon-fries",
+    name: "Cheddar Bacon Fries",
+    description: "Loaded fries topped with melted cheddar cheese, crispy bacon bits, and green onions.",
+    price: 59,
+    image: "/images/fries/cheddar-bacon.jpg",
+    tags: ["loaded", "popular"],
+    popular: true,
+    addOns: friesAddOns,
+    juiceUpsell: juiceUpsellOptions,
   },
 ];
 
-// Common add-ons for fries
-export const friesAddOns: AddOn[] = [
-  { id: "extra-cheese", name: "Extra Cheese", price: 12 },
-  { id: "macon-pieces", name: "Macon Pieces", price: 18 },
-  { id: "chili-flakes", name: "Chili Flakes", price: 5 },
-  { id: "herbs", name: "Fresh Herbs", price: 8 },
-];
+export const allFries = fries;

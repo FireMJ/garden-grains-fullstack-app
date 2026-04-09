@@ -4,7 +4,74 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { collection, query, where, getDocs, updateDoc, doc, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from './AuthContext';
-import { DeliveryOrder, DriverProfile, DeliveryEarning } from '@/types/driver';
+
+export interface DeliveryOrder {
+  id: string;
+  orderNumber: string;
+  customerName: string;
+  customerAddress: string;
+  customerPhone: string;
+  customerEmail: string;
+  items: Array<{
+    name: string;
+    quantity: number;
+    price: number;
+  }>;
+  subtotal: number;
+  deliveryFee: number;
+  total: number;
+  deliveryInstructions: string;
+  status: 'pending' | 'accepted' | 'picked_up' | 'in_transit' | 'delivered' | 'cancelled';
+  distance: number;
+  estimatedTime: number;
+  createdAt: string;
+  scheduledTime?: string;
+  driverId?: string;
+  coordinates: {
+    lat: number;
+    lng: number;
+  };
+}
+
+export interface DriverProfile {
+  id: string;
+  uid: string;
+  name: string;
+  email: string;
+  phone: string;
+  vehicleType: 'car' | 'motorcycle' | 'bicycle';
+  licensePlate: string;
+  status: 'available' | 'busy' | 'offline';
+  rating: number;
+  totalDeliveries: number;
+  earnings: {
+    today: number;
+    week: number;
+    month: number;
+    total: number;
+  };
+  currentLocation?: {
+    lat: number;
+    lng: number;
+    updatedAt: string;
+  };
+  documents: {
+    driversLicense: boolean;
+    vehicleRegistration: boolean;
+    backgroundCheck: boolean;
+  };
+}
+
+export interface DeliveryEarning {
+  id: string;
+  orderId: string;
+  driverId: string;
+  amount: number;
+  distance: number;
+  timeSpent: number;
+  status: 'pending' | 'completed' | 'failed';
+  completedAt?: string;
+}
 
 interface DriverContextType {
   driverProfile: DriverProfile | null;
@@ -13,6 +80,7 @@ interface DriverContextType {
   completedOrders: DeliveryOrder[];
   earnings: DeliveryEarning[];
   loading: boolean;
+  error: string | null;
   acceptOrder: (orderId: string) => Promise<void>;
   updateOrderStatus: (orderId: string, status: DeliveryOrder['status']) => Promise<void>;
   updateLocation: (lat: number, lng: number) => Promise<void>;
@@ -31,10 +99,14 @@ export function DriverProvider({ children }: { children: ReactNode }) {
   const [completedOrders, setCompletedOrders] = useState<DeliveryOrder[]>([]);
   const [earnings, setEarnings] = useState<DeliveryEarning[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Load driver profile
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     const loadDriverProfile = async () => {
       try {
@@ -43,17 +115,28 @@ export function DriverProvider({ children }: { children: ReactNode }) {
         const snapshot = await getDocs(q);
         
         if (!snapshot.empty) {
-          setDriverProfile({ id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as DriverProfile);
+          const docData = snapshot.docs[0].data();
+          setDriverProfile({ id: snapshot.docs[0].id, ...docData } as DriverProfile);
+        } else {
+          // No driver profile found - user is not a driver
+          setDriverProfile(null);
         }
-      } catch (error) {
-        console.error('Error loading driver profile:', error);
+      } catch (err: any) {
+        console.error('Error loading driver profile:', err);
+        if (err.code === 'permission-denied') {
+          setError('Firebase permissions not configured. Please check Firestore rules.');
+        } else {
+          setError(err.message);
+        }
+      } finally {
+        setLoading(false);
       }
     };
 
     loadDriverProfile();
   }, [user]);
 
-  // Listen to available orders
+  // Listen to available orders (only if driver is available)
   useEffect(() => {
     if (!driverProfile || driverProfile.status !== 'available') return;
 
@@ -66,6 +149,11 @@ export function DriverProvider({ children }: { children: ReactNode }) {
         orders.push({ id: doc.id, ...doc.data() } as DeliveryOrder);
       });
       setAvailableOrders(orders);
+    }, (err) => {
+      console.error('Error loading available orders:', err);
+      if (err.code === 'permission-denied') {
+        setError('Unable to load orders. Please check Firestore permissions.');
+      }
     });
 
     return () => unsubscribe();
@@ -93,26 +181,32 @@ export function DriverProvider({ children }: { children: ReactNode }) {
       
       setActiveOrders(active);
       setCompletedOrders(completed);
+    }, (err) => {
+      console.error('Error loading active orders:', err);
     });
 
     return () => unsubscribe();
   }, [driverProfile]);
 
   const acceptOrder = async (orderId: string) => {
+    if (!driverProfile) return;
+    
     try {
       const orderRef = doc(db, 'orders', orderId);
       await updateDoc(orderRef, {
-        driverId: driverProfile?.id,
+        driverId: driverProfile.id,
         status: 'accepted',
         acceptedAt: serverTimestamp()
       });
-    } catch (error) {
-      console.error('Error accepting order:', error);
-      throw error;
+    } catch (err) {
+      console.error('Error accepting order:', err);
+      throw err;
     }
   };
 
   const updateOrderStatus = async (orderId: string, status: DeliveryOrder['status']) => {
+    if (!driverProfile) return;
+    
     try {
       const orderRef = doc(db, 'orders', orderId);
       const updates: any = { status };
@@ -122,7 +216,7 @@ export function DriverProvider({ children }: { children: ReactNode }) {
         
         // Calculate earning
         const order = [...activeOrders, ...availableOrders].find(o => o.id === orderId);
-        if (order && driverProfile) {
+        if (order) {
           const earning: Partial<DeliveryEarning> = {
             orderId,
             driverId: driverProfile.id,
@@ -131,14 +225,18 @@ export function DriverProvider({ children }: { children: ReactNode }) {
             status: 'completed',
             completedAt: new Date().toISOString()
           };
-          await addDoc(collection(db, 'driverEarnings'), earning);
+          try {
+            await addDoc(collection(db, 'driverEarnings'), earning);
+          } catch (err) {
+            console.error('Error saving earning:', err);
+          }
         }
       }
       
       await updateDoc(orderRef, updates);
-    } catch (error) {
-      console.error('Error updating order status:', error);
-      throw error;
+    } catch (err) {
+      console.error('Error updating order status:', err);
+      throw err;
     }
   };
 
@@ -151,8 +249,8 @@ export function DriverProvider({ children }: { children: ReactNode }) {
         currentLocation: { lat, lng, updatedAt: new Date().toISOString() }
       });
       setDriverProfile(prev => prev ? { ...prev, currentLocation: { lat, lng, updatedAt: new Date().toISOString() } } : null);
-    } catch (error) {
-      console.error('Error updating location:', error);
+    } catch (err) {
+      console.error('Error updating location:', err);
     }
   };
 
@@ -163,9 +261,9 @@ export function DriverProvider({ children }: { children: ReactNode }) {
       const driverRef = doc(db, 'drivers', driverProfile.id);
       await updateDoc(driverRef, { status });
       setDriverProfile(prev => prev ? { ...prev, status } : null);
-    } catch (error) {
-      console.error('Error updating driver status:', error);
-      throw error;
+    } catch (err) {
+      console.error('Error updating driver status:', err);
+      throw err;
     }
   };
 
@@ -199,8 +297,21 @@ export function DriverProvider({ children }: { children: ReactNode }) {
 
   const refreshData = async () => {
     setLoading(true);
-    // Refresh logic here
-    setLoading(false);
+    try {
+      if (user) {
+        const driversRef = collection(db, 'drivers');
+        const q = query(driversRef, where('uid', '==', user.uid));
+        const snapshot = await getDocs(q);
+        
+        if (!snapshot.empty) {
+          setDriverProfile({ id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as DriverProfile);
+        }
+      }
+    } catch (err) {
+      console.error('Error refreshing data:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -211,6 +322,7 @@ export function DriverProvider({ children }: { children: ReactNode }) {
       completedOrders,
       earnings,
       loading,
+      error,
       acceptOrder,
       updateOrderStatus,
       updateLocation,

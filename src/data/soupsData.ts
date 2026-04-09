@@ -4,152 +4,167 @@ export interface AddOn {
   price: number;
 }
 
-export interface JuiceUpsell {
+export interface FriesUpsell {
   id: string;
   name: string;
   price: number;
-  size: string;
+  optional?: boolean;
 }
 
-export interface MenuItem {
+export interface JuiceOption {
+  id: string;
+  name: string;
+  price: number;
+}
+
+export interface JuiceGroup {
+  size: string;
+  options: JuiceOption[];
+}
+
+export interface SoupItem {
   id: string;
   slug: string;
   name: string;
   description: string;
   price: number;
   image: string;
-  category: string;
   tags?: string[];
+  popular?: boolean;
   addOns?: AddOn[];
-  juiceUpsell?: JuiceUpsell[];
+  friesUpsell?: FriesUpsell[];
+  juiceUpsell?: JuiceGroup[];
 }
 
-export const soups: MenuItem[] = [
+// Fries upsell options
+export const friesUpsellOptions: FriesUpsell[] = [
+  { id: "fries1", name: "Skinny French Fries", price: 25 },
+  { id: "fries2", name: "Sweet Potato Fries", price: 25 },
+];
+
+// Juice upsell options
+export const juiceUpsellOptions: JuiceGroup[] = [
+  {
+    size: "250ml",
+    options: [
+      { id: "juice1", name: "Orange Juice", price: 55 },
+      { id: "juice2", name: "Apple & Lemon Juice", price: 55 },
+      { id: "juice3", name: "The Green Mile", price: 55 },
+      { id: "juice4", name: "Fruit Punch", price: 55 },
+      { id: "juice5", name: "Up Beet Juice", price: 55 },
+      { id: "juice6", name: "GLOW", price: 55 },
+    ],
+  },
+  {
+    size: "350ml",
+    options: [
+      { id: "juice7", name: "Orange Juice", price: 75 },
+      { id: "juice8", name: "Apple & Lemon Juice", price: 75 },
+      { id: "juice9", name: "The Green Mile", price: 75 },
+      { id: "juice10", name: "Fruit Punch", price: 75 },
+      { id: "juice11", name: "Up Beet Juice", price: 75 },
+      { id: "juice12", name: "GLOW", price: 75 },
+    ],
+  },
+  {
+    size: "500ml",
+    options: [
+      { id: "juice13", name: "Orange Juice", price: 95 },
+      { id: "juice14", name: "Apple & Lemon Juice", price: 95 },
+      { id: "juice15", name: "The Green Mile", price: 95 },
+      { id: "juice16", name: "Fruit Punch", price: 95 },
+      { id: "juice17", name: "Up Beet Juice", price: 95 },
+      { id: "juice18", name: "GLOW", price: 95 },
+    ],
+  },
+];
+
+// Common add-ons for soups
+export const soupAddOns: AddOn[] = [
+  { id: "addon1", name: "Extra Bread Roll", price: 15 },
+  { id: "addon2", name: "Cheese Topping", price: 15 },
+  { id: "addon3", name: "Croutons", price: 10 },
+  { id: "addon4", name: "Bacon Bits", price: 20 },
+  { id: "addon5", name: "Sourdough Toast", price: 15 },
+];
+
+// Soup items from the menu
+export const soups: SoupItem[] = [
   {
     id: "soup-1",
-    slug: "creamy-broccoli-cauliflower-soup",
-    name: "Creamy Broccoli and Cauliflower Soup",
-    description: "Broccoli, cauliflower, onion, garlic, dried thyme, olive oil, and chicken stock, topped with blue cheese, fresh cream, & olive oil. Served with a toasted slice of sourdough bread.",
-    price: 128.65,
-    image: "/images/soups/creamy-broccoli-cauliflower.jpg",
-    category: "soups",
-    tags: ["Creamy", "Vegetarian", "Popular"],
-    addOns: [
-      { id: "extra-bread", name: "Extra Sourdough Bread", price: 12.00 },
-      { id: "extra-cheese", name: "Extra Blue Cheese", price: 15.00 },
-      { id: "extra-cream", name: "Extra Fresh Cream", price: 8.00 },
-    ],
-    juiceUpsell: [
-      { id: "juice-soup-1", name: "Orange Juice (250ml)", price: 35.00, size: "250ml" },
-      { id: "juice-soup-2", name: "Carrot & Ginger Juice (250ml)", price: 38.00, size: "250ml" },
-      { id: "juice-soup-3", name: "Apple & Pear Juice (250ml)", price: 36.00, size: "250ml" },
-      { id: "juice-soup-4", name: "Orange Juice (350ml)", price: 45.00, size: "350ml" },
-      { id: "juice-soup-5", name: "Carrot & Ginger Juice (350ml)", price: 48.00, size: "350ml" },
-      { id: "juice-soup-6", name: "Apple & Pear Juice (350ml)", price: 46.00, size: "350ml" },
-    ],
+    slug: "creamy-broccoli-soup",
+    name: "Creamy Broccoli Soup",
+    description: "Fresh broccoli florets, onion, potato, stock, cheddar, mustard. A rich and creamy classic.",
+    price: 85,
+    image: "/images/soups/broccoli-cauliflower.jpg",
+    tags: ["popular", "creamy", "vegetarian"],
+    popular: true,
+    addOns: soupAddOns,
+    friesUpsell: friesUpsellOptions,
+    juiceUpsell: juiceUpsellOptions,
   },
   {
     id: "soup-2",
-    slug: "pea-macon-soup",
-    name: "Pea and Macon Soup",
-    description: "Peas, macon, onion, garlic, chicken stock, topped with fresh cream, parmesan cheese, & served with toasted slice sourdough bread.",
-    price: 129.15,
-    image: "/images/soups/pea-macon-soup.jpg",
-    category: "soups",
-    tags: ["Hearty", "Savory", "Popular"],
-    addOns: [
-      { id: "extra-bread", name: "Extra Sourdough Bread", price: 12.00 },
-      { id: "extra-parmesan", name: "Extra Parmesan Cheese", price: 10.00 },
-      { id: "extra-cream", name: "Extra Fresh Cream", price: 8.00 },
-      { id: "extra-macon", name: "Extra Macon", price: 18.00 },
-    ],
-    juiceUpsell: [
-      { id: "juice-soup-7", name: "Orange Juice (250ml)", price: 35.00, size: "250ml" },
-      { id: "juice-soup-8", name: "Carrot & Ginger Juice (250ml)", price: 38.00, size: "250ml" },
-      { id: "juice-soup-9", name: "Green Mile Juice (250ml)", price: 40.00, size: "250ml" },
-      { id: "juice-soup-10", name: "Orange Juice (350ml)", price: 45.00, size: "350ml" },
-      { id: "juice-soup-11", name: "Carrot & Ginger Juice (350ml)", price: 48.00, size: "350ml" },
-      { id: "juice-soup-12", name: "Green Mile Juice (350ml)", price: 50.00, size: "350ml" },
-    ],
+    slug: "creamy-butternut-soup",
+    name: "Creamy Butternut Soup",
+    description: "Roasted butternut, onion, garlic, carrot, apple, vegetable stock, cinnamon, nutmeg, smoked paprika, topped with parmesan, fresh cream & roasted pumpkin seeds",
+    price: 85,
+    image: "/images/soups/butternut.jpg",
+    tags: ["popular", "creamy", "vegetarian", "winter-warmer"],
+    popular: true,
+    addOns: soupAddOns,
+    friesUpsell: friesUpsellOptions,
+    juiceUpsell: juiceUpsellOptions,
   },
   {
     id: "soup-3",
-    slug: "creamy-butternut-soup",
-    name: "Creamy Butternut Soup",
-    description: "Roasted butternut, onion, garlic, carrots, apple, vegetable stock, cinnamon, nutmeg, smoked paprika, topped with cream, parmesan cheese, roasted pumpkin seeds and served with toasted slice of sourdough bread.",
-    price: 128.65,
-    image: "/images/soups/creamy-butternut.jpg",
-    category: "soups",
-    tags: ["Sweet", "Vegetarian", "Comforting"],
-    addOns: [
-      { id: "extra-bread", name: "Extra Sourdough Bread", price: 12.00 },
-      { id: "extra-parmesan", name: "Extra Parmesan Cheese", price: 10.00 },
-      { id: "extra-pumpkin-seeds", name: "Extra Pumpkin Seeds", price: 8.00 },
-      { id: "extra-cream", name: "Extra Cream", price: 8.00 },
-    ],
-    juiceUpsell: [
-      { id: "juice-soup-13", name: "Orange Juice (250ml)", price: 35.00, size: "250ml" },
-      { id: "juice-soup-14", name: "Apple & Pear Juice (250ml)", price: 36.00, size: "250ml" },
-      { id: "juice-soup-15", name: "Mango Juice (250ml)", price: 37.00, size: "250ml" },
-      { id: "juice-soup-16", name: "Orange Juice (350ml)", price: 45.00, size: "350ml" },
-      { id: "juice-soup-17", name: "Apple & Pear Juice (350ml)", price: 46.00, size: "350ml" },
-      { id: "juice-soup-18", name: "Mango Juice (350ml)", price: 47.00, size: "350ml" },
-    ],
+    slug: "pea-bacon-soup",
+    name: "Pea & Bacon Soup",
+    description: "Fresh peas, chopped bacon, garlic, chicken stock, topped with fresh cream & parmesan cheese. A hearty and flavorful combination.",
+    price: 95,
+    image: "/images/soups/pea-bacon.jpg",
+    tags: ["popular", "hearty", "protein-rich"],
+    addOns: soupAddOns,
+    friesUpsell: friesUpsellOptions,
+    juiceUpsell: juiceUpsellOptions,
   },
   {
     id: "soup-4",
-    slug: "velvety-broccoli-spinach-soup",
-    name: "Velvety Broccoli & Spinach Soup",
-    description: "Broccoli, baby spinach, olive oil, onion, garlic, potato, vegetable stock, nutritional yeast, salt & pepper to taste, lemon juice",
-    price: 129.65,
-    image: "/images/soups/broccoli-spinach.jpg",
-    category: "soups",
-    tags: ["Healthy", "Vegetarian", "Green"],
-    addOns: [
-      { id: "extra-bread", name: "Extra Sourdough Bread", price: 12.00 },
-      { id: "extra-spinach", name: "Extra Spinach", price: 10.00 },
-      { id: "extra-lemon", name: "Extra Lemon", price: 5.00 },
-      { id: "nutritional-yeast", name: "Extra Nutritional Yeast", price: 8.00 },
-    ],
-    juiceUpsell: [
-      { id: "juice-soup-19", name: "Green Mile Juice (250ml)", price: 40.00, size: "250ml" },
-      { id: "juice-soup-20", name: "Carrot & Ginger Juice (250ml)", price: 38.00, size: "250ml" },
-      { id: "juice-soup-21", name: "Apple & Lemon Juice (250ml)", price: 36.00, size: "250ml" },
-      { id: "juice-soup-22", name: "Green Mile Juice (350ml)", price: 50.00, size: "350ml" },
-      { id: "juice-soup-23", name: "Carrot & Ginger Juice (350ml)", price: 48.00, size: "350ml" },
-      { id: "juice-soup-24", name: "Apple & Lemon Juice (350ml)", price: 46.00, size: "350ml" },
-    ],
+    slug: "spiced-sweet-potato-soup",
+    name: "Spiced Sweet Potato Soup",
+    description: "Roasted sweet potatoes, carrot, onion, garlic, ginger, orange juice, vegetable broth, ground coriander, ground cumin, smoked paprika, coconut milk, cinnamon. A warming blend of spices.",
+    price: 90,
+    image: "/images/soups/sweet-potato.jpg",
+    tags: ["vegetarian", "spicy", "healthy", "vegan-friendly"],
+    addOns: soupAddOns,
+    friesUpsell: friesUpsellOptions,
+    juiceUpsell: juiceUpsellOptions,
   },
   {
     id: "soup-5",
-    slug: "creamy-spiced-sweet-potato-soup",
-    name: "Creamy Spiced Sweet Potato Soup",
-    description: "Olive oil, onion, garlic, fresh ginger, ground cumin, smoked paprika, cinnamon, ground coriander, sweet potatoes, carrot, vegetable broth, coconut milk, Salt & pepper to taste, Juice of orange",
-    price: 128.65,
-    image: "/images/soups/spiced-sweet-potato.jpg",
-    category: "soups",
-    tags: ["Spicy", "Vegetarian", "Creamy"],
-    addOns: [
-      { id: "extra-bread", name: "Extra Sourdough Bread", price: 12.00 },
-      { id: "extra-coconut-milk", name: "Extra Coconut Milk", price: 10.00 },
-      { id: "extra-spices", name: "Extra Spice Blend", price: 8.00 },
-      { id: "extra-ginger", name: "Extra Fresh Ginger", price: 6.00 },
-    ],
-    juiceUpsell: [
-      { id: "juice-soup-25", name: "Orange Juice (250ml)", price: 35.00, size: "250ml" },
-      { id: "juice-soup-26", name: "Carrot & Ginger Juice (250ml)", price: 38.00, size: "250ml" },
-      { id: "juice-soup-27", name: "Mango Juice (250ml)", price: 37.00, size: "250ml" },
-      { id: "juice-soup-28", name: "Orange Juice (350ml)", price: 45.00, size: "350ml" },
-      { id: "juice-soup-29", name: "Carrot & Ginger Juice (350ml)", price: 48.00, size: "350ml" },
-      { id: "juice-soup-30", name: "Mango Juice (350ml)", price: 47.00, size: "350ml" },
-    ],
+    slug: "tomato-basil-soup",
+    name: "Tomato & Basil Soup",
+    description: "Ripe tomatoes, fresh basil, garlic, onion, vegetable stock, touch of cream. A timeless classic.",
+    price: 80,
+    image: "/images/soups/tomato-basil.jpg",
+    tags: ["vegetarian", "classic", "popular"],
+    addOns: soupAddOns,
+    friesUpsell: friesUpsellOptions,
+    juiceUpsell: juiceUpsellOptions,
+  },
+  {
+    id: "soup-6",
+    slug: "chicken-noodle-soup",
+    name: "Chicken Noodle Soup",
+    description: "Tender chicken, egg noodles, carrots, celery, onion, garlic, fresh herbs, chicken broth. Comfort in a bowl.",
+    price: 95,
+    image: "/images/soups/chicken-noodle.jpg",
+    tags: ["popular", "hearty", "protein-rich", "comfort-food"],
+    addOns: soupAddOns,
+    friesUpsell: friesUpsellOptions,
+    juiceUpsell: juiceUpsellOptions,
   },
 ];
 
-export const soupAddOns: AddOn[] = [
-  { id: "extra-bread", name: "Extra Sourdough Bread", price: 12.00 },
-  { id: "extra-croutons", name: "Extra Croutons", price: 8.00 },
-  { id: "extra-cheese", name: "Extra Cheese", price: 10.00 },
-  { id: "chili-flakes", name: "Chili Flakes", price: 5.00 },
-  { id: "fresh-herbs", name: "Fresh Herbs", price: 8.00 },
-];
+// Export as allSoups for compatibility
+export const allSoups = soups;

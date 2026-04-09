@@ -1,136 +1,161 @@
 "use client";
-export const dynamic = "force-dynamic";
 
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { useCart, type CartItem } from "@/context/CartContext";
 import { smoothies } from "@/data/smoothiesData";
+import { FaArrowLeft } from "react-icons/fa";
 
 export default function SmoothiesListPage() {
   const router = useRouter();
-  const { cart: cartItems } = useCart(); // Fixed: using correct cart context properties
-  const safeCartItems = cartItems && Array.isArray(cartItems) ? cartItems : [];
-  // Calculate values since they are not provided by CartContext
-  const totalItems = (cartItems || []).reduce((total: number, item: CartItem) => total + (item.quantity || 1), 0);
-  const totalPrice = (cartItems || []).reduce((total: number, item: CartItem) => total + (item.price || 0) * (item.quantity || 1), 0);
+  const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
 
-  const handleNavigate = (slug: string) => {
-    router.push(`/menu/smoothies/${slug}`);
+  const handleImageError = (itemId: string) => {
+    setImgErrors(prev => ({ ...prev, [itemId]: true }));
+  };
+
+  const formatPriceRange = (sizes: any[]) => {
+    if (!sizes || sizes.length === 0) return "";
+    const minPrice = Math.min(...sizes.map(s => s.price));
+    const maxPrice = Math.max(...sizes.map(s => s.price));
+    if (minPrice === maxPrice) return `R${minPrice}`;
+    return `R${minPrice} - R${maxPrice}`;
   };
 
   return (
-    <main className="min-h-screen bg-[#1E4259] text-white pt-20">
-      {/* Navigation Header */}
-      <div className="bg-white/10 backdrop-blur-sm border-b border-white/20">
-        <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <Link href="/menu" className="flex items-center text-white hover:text-[#F4A261] transition">
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Back to Menu
-            </Link>
-            <Link href="/" className="flex items-center text-white hover:text-[#F4A261] transition">
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
-              Home
-            </Link>
-          </div>
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="max-w-7xl mx-auto px-4">
+        {/* Back to Menu Button */}
+        <div className="mb-6">
+          <Link
+            href="/menu"
+            className="inline-flex items-center gap-2 text-gray-600 hover:text-green-600 transition group"
+          >
+            <FaArrowLeft className="group-hover:-translate-x-1 transition-transform" />
+            <span>Back to Menu</span>
+          </Link>
         </div>
-      </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-[#F4A261]">
-            Fresh Smoothies
-          </h1>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-            Nutrient-packed smoothies made with fresh fruits, superfoods, and wholesome ingredients
+          <h1 className="text-4xl font-bold text-[#2F5D50] mb-4">Fresh Smoothies</h1>
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            Handcrafted smoothies made with fresh fruits, Greek yoghurt, and wholesome ingredients.
+            Available in 250ml, 350ml, and 500ml sizes.
           </p>
         </div>
 
-        {/* Cart Summary */}
-        {(cartItems && Array.isArray(cartItems) ? safeCartItems.length : 0) > 0 && (
-          <div className="bg-[#6c8665] rounded-lg p-4 mb-8 max-w-4xl mx-auto">
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="font-semibold text-lg">Items in cart: {totalItems}</p>
-                <p className="text-[#F4A261] font-bold text-xl">Total: R {totalPrice.toFixed(2)}</p>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => router.push("/cart")} className="px-4 py-2 bg-[#F4A261] text-white rounded-lg hover:bg-[#e68e42] transition font-semibold">
-                  View Cart
-                </button>
-                <button onClick={() => router.push("/schedule-order")} className="px-4 py-2 bg-[#6C7B58] text-white rounded-lg hover:bg-[#5a6a4d] transition font-semibold">
-                  Schedule Order
-                </button>
-              </div>
-            </div>
+        {/* Size Guide */}
+        <div className="mb-8 flex justify-center gap-4">
+          <div className="bg-white rounded-lg shadow p-3 px-4 text-center">
+            <span className="text-sm font-semibold text-gray-900">Small (250ml)</span>
+            <span className="text-xs text-gray-500 ml-2">R65</span>
           </div>
-        )}
+          <div className="bg-white rounded-lg shadow p-3 px-4 text-center">
+            <span className="text-sm font-semibold text-gray-900">Medium (350ml)</span>
+            <span className="text-xs text-gray-500 ml-2">R80</span>
+          </div>
+          <div className="bg-white rounded-lg shadow p-3 px-4 text-center">
+            <span className="text-sm font-semibold text-gray-900">Large (500ml)</span>
+            <span className="text-xs text-gray-500 ml-2">R93</span>
+          </div>
+        </div>
 
-        {/* Menu Items Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {smoothies.map((item) => {
-            const inCart = safeCartItems.filter((c: any) => c.name.toLowerCase() === item.name.toLowerCase());
-            const itemCount = inCart.reduce((sum: number, i) => sum + i.quantity, 0);
-            const itemTotal = inCart.reduce((sum: number, i) => sum + ((i.price || 0) * i.quantity), 0);
-
-            // Show medium price as base price (350ml)
-            const basePrice = item.sizes.find(s => s.label === "350ml")?.price ?? item.sizes[0].price;
-
-            return (
-              <div key={item.id} onClick={() => handleNavigate(item.slug)} className="bg-white/10 rounded-2xl shadow-lg cursor-pointer overflow-hidden transition transform hover:scale-105 hover:shadow-xl backdrop-blur-sm">
-                <div className="relative w-full h-52">
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#2A5568] to-[#6C7B58] flex items-center justify-center">
-                    <span className="text-white/80 text-lg">Smoothie Image</span>
+        {/* Smoothies Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {smoothies.map((item) => (
+            <div
+              key={item.id}
+              className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 cursor-pointer"
+              onClick={() => router.push(`/menu/smoothies/${item.slug}`)}
+            >
+              {/* Smoothie Image */}
+              <div className="relative h-48 w-full bg-gradient-to-br from-purple-100 to-pink-100">
+                {!imgErrors[item.id] ? (
+                  <Image
+                    src={item.image}
+                    alt={item.name}
+                    fill
+                    className="object-cover"
+                    onError={() => handleImageError(item.id)}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-4xl">
+                    🥤
                   </div>
-                  {item.popular && (
-                    <div className="absolute top-3 left-3 z-20">
-                      <span className="bg-[#F4A261] text-white px-2 py-1 rounded-full text-sm font-semibold">
-                        Popular
-                      </span>
+                )}
+                
+                {/* Popular Badge */}
+                {item.popular && (
+                  <div className="absolute top-3 left-3">
+                    <span className="bg-[#F4A261] text-white text-xs px-2 py-1 rounded-full">
+                      Popular
+                    </span>
+                  </div>
+                )}
+                
+                {/* Tags */}
+                <div className="absolute top-3 right-3 flex gap-2">
+                  {item.tags?.slice(0, 2).map((tag, idx) => (
+                    <span key={idx} className="bg-black/60 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Smoothie Info */}
+              <div className="p-5">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">{item.name}</h3>
+                <p className="text-gray-600 text-sm mb-3 line-clamp-2">{item.description}</p>
+
+                {/* Price */}
+                <div className="mb-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500">Prices:</span>
+                    <div className="flex gap-3">
+                      <span className="text-green-600 font-medium">R65 (250ml)</span>
+                      <span className="text-green-600 font-medium">R80 (350ml)</span>
+                      <span className="text-green-600 font-medium">R93 (500ml)</span>
                     </div>
-                  )}
+                  </div>
                 </div>
 
-                <div className="p-6 flex flex-col gap-2">
-                  <h2 className="text-2xl font-bold text-green-200">{item.name}</h2>
-                  <p className="text-gray-100 text-sm line-clamp-3">{item.description}</p>
-                  <span className="font-bold text-green-300 text-lg">R{basePrice.toFixed(2)}</span>
-
-                  {itemCount > 0 && (
-                    <div className="text-sm bg-green-200 text-green-900 rounded-md px-3 py-1 mt-1 font-semibold">
-                      ✅ In Cart: {itemCount} item{itemCount > 1 ? "s" : ""} • R{itemTotal.toFixed(2)}
-                    </div>
-                  )}
-
-                  <button onClick={(e) => { e.stopPropagation(); handleNavigate(item.slug); }} className="mt-3 bg-[#F4A261] hover:bg-[#e68e42] text-white font-semibold py-2 px-4 rounded-lg transition">
-                    Customize & Add
+                {/* Price and Action */}
+                <div className="flex items-center justify-between mt-4 pt-3 border-t">
+                  <div>
+                    <span className="text-2xl font-bold text-green-600">{formatPriceRange(item.sizes)}</span>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/menu/smoothies/${item.slug}`);
+                    }}
+                    className="bg-[#2F5D50] text-white px-4 py-2 rounded-lg hover:bg-[#244a3f] transition text-sm font-medium"
+                  >
+                    Customize
                   </button>
                 </div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
 
-        {/* Quick Navigation */}
-        <div className="mt-12 text-center">
-          <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm max-w-2xl mx-auto">
-            <h3 className="text-xl font-bold text-white mb-4">Explore Other Categories</h3>
-            <div className="flex flex-wrap justify-center gap-3">
-              <Link href="/menu/breakfast" className="bg-[#F4A261] text-white px-4 py-2 rounded-lg hover:bg-[#e68e42] transition text-sm">Breakfast</Link>
-              <Link href="/menu/bowls" className="bg-[#6C7B58] text-white px-4 py-2 rounded-lg hover:bg-[#5a6a4d] transition text-sm">Bowls</Link>
-              <Link href="/menu/juices" className="bg-[#E76F51] text-white px-4 py-2 rounded-lg hover:bg-[#d65a3c] transition text-sm">Juices</Link>
-              <Link href="/menu" className="border border-white text-white px-4 py-2 rounded-lg hover:bg-white hover:text-[#1E4259] transition text-sm">All Categories</Link>
-            </div>
+        {/* Add-ons Info */}
+        <div className="mt-12 p-6 bg-amber-50 rounded-xl text-center">
+          <h3 className="font-bold text-amber-800 mb-2">Customize Your Smoothie</h3>
+          <p className="text-amber-700 text-sm">
+            Add extra honey, chia seeds, or protein powder to boost your smoothie!
+          </p>
+          <div className="flex flex-wrap justify-center gap-2 mt-3">
+            <span className="text-xs bg-white px-2 py-1 rounded-full shadow-sm">+ Extra Honey (R5)</span>
+            <span className="text-xs bg-white px-2 py-1 rounded-full shadow-sm">+ Chia Seeds (R10)</span>
+            <span className="text-xs bg-white px-2 py-1 rounded-full shadow-sm">+ Protein Powder (R15)</span>
+            <span className="text-xs bg-white px-2 py-1 rounded-full shadow-sm">+ Almond Milk (R10)</span>
           </div>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

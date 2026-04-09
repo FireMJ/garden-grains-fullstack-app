@@ -5,7 +5,7 @@ import { getFirebaseStatus, isFirebaseAvailable } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 
 export default function DebugPage() {
-  const { user, userData, loading } = useAuth();
+  const { user, loading } = useAuth();
   const [firebaseStatus, setFirebaseStatus] = useState<any>(null);
   const [envVars, setEnvVars] = useState<any>({});
 
@@ -85,15 +85,6 @@ export default function DebugPage() {
                 <p><span className="font-medium">Created:</span> {user.metadata.creationTime ? new Date(user.metadata.creationTime).toLocaleString() : 'Unknown'}</p>
                 <p><span className="font-medium">Last Sign In:</span> {user.metadata.lastSignInTime ? new Date(user.metadata.lastSignInTime).toLocaleString() : 'Unknown'}</p>
               </div>
-              
-              {userData && (
-                <div className="mt-4">
-                  <h3 className="font-medium text-gray-900 mb-2">Firestore User Data:</h3>
-                  <pre className="bg-gray-50 p-3 rounded text-xs overflow-auto max-h-60">
-                    {JSON.stringify(userData, null, 2)}
-                  </pre>
-                </div>
-              )}
             </div>
           ) : (
             <div>

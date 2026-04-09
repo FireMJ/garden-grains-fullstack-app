@@ -1,5 +1,3 @@
-// VodaPay Payment Gateway Integration
-
 export const TEST_API_KEYS = [
   'd605f89b-079c-11ed-b83a-06c42a9d493e',
   'd60d60ab-079c-11ed-b83a-06c42a9d493e',
@@ -63,19 +61,6 @@ export class VodaPayPayment {
       // Real API call would go here
       const baseUrl = PAYMENT_URLS[this.config.environment];
       
-      // This is where you'd make the actual API call
-      // const response = await fetch(`${baseUrl}payments`, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     'api-key': this.config.apiKey,
-      //     ...(this.config.isTest && { 'test': 'true' })
-      //   },
-      //   body: JSON.stringify(paymentData)
-      // });
-      
-      // return await response.json();
-
       return {
         success: true,
         transactionId: `txn_${Date.now()}`,

@@ -1,7 +1,4 @@
 "use client";
-import 'swiper/css';
-import 'swiper/css/navigation';
-import 'swiper/css/pagination';
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
@@ -9,106 +6,83 @@ import Image from "next/image";
 interface BannerImage {
   src: string;
   alt: string;
-  title: string;
-  subtitle: string;
 }
 
 const bannerImages: BannerImage[] = [
   {
-    src: "/api/placeholder/1200/400",
-    alt: "Fresh Grain Bowls",
-    title: "Fresh & Healthy",
-    subtitle: "Customize your perfect grain bowl"
+    src: "/images/banner1.jpg",
+    alt: "Fresh farm produce"
   },
   {
-    src: "/api/placeholder/1200/400",
-    alt: "Quick Delivery",
-    title: "Fast Delivery",
-    subtitle: "Get your meal in 30 minutes or less"
+    src: "/images/banner2.jpg",
+    alt: "Organic grains"
   },
   {
-    src: "/api/placeholder/1200/400",
-    alt: "Local Ingredients",
-    title: "Locally Sourced",
-    subtitle: "Fresh ingredients from local farms"
+    src: "/images/banner3.jpg",
+    alt: "Farm to table"
   }
 ];
 
-const DynamicBanner = () => {
+export default function DynamicBanner() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
-    
-    // Safe image preloading
-    bannerImages.forEach((image) => {
-      const img = new Image();
-      img.src = image.src;
-    });
-
-    // Initialize with a stable index
-    setCurrentIndex(0);
-
+    // Auto-rotate banners every 5 seconds
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % bannerImages.length);
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % bannerImages.length);
     }, 5000);
 
     return () => clearInterval(interval);
   }, []);
 
-  if (!isClient) {
-    // SSR fallback - show first banner
-    const firstBanner = bannerImages[0];
-    return (
-      <div className="relative h-64 md:h-96 w-full overflow-hidden rounded-lg">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-100 to-green-100" />
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
-          <h2 className="text-2xl md:text-4xl font-bold text-gray-800 mb-2">
-            {firstBanner.title}
-          </h2>
-          <p className="text-lg md:text-xl text-gray-600">
-            {firstBanner.subtitle}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  const currentImage = bannerImages[currentIndex];
+  const currentBanner = bannerImages[currentIndex];
 
   return (
-    <div className="relative h-64 md:h-96 w-full overflow-hidden rounded-lg">
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-100 to-green-100">
-        <div className="absolute inset-0 opacity-20" />
-      </div>
-      
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
-        <h2 className="text-2xl md:text-4xl font-bold text-gray-800 mb-2">
-          {currentImage.title}
-        </h2>
-        <p className="text-lg md:text-xl text-gray-600">
-          {currentImage.subtitle}
-        </p>
+    <div className="relative w-full h-[400px] md:h-[500px] lg:h-[600px] overflow-hidden">
+      {/* Background Image */}
+      <div className="absolute inset-0">
+        {currentBanner && (
+          <Image
+            src={currentBanner.src}
+            alt={currentBanner.alt}
+            fill
+            priority
+            className="object-cover transition-opacity duration-500"
+            sizes="100vw"
+          />
+        )}
       </div>
 
-      {/* Navigation dots */}
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+      {/* Overlay */}
+      <div className="absolute inset-0 bg-black bg-opacity-40" />
+
+      {/* Content */}
+      <div className="relative h-full flex items-center justify-center text-center text-white px-4">
+        <div className="max-w-3xl">
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-4">
+            Welcome to Garden & Grains
+          </h1>
+          <p className="text-base md:text-lg lg:text-xl mb-8">
+            Experience the freshest farm-to-table ingredients, sustainably grown and delivered to your door.
+          </p>
+          <button className="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg transition transform hover:scale-105">
+            Explore Our Menu
+          </button>
+        </div>
+      </div>
+
+      {/* Dots Navigation */}
+      <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
         {bannerImages.map((_, index) => (
           <button
             key={index}
             onClick={() => setCurrentIndex(index)}
-            className={`w-3 h-3 rounded-full transition-all ${
-              index === currentIndex
-                ? "bg-[#E9C46A] scale-125"
-                : "bg-white/50 hover:bg-white/80"
+            className={`w-2 h-2 rounded-full transition-all ${
+              index === currentIndex ? "bg-white w-4" : "bg-white bg-opacity-50"
             }`}
-            aria-label={`Go to slide ${index + 1}`}
           />
         ))}
       </div>
     </div>
   );
-};
-
-export default DynamicBanner;
+}

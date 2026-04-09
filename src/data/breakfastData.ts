@@ -4,189 +4,187 @@ export interface AddOn {
   price: number;
 }
 
+export interface FriesUpsell {
+  id: string;
+  name: string;
+  price: number;
+  optional?: boolean;
+}
+
 export interface JuiceOption {
   id: string;
   name: string;
   price: number;
 }
 
-export interface JuiceUpsell {
+export interface JuiceGroup {
   size: string;
   options: JuiceOption[];
 }
 
-export interface FriesUpsell {
-  id: string;
-  name: string;
-  price: number;
-}
-
 export interface BreakfastItem {
   id: string;
+  slug: string;
   name: string;
   description: string;
   price: number;
   image: string;
-  slug: string;
-  tags: string[];
+  tags?: string[];
   addOns?: AddOn[];
   friesUpsell?: FriesUpsell[];
-  juiceUpsell?: JuiceUpsell[];
+  juiceUpsell?: JuiceGroup[];
 }
 
-// ✅ Common add-ons for breakfast
+// Common add-ons for breakfast items
 export const breakfastAddOns: AddOn[] = [
-  { id: "breakfast-addon1", name: "extra macon", price: 25 },
-  { id: "breakfast-addon2", name: "extra egg", price: 15 },
-  { id: "breakfast-addon3", name: "extra avocado", price: 20 },
-  { id: "breakfast-addon4", name: "extra cheese", price: 25 },
-  { id: "breakfast-addon5", name: "extra toast", price: 12 },
-  { id: "breakfast-addon6", name: "extra mushrooms", price: 15 },
-  { id: "breakfast-addon7", name: "extra tomato", price: 10 },
-  { id: "breakfast-addon9", name: "extra honey", price: 8 },
-  { id: "breakfast-addon10", name: "extra nuts", price: 15 },
-  { id: "breakfast-addon11", name: "extra seeds", price: 12 },
-  { id: "breakfast-addon12", name: "extra berries", price: 18 },
-  { id: "breakfast-addon13", name: "extra granola", price: 12 },
-  { id: "breakfast-addon14", name: "extra peanut butter", price: 10 },
+  { id: "addon1", name: "Extra Poached Egg", price: 15 },
+  { id: "addon2", name: "Extra Bacon", price: 25 },
+  { id: "addon3", name: "Avocado", price: 20 },
+  { id: "addon4", name: "Sourdough Toast", price: 15 },
+  { id: "addon5", name: "Extra Berries", price: 20 },
+  { id: "addon6", name: "Honey Drizzle", price: 10 },
+  { id: "addon7", name: "Peanut Butter", price: 10 },
+  { id: "addon8", name: "Cottage Cheese", price: 15 },
+  { id: "addon9", name: "Cheddar Cheese", price: 25 },
+  { id: "addon10", name: "Mushrooms", price: 20 },
+  { id: "addon11", name: "Sauted Cherry Tomatoes", price: 25 },
+  { id: "addon12", name: "Fried Egg", price: 15 },
+  { id: "addon13", name: "Scrambled Egg", price: 15 }
 ];
 
-// ✅ Fries upsell options for breakfast
-export const breakfastFriesUpsell: FriesUpsell[] = [
-  { id: "breakfast-fries1", name: "No fries", price: 0 },
-  { id: "breakfast-fries2", name: "Regular Fries", price: 39 },
-  { id: "breakfast-fries3", name: "Sweet Potato Fries", price: 49 },
+// Fries upsell options
+export const friesUpsell: FriesUpsell[] = [
+  { id: "fries1", name: "Skinny French Fries", price: 45 },
+  { id: "fries2", name: "Sweet Potato Fries", price: 59 },
 ];
 
-// ✅ Juice upsell options for breakfast
-export const breakfastJuiceUpsell: JuiceUpsell[] = [
+// Juice upsell options
+export const juiceGroup: JuiceGroup[] = [
   {
     size: "250ml",
     options: [
-      { id: "breakfast-juice1", name: "Orange Juice", price: 55 },
-      { id: "breakfast-juice2", name: "Apple & Lemon Juice", price: 55 },
-      { id: "breakfast-juice3", name: "The Green Mile", price: 55 },
-      { id: "breakfast-juice4", name: "Upbeat Juice", price: 56 },
+      { id: "juice1", name: "Orange Juice", price: 55 },
+      { id: "juice2", name: "Apple & Lemon Juice", price: 55 },
+      { id: "juice3", name: "The Green Mile", price: 55 },
+      { id: "juice4", name: "Fruit Punch", price: 55 },
+      { id: "juice5", name: "Up Beet Juice", price: 55 },
+      { id: "juice6", name: "GLOW", price: 55 },
     ],
   },
   {
     size: "350ml",
     options: [
-      { id: "breakfast-juice5", name: "Orange Juice", price: 69 },
-      { id: "breakfast-juice6", name: "Apple Juice", price: 69 },
-      { id: "breakfast-juice7", name: "The Green Mile", price: 69 },
-      { id: "breakfast-juice8", name: "Upbeat Juice", price: 69 },
+      { id: "juice7", name: "Orange Juice", price: 75 },
+      { id: "juice8", name: "Apple & Lemon Juice", price: 75 },
+      { id: "juice9", name: "The Green Mile", price: 75 },
+      { id: "juice10", name: "Fruit Punch", price: 75 },
+      { id: "juice11", name: "Up Beet Juice", price: 75 },
+      { id: "juice12", name: "GLOW", price: 75 },
     ],
   },
   {
     size: "500ml",
     options: [
-      { id: "breakfast-juice9", name: "Orange Juice", price: 89 },
-      { id: "breakfast-juice10", name: "Apple Juice", price: 89 },
-      { id: "breakfast-juice11", name: "The Green Mile", price: 89 },
-      { id: "breakfast-juice12", name: "Upbeat Juice", price: 89 },
+      { id: "juice13", name: "Orange Juice", price: 95 },
+      { id: "juice14", name: "Apple & Lemon Juice", price: 95 },
+      { id: "juice15", name: "The Green Mile", price: 95 },
+      { id: "juice16", name: "Fruit Punch", price: 95 },
+      { id: "juice17", name: "Up Beet Juice", price: 95 },
+      { id: "juice18", name: "GLOW", price: 95 },
     ],
   },
 ];
 
+// Breakfast items from the menu with correct pricing
 export const breakfastItems: BreakfastItem[] = [
+  // BRUNCH ITEMS
   {
-    id: "breakfast1",
-    name: "Yoghurt, Chia Seeds & Fruit Bowl",
-    description: "Chia seeds Greek yoghurt, honey, fresh berries, banana, and seeds (flaxseeds, pumpkin & sunflower), cinnamon. A nutritious and refreshing start to your day.",
-    price: 105,
-    image: "/images/breakfast/yoghurt-chia-bowl.jpg",
-    slug: "yoghurt-chia-fruit-bowl",
-    tags: ["vegetarian", "healthy", "protein"],
+    id: "breakfast-1",
+    slug: "avo-n-toast",
+    name: "Avo 'n Toast",
+    description: "Poached egg, smashed avocado, toasted sourdough. A classic breakfast favorite!",
+    price: 99,
+    image: "/images/breakfast/avo-toast.jpg",
+    tags: ["vegetarian", "popular", "brunch"],
     addOns: breakfastAddOns,
-    friesUpsell: breakfastFriesUpsell,
-    juiceUpsell: breakfastJuiceUpsell,
+    friesUpsell: friesUpsell,
+    juiceUpsell: juiceGroup,
   },
   {
-    id: "breakfast2",
-    name: "Nutritious Breakfast Bowl",
-    description: "Peanut butter quinoa, chia seeds Greek yogurt, fresh berries, banana, apple, flaxseeds, almond flakes, peanuts, roasted sunflower seeds, unsweetened coconut flakes, honey, a sprinkle of cinnamon. Packed with protein and energy.",
-    price: 115,
-    image: "/images/breakfast/nutritious-bowl.jpg",
+    id: "breakfast-2",
+    slug: "egg-benedict",
+    name: "Egg Benedict",
+    description: "Arugula, bacon, two poached eggs, hollandaise sauce, toasted sourdough. A decadent breakfast classic.",
+    price: 139,
+    image: "/images/breakfast/egg-benedict.jpg",
+    tags: ["popular", "protein-rich", "brunch"],
+    addOns: breakfastAddOns,
+    friesUpsell: friesUpsell,
+    juiceUpsell: juiceGroup,
+  },
+  {
+    id: "breakfast-3",
+    slug: "florentine",
+    name: "Florentine",
+    description: "Sautéed spinach, two poached eggs, toasted sourdough. A vegetarian twist on the classic.",
+    price: 119,
+    image: "/images/breakfast/florentine.jpg",
+    tags: ["vegetarian", "healthy", "brunch"],
+    addOns: breakfastAddOns,
+    friesUpsell: friesUpsell,
+    juiceUpsell: juiceGroup,
+  },
+  {
+    id: "breakfast-4",
+    slug: "wine-makers-breakfast",
+    name: "Wine Maker's Breakfast",
+    description: "Two scrambled eggs, mushrooms, grilled cherry tomatoes, toasted sourdough. A hearty farm-style breakfast.",
+    price:149,
+    image: "/images/breakfast/wine-makers.jpg",
+    tags: ["hearty", "popular", "brunch"],
+    addOns: breakfastAddOns,
+    friesUpsell: friesUpsell,
+    juiceUpsell: juiceGroup,
+  },
+
+  // BREAKFAST BOWLS
+  {
+    id: "breakfast-5",
+    slug: "harvest-bowl",
+    name: "Harvest Bowl",
+    description: "Chia seeds Greek yoghurt, honey, fresh berries, banana, and seeds (flaxseeds, pumpkin & sunflower), topped with a sprinkle of cinnamon.",
+    price: 137,
+    image: "/images/breakfast/harvest-bowl.jpg",
+    tags: ["nutritious", "protein-rich", "healthy", "bowl"],
+    addOns: breakfastAddOns,
+    friesUpsell: friesUpsell,
+    juiceUpsell: juiceGroup,
+  },
+  {
+    id: "breakfast-6",
     slug: "nutritious-breakfast-bowl",
-    tags: ["high-protein", "energy", "gluten-free"],
+    name: "Nutritious Breakfast Bowl",
+    description: "Peanut butter quinoa, chia seeds Greek yogurt, fresh berries, banana, apple, flaxseeds, almond flakes, peanuts, roasted sunflower seeds, unsweetened coconut flakes, honey, a sprinkle of cinnamon.",
+    price: 145,
+    image: "/images/breakfast/nutritious.jpeg",
+    tags: ["high-protein", "popular", "bowl", "nutrient-dense"],
     addOns: breakfastAddOns,
-    friesUpsell: breakfastFriesUpsell,
-    juiceUpsell: breakfastJuiceUpsell,
+    friesUpsell: friesUpsell,
+    juiceUpsell: juiceGroup,
   },
   {
-    id: "breakfast3", 
-    name: "Roasted Oats and Nuts Breakfast Bowl",
-    description: "Creamy warm rolled oats with peanut butter, roasted peanuts and sunflower seeds, chopped dates, dried cranberries, milk, topped with a sprinkle of cinnamon. Warm and comforting.",
-    price: 105,
-    image: "/images/breakfast/roasted-oats-bowl.jpg",
-    slug: "roasted-oats-nuts-bowl",
-    tags: ["warm", "comfort", "fiber"],
+    id: "breakfast-7",
+    slug: "high-protein-breakfast",
+    name: "High Protein Breakfast",
+    description: "Tortilla, scrambled eggs with spring onion, cottage cheese, avocado, baby spinach, bacon, cheddar cheese. A protein-packed wrap to start your day!",
+    price: 130,
+    image: "/images/breakfast/high_protein_breakfast.jpg",
+    tags: ["high-protein", "popular", "wrap", "protein-rich"],
     addOns: breakfastAddOns,
-    friesUpsell: breakfastFriesUpsell,
-    juiceUpsell: breakfastJuiceUpsell,
-  },
-  {
-    id: "breakfast4",
-    name: "Granola and Yogurt Breakfast Bowl",
-    description: "Chia seeds Greek yogurt, granola, sliced banana, honey, almond flakes, roasted sunflower seeds, flaxseeds & pumpkin seeds, a sprinkle of cinnamon. Crunchy and satisfying.",
-    price: 109,
-    image: "/images/breakfast/granola-yogurt-bowl.jpg",
-    slug: "granola-yogurt-bowl",
-    tags: ["crunchy", "protein", "satisfying"],
-    addOns: breakfastAddOns,
-    friesUpsell: breakfastFriesUpsell,
-    juiceUpsell: breakfastJuiceUpsell,
-  },
-  {
-    id: "breakfast5",
-    name: "All-Bran and Yogurt Breakfast Bowl",
-    description: "Greek yogurt, All-Bran cereal, fresh fruit (berries, sliced banana, chunky apple), honey, almond flakes, and seeds (flaxseeds, pumpkin & sunflower). High in fiber and nutrients.",
-    price: 109,
-    image: "/images/breakfast/all-bran-yogurt-bowl.jpg",
-    slug: "all-bran-yogurt-bowl",
-    tags: ["high-fiber", "nutritious", "wholesome"],
-    addOns: breakfastAddOns,
-    friesUpsell: breakfastFriesUpsell,
-    juiceUpsell: breakfastJuiceUpsell,
-  },
-  {
-    id: "breakfast6",
-    name: "Classic Breakfast",
-    description: "Two free-range eggs, crispy macon, grilled tomato, toast, roasted mushrooms and two slices of toasted sourdough bread. A traditional favorite to start your day right.",
-    price: 115,
-    image: "/images/breakfast/classic-breakfast.jpg",
-    slug: "classic-breakfast",
-    tags: ["popular", "protein", "traditional"],
-    addOns: breakfastAddOns,
-    friesUpsell: breakfastFriesUpsell,
-    juiceUpsell: breakfastJuiceUpsell,
-  },
-  {
-    id: "breakfast7",
-    name: "Avocado Toast",
-    description: "Smashed avocado on sourdough bread with cherry tomatoes and microgreens. Simple, fresh, and delicious.",
-    price: 95,
-    image: "/images/breakfast/avocado-toast.jpg",
-    slug: "avocado-toast",
-    tags: ["vegetarian", "healthy", "fresh"],
-    addOns: breakfastAddOns,
-    friesUpsell: breakfastFriesUpsell,
-    juiceUpsell: breakfastJuiceUpsell,
-  },
-  {
-    id: "breakfast8",
-    name: "Breakfast Burrito",
-    description: "Scrambled eggs, black beans, cheese, and salsa wrapped in a tortilla. Portable and protein-packed.",
-    price: 117,
-    image: "/images/breakfast/breakfast-burrito.jpg",
-    slug: "breakfast-burrito",
-    tags: ["hearty", "protein", "portable"],
-    addOns: breakfastAddOns,
-    friesUpsell: breakfastFriesUpsell,
-    juiceUpsell: breakfastJuiceUpsell,
+    friesUpsell: friesUpsell,
+    juiceUpsell: juiceGroup,
   }
 ];
 
-// Alias for compatibility with existing imports
+// Export as breakfasts for compatibility with dynamic pages
 export const breakfasts = breakfastItems;

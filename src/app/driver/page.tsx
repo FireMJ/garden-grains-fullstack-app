@@ -26,7 +26,7 @@ import {
 
 export default function DriverPage() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { 
     driverProfile, 
     availableOrders, 
@@ -37,33 +37,71 @@ export default function DriverPage() {
     updateLocation,
     setDriverStatus,
     getEarningsSummary,
-    loading 
+    loading: driverLoading,
+    error
   } = useDriver();
 
   const [isTracking, setIsTracking] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
-  const [showOnboarding, setShowOnboarding] = useState(!driverProfile);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+  const [redirected, setRedirected] = useState(false);
 
-  // Track location
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Handle redirect when not logged in
+  useEffect(() => {
+    if (!authLoading && !user && isClient && !redirected) {
+      setRedirected(true);
+      router.push('/login?redirect=/driver');
+    }
+  }, [user, authLoading, router, isClient, redirected]);
+
+  // Check if user has driver profile
+  useEffect(() => {
+    if (!driverLoading && user && !driverProfile && !showOnboarding) {
+      setShowOnboarding(true);
+    }
+  }, [driverLoading, user, driverProfile, showOnboarding]);
+
+  // Track location with proper geolocation options
   useEffect(() => {
     if (!isTracking || !driverProfile) return;
 
-    const watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        updateLocation(position.coords.latitude, position.coords.longitude);
-      },
-      (error) => {
-        console.error('Geolocation error:', error);
-      },
-      { enableHighAccuracy: true, interval: 5000 }
-    );
+    let watchId: number;
 
-    return () => navigator.geolocation.clearWatch(watchId);
-  }, [isTracking, driverProfile]);
+    const startTracking = () => {
+      if (!navigator.geolocation) {
+        console.error('Geolocation not supported');
+        return;
+      }
+
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          updateLocation(position.coords.latitude, position.coords.longitude);
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+        },
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+      );
+    };
+
+    startTracking();
+
+    return () => {
+      if (watchId) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+    };
+  }, [isTracking, driverProfile, updateLocation]);
 
   const earnings = getEarningsSummary();
 
-  if (loading) {
+  // Show loading state
+  if (!isClient || authLoading || (driverLoading && !driverProfile)) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
@@ -74,16 +112,39 @@ export default function DriverPage() {
     );
   }
 
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6 bg-white rounded-xl shadow">
+          <div className="text-red-600 text-5xl mb-4">⚠️</div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Something went wrong</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show onboarding if user is logged in but not a driver
+  if (showOnboarding) {
+    return <DriverOnboarding onComplete={() => {
+      setShowOnboarding(false);
+      window.location.reload();
+    }} />;
+  }
+
+  // If not logged in, don't render (redirect will happen)
   if (!user) {
-    router.push('/login');
     return null;
   }
 
-  // Onboarding - Driver Sign Up
-  if (showOnboarding) {
-    return <DriverOnboarding onComplete={() => setShowOnboarding(false)} />;
-  }
-
+  // If no driver profile after onboarding check, show onboarding
   if (!driverProfile) {
     return <DriverOnboarding onComplete={() => window.location.reload()} />;
   }
@@ -98,7 +159,7 @@ export default function DriverPage() {
               <FaTruck className="text-2xl" />
               <div>
                 <h1 className="text-xl font-bold">Driver Portal</h1>
-                <p className="text-sm text-white/80">{driverProfile?.name}</p>
+                <p className="text-sm text-white/80">{driverProfile.name}</p>
               </div>
             </div>
             <div className="flex gap-2">
@@ -123,10 +184,10 @@ export default function DriverPage() {
                 {driverProfile.status === 'available' ? 'Available' : 'Offline'}
               </button>
               <button
-                onClick={logout}
-                className="px-3 py-1 bg-red-600 rounded-lg text-sm font-medium hover:bg-red-700 transition"
+                onClick={() => router.push('/profile')}
+                className="px-3 py-1 bg-blue-600 rounded-lg text-sm font-medium hover:bg-blue-700 transition"
               >
-                <FaSignOutAlt className="inline mr-1" /> Logout
+                Profile
               </button>
             </div>
           </div>
@@ -181,11 +242,12 @@ export default function DriverPage() {
               <FaClock className="text-green-600" />
               Available Orders ({availableOrders.length})
             </h2>
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-[600px] overflow-y-auto">
               {availableOrders.length === 0 ? (
                 <div className="bg-white rounded-xl p-8 text-center">
                   <FaTruck className="text-4xl text-gray-300 mx-auto mb-3" />
                   <p className="text-gray-500">No available orders at the moment</p>
+                  <p className="text-sm text-gray-400 mt-2">Check back later for new deliveries</p>
                 </div>
               ) : (
                 availableOrders.map((order) => (
@@ -199,8 +261,8 @@ export default function DriverPage() {
                     </div>
                     <div className="space-y-2 text-sm text-gray-600">
                       <p className="flex items-center gap-2">
-                        <FaMapMarkerAlt className="text-gray-400" />
-                        {order.customerAddress}
+                        <FaMapMarkerAlt className="text-gray-400 flex-shrink-0" />
+                        <span className="truncate">{order.customerAddress}</span>
                       </p>
                       <p className="flex items-center gap-2">
                         <FaClock className="text-gray-400" />
@@ -249,11 +311,12 @@ export default function DriverPage() {
               <FaTruck className="text-blue-600" />
               Active Deliveries ({activeOrders.length})
             </h2>
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-[600px] overflow-y-auto">
               {activeOrders.length === 0 ? (
                 <div className="bg-white rounded-xl p-8 text-center">
                   <FaUserCheck className="text-4xl text-gray-300 mx-auto mb-3" />
                   <p className="text-gray-500">No active deliveries</p>
+                  <p className="text-sm text-gray-400 mt-2">Accept an order to get started</p>
                 </div>
               ) : (
                 activeOrders.map((order) => (
@@ -269,8 +332,8 @@ export default function DriverPage() {
                     </div>
                     <div className="space-y-2 text-sm text-gray-600">
                       <p className="flex items-center gap-2">
-                        <FaMapMarkerAlt className="text-gray-400" />
-                        {order.customerAddress}
+                        <FaMapMarkerAlt className="text-gray-400 flex-shrink-0" />
+                        <span className="truncate">{order.customerAddress}</span>
                       </p>
                       <p className="flex items-center gap-2">
                         <FaPhone className="text-gray-400" />
@@ -360,9 +423,12 @@ export default function DriverPage() {
               Live Location Tracking
             </h3>
             <div className="bg-gray-200 rounded-lg h-64 flex items-center justify-center">
-              <p className="text-gray-500">
+              <p className="text-gray-500 text-center">
                 📍 Latitude: {driverProfile.currentLocation.lat.toFixed(6)}<br />
-                📍 Longitude: {driverProfile.currentLocation.lng.toFixed(6)}
+                📍 Longitude: {driverProfile.currentLocation.lng.toFixed(6)}<br />
+                <span className="text-xs text-gray-400 mt-2 block">
+                  Last updated: {new Date(driverProfile.currentLocation.updatedAt).toLocaleTimeString()}
+                </span>
               </p>
             </div>
             <p className="text-xs text-gray-500 mt-2 text-center">
@@ -386,10 +452,26 @@ function DriverOnboarding({ onComplete }: { onComplete: () => void }) {
     licensePlate: ''
   });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
+
+    // Validate phone number
+    if (!formData.phone || formData.phone.length < 10) {
+      setError('Please enter a valid phone number');
+      setLoading(false);
+      return;
+    }
+
+    // Validate license plate
+    if (!formData.licensePlate || formData.licensePlate.length < 3) {
+      setError('Please enter a valid license plate');
+      setLoading(false);
+      return;
+    }
 
     try {
       const response = await fetch('/api/driver/register', {
@@ -398,14 +480,17 @@ function DriverOnboarding({ onComplete }: { onComplete: () => void }) {
         body: JSON.stringify({ ...formData, uid: user?.uid })
       });
 
+      const data = await response.json();
+
       if (response.ok) {
+        alert('Driver registration successful! You can now start delivering.');
         onComplete();
       } else {
-        alert('Registration failed. Please try again.');
+        setError(data.error || 'Registration failed. Please try again.');
       }
     } catch (error) {
       console.error('Registration error:', error);
-      alert('An error occurred. Please try again.');
+      setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -420,6 +505,12 @@ function DriverOnboarding({ onComplete }: { onComplete: () => void }) {
             <h1 className="text-2xl font-bold text-gray-900">Become a Driver</h1>
             <p className="text-gray-600">Register to start delivering with Garden & Grains</p>
           </div>
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-600 text-sm">{error}</p>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -449,6 +540,7 @@ function DriverOnboarding({ onComplete }: { onComplete: () => void }) {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="e.g., 0812345678"
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 required
               />
@@ -473,8 +565,8 @@ function DriverOnboarding({ onComplete }: { onComplete: () => void }) {
                 type="text"
                 value={formData.licensePlate}
                 onChange={(e) => setFormData({ ...formData, licensePlate: e.target.value })}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="e.g., CA 123-456"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 required
               />
             </div>
@@ -487,6 +579,15 @@ function DriverOnboarding({ onComplete }: { onComplete: () => void }) {
               {loading ? 'Registering...' : 'Register as Driver'}
             </button>
           </form>
+
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => window.location.href = '/'}
+              className="text-sm text-gray-500 hover:text-gray-700"
+            >
+              ← Back to Home
+            </button>
+          </div>
         </div>
       </div>
     </div>

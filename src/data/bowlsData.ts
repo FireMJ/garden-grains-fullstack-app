@@ -1,291 +1,201 @@
-export interface BowlOption {
+export interface BowlAddOn {
   id: string;
   name: string;
   price: number;
-}
-
-export interface JuiceUpsell {
-  id: string;
-  name: string;
-  price: number;
-  size: string;
 }
 
 export interface FriesUpsell {
   id: string;
   name: string;
   price: number;
+  optional?: boolean;
 }
 
-export interface BowlItem {
+export interface JuiceOption {
+  id: string;
+  name: string;
+  price: number;
+}
+
+export interface JuiceGroup {
+  size: string;
+  options: JuiceOption[];
+}
+
+export interface Bowl {
   id: string;
   slug: string;
   name: string;
   description: string;
-  price: number;
+  basePrice: number;
   image: string;
-  category: string;
-  popular?: boolean;
-  bases: BowlOption[];
-  dressings: BowlOption[];
-  includedIngredients: {
-    proteins: string[];
-    veggies: string[];
-    toppings: string[];
-    finishes: string[];
-  };
-  addOns?: BowlOption[];
+  tags?: string[];
+  dressings: string[];
+  addOns?: BowlAddOn[];
   friesUpsell?: FriesUpsell[];
-  juiceUpsell?: JuiceUpsell[];
+  juiceUpsell?: JuiceGroup[];
+  baseOptions: string[];
 }
 
-// Fries upsell options
-export const friesUpsellOptions: FriesUpsell[] = [
-  { id: "fries-regular", name: "Regular Fries", price: 25 },
-  { id: "fries-sweet-potato", name: "Sweet Potato Fries", price: 35 },
-  { id: "fries-truffle", name: "Truffle Fries", price: 45 }
+// ✅ Common add-ons
+export const commonAddOns: BowlAddOn[] = [
+  { id: "addon1", name: "Extra Chicken", price: 40 },
+  { id: "addon2", name: "Extra Beef", price: 45 },
+  { id: "addon3", name: "Extra Poached Egg", price: 15 },
+  { id: "addon4", name: "Extra Quinoa", price: 35 },
+  { id: "addon5", name: "Extra Tofu", price: 35 },
+  { id: "addon6", name: "Extra Millet", price: 30 },
+  { id: "addon7", name: "Extra Feta Cheese", price: 25 },
+  { id: "addon8", name: "Extra Edamame Beans", price: 20 },
+  { id: "addon9", name: "Extra Avocado", price: 20 },
+  { id: "addon10", name: "Roasted Chickpeas", price: 15 },
+  { id: "addon11", name: "Mixed Seeds (Cashews/Linseeds/Pumpkin/Sesame)", price: 20 }
 ];
 
-// Juice upsell options
-export const juiceUpsellOptions: JuiceUpsell[] = [
-  { id: "juice-small-orange", name: "Orange Juice", price: 25, size: "Small" },
-  { id: "juice-medium-orange", name: "Orange Juice", price: 35, size: "Medium" },
-  { id: "juice-large-orange", name: "Orange Juice", price: 45, size: "Large" },
-  { id: "juice-small-apple", name: "Apple Juice", price: 25, size: "Small" },
-  { id: "juice-medium-apple", name: "Apple Juice", price: 35, size: "Medium" },
-  { id: "juice-large-apple", name: "Apple Juice", price: 45, size: "Large" },
-  { id: "juice-small-green", name: "Green Juice", price: 35, size: "Small" },
-  { id: "juice-medium-green", name: "Green Juice", price: 45, size: "Medium" },
-  { id: "juice-large-green", name: "Green Juice", price: 55, size: "Large" }
+// ✅ Fries upsell options
+export const friesUpsell: FriesUpsell[] = [
+  { id: "fries1", name: "Skinny French Fries", price: 25 },
+  { id: "fries2", name: "Sweet Potato Fries", price: 25 },
 ];
 
-export const chipotleBowls: BowlItem[] = [
+// ✅ Juice upsell options
+export const juiceGroup: JuiceGroup[] = [
   {
-    id: "chipotle-chicken",
+    size: "250ml",
+    options: [
+      { id: "juice1", name: "Orange Juice", price: 55 },
+      { id: "juice2", name: "Apple & Lemon Juice", price: 55 },
+      { id: "juice3", name: "The Green Mile", price: 55 },
+      { id: "juice4", name: "Fruit Punch", price: 55 },
+      { id: "juice5", name: "Up Beet Juice", price: 55 },
+      { id: "juice6", name: "GLOW", price: 55 },
+    ],
+  },
+  {
+    size: "350ml",
+    options: [
+      { id: "juice7", name: "Orange Juice", price: 75 },
+      { id: "juice8", name: "Apple & Lemon Juice", price: 75 },
+      { id: "juice9", name: "The Green Mile", price: 75 },
+      { id: "juice10", name: "Fruit Punch", price: 75 },
+      { id: "juice11", name: "Up Beet Juice", price: 75 },
+      { id: "juice12", name: "GLOW", price: 75 },
+    ],
+  },
+  {
+    size: "500ml",
+    options: [
+      { id: "juice13", name: "Orange Juice", price: 95 },
+      { id: "juice14", name: "Apple & Lemon Juice", price: 95 },
+      { id: "juice15", name: "The Green Mile", price: 95 },
+      { id: "juice16", name: "Fruit Punch", price: 95 },
+      { id: "juice17", name: "Up Beet Juice", price: 95 },
+      { id: "juice18", name: "GLOW", price: 95 },
+    ],
+  },
+];
+
+// ✅ Bowl dressings with actual names from the menu - includes "No Dressing" option
+export const bowlDressings = [
+  { id: "dressing1", name: "Orange Ginger Dressing", price: 0 },
+  { id: "dressing2", name: "Sesame Soy Dressing", price: 0 },
+  { id: "dressing3", name: "Sour Cream Dressing", price: 0 },
+  { id: "dressing4", name: "Balsamic Vinaigrette", price: 0 },
+  { id: "dressing5", name: "Lemon & Herb Vinaigrette", price: 0 },
+  { id: "dressing6", name: "Honey Mustard Dressing", price: 0 },
+  { id: "dressing7", name: "Apple Cider Vinaigrette", price: 0 },
+  { id: "dressing8", name: "Authentic Greek Dressing", price: 0 },
+  { id: "dressing9", name: "Citrus Coriander Dressing", price: 0 },
+  { id: "dressing10", name: "Creamy Chipotle Yoghurt Sauce", price: 0 },
+  { id: "dressing11", name: "No Dressing", price: 0 }
+];
+
+// ✅ Bowl bases
+export const bowlBases = [
+  { id: "base1", name: "Quinoa", price: 0 },
+  { id: "base2", name: "Millet", price: 0 },
+  { id: "base3", name: "Couscous", price: 0 },
+  { id: "base4", name: "Brown Rice", price: 0 },
+  { id: "base5", name: "Bulgar Wheat", price: 0 },
+  { id: "base6", name: "Mixed Greens", price: 0 }
+];
+
+// ✅ Main bowls data
+export const bowls: Bowl[] = [
+  // CHIPOTLE-INSPIRED BOWLS
+  {
+    id: "chipotle1",
     slug: "smoky-chipotle-chicken-bowl",
     name: "Smoky Chipotle Chicken Bowl",
-    description: "Grilled chipotle-marinated chicken strips with corn, black beans, grilled peppers & red onion",
-    price: 127,
-    image: "/images/bowls/chipotle-chicken.jpg",
-    category: "chipotle",
-    popular: true,
-    bases: [
-      { id: "base-1", name: "Quinoa", price: 35 },
-      { id: "base-2", name: "Millet", price: 30 },
-      { id: "base-3", name: "Brown Rice", price: 25 },
-      { id: "base-4", name: "Mixed Greens", price: 20 }
-    ],
-    dressings: [
-      { id: "dress-1", name: "Orange Ginger Dressing", price: 0 },
-      { id: "dress-2", name: "Sesame Soy Dressing", price: 0 },
-      { id: "dress-3", name: "Buttermilk Ranch", price: 0 },
-      { id: "dress-4", name: "Balsamic Vinaigrette", price: 0 },
-      { id: "dress-5", name: "Lemon & Herb Vinaigrette", price: 0 },
-      { id: "dress-6", name: "Honey Mustard", price: 0 },
-      { id: "dress-7", name: "Apple Cider Vinaigrette", price: 0 },
-      { id: "dress-8", name: "Authentic Greek Dressing", price: 0 },
-      { id: "dress-9", name: "Citrus Coriander Dressing", price: 0 },
-      { id: "dress-10", name: "Creamy Chipotle Yoghurt Sauce", price: 0 }
-    ],
-    includedIngredients: {
-      proteins: ["Grilled Chipotle Chicken Strips"],
-      veggies: ["Corn", "Black Beans", "Grilled Peppers & Red Onion"],
-      toppings: ["Avocado Slices", "Tomato Salsa", "Shredded Lettuce", "Cheddar Cheese"],
-      finishes: ["Lime Wedge", "Sesame Seeds"]
-    },
-    addOns: [
-      { id: "addon-1", name: "Extra Chicken", price: 39 },
-      { id: "addon-2", name: "Beef", price: 45 },
-      { id: "addon-3", name: "Poached Egg", price: 15 },
-      { id: "addon-4", name: "Tofu", price: 35 },
-      { id: "addon-5", name: "Feta Cheese", price: 25 },
-      { id: "addon-6", name: "Extra Avocado", price: 25 }
-    ],
-    friesUpsell: friesUpsellOptions,
-    juiceUpsell: juiceUpsellOptions
+    description: "Grilled chipotle-marinated chicken strips with corn, black beans, grilled peppers & red onion. Topped with avocado slices, tomato salsa, shredded lettuce, cheddar cheese. Served with your choice of dressing, lime wedge and sesame seeds.",
+    basePrice: 163,
+    image: "/images/bowls/smoky-chipotle-chicken.jpg",
+    tags: ["chipotle", "protein", "spicy", "popular"],
+    dressings: ["Orange Ginger Dressing", "Sesame Soy Dressing", "Sour Cream Dressing", "Balsamic Vinaigrette", "Lemon & Herb Vinaigrette", "Honey Mustard Dressing", "Apple Cider Vinaigrette", "Authentic Greek Dressing", "Citrus Coriander Dressing", "Creamy Chipotle Yoghurt Sauce", "No Dressing"],
+    addOns: commonAddOns,
+    friesUpsell: friesUpsell,
+    juiceUpsell: juiceGroup,
+    baseOptions: ["Quinoa", "Millet", "Couscous", "Brown Rice", "Bulgar Wheat", "Mixed Greens"]
   },
   {
-    id: "beef-glow",
+    id: "chipotle2",
     slug: "beef-glow-bowl",
     name: "Beef Glow Bowl",
-    description: "Pan-fried spicy beef with roasted sweet potato, red cabbage, and fresh veggies",
-    price: 145,
-    image: "/images/bowls/beef-glow.jpg",
-    category: "chipotle",
-    popular: true,
-    bases: [
-      { id: "base-1", name: "Quinoa", price: 35 },
-      { id: "base-2", name: "Millet", price: 30 },
-      { id: "base-3", name: "Brown Rice", price: 25 },
-      { id: "base-4", name: "Mixed Greens", price: 20 }
-    ],
-    dressings: [
-      { id: "dress-1", name: "Orange Ginger Dressing", price: 0 },
-      { id: "dress-2", name: "Sesame Soy Dressing", price: 0 },
-      { id: "dress-3", name: "Buttermilk Ranch", price: 0 },
-      { id: "dress-4", name: "Balsamic Vinaigrette", price: 0 },
-      { id: "dress-5", name: "Lemon & Herb Vinaigrette", price: 0 },
-      { id: "dress-6", name: "Honey Mustard", price: 0 },
-      { id: "dress-7", name: "Apple Cider Vinaigrette", price: 0 },
-      { id: "dress-8", name: "Authentic Greek Dressing", price: 0 },
-      { id: "dress-9", name: "Citrus Coriander Dressing", price: 0 },
-      { id: "dress-10", name: "Creamy Chipotle Yoghurt Sauce", price: 0 }
-    ],
-    includedIngredients: {
-      proteins: ["Pan-fried Spicy Beef"],
-      veggies: ["Roasted Sweet Potato Cubes", "Red Cabbage", "Cucumber"],
-      toppings: ["Corn Salsa", "Guacamole", "Grated Carrot"],
-      finishes: ["Fresh Coriander", "Sesame Seeds"]
-    },
-    addOns: [
-      { id: "addon-1", name: "Extra Beef", price: 45 },
-      { id: "addon-2", name: "Chicken", price: 39 },
-      { id: "addon-3", name: "Poached Egg", price: 15 },
-      { id: "addon-4", name: "Tofu", price: 35 },
-      { id: "addon-5", name: "Feta Cheese", price: 25 },
-      { id: "addon-6", name: "Extra Avocado", price: 25 }
-    ],
-    friesUpsell: friesUpsellOptions,
-    juiceUpsell: juiceUpsellOptions
+    description: "Pan-fried spicy beef with roasted sweet potato cubes, red cabbage, cucumber. Topped with corn salsa, guacamole, grated carrot. Served with your choice of dressing, fresh coriander and sesame seeds.",
+    basePrice: 163,
+    image: "/images/bowls/beef-glow-bowl.jpg",
+    tags: ["chipotle", "protein", "spicy", "bestseller"],
+    dressings: ["Orange Ginger Dressing", "Sesame Soy Dressing", "Sour Cream Dressing", "Balsamic Vinaigrette", "Lemon & Herb Vinaigrette", "Honey Mustard Dressing", "Apple Cider Vinaigrette", "Authentic Greek Dressing", "Citrus Coriander Dressing", "Creamy Chipotle Yoghurt Sauce", "No Dressing"],
+    addOns: commonAddOns,
+    friesUpsell: friesUpsell,
+    juiceUpsell: juiceGroup,
+    baseOptions: ["Quinoa", "Millet", "Couscous", "Brown Rice", "Bulgar Wheat", "Mixed Greens"]
   },
   {
-    id: "fiery-chickpea",
+    id: "chipotle3",
     slug: "fiery-chickpea-bowl",
     name: "Fiery Chickpea Bowl (V)",
-    description: "Spicy roasted chickpeas with fresh vegetables and hummus",
-    price: 143,
-    image: "/images/bowls/fiery-chickpea.jpg",
-    category: "chipotle",
-    popular: false,
-    bases: [
-      { id: "base-1", name: "Quinoa", price: 35 },
-      { id: "base-2", name: "Millet", price: 30 },
-      { id: "base-3", name: "Brown Rice", price: 25 },
-      { id: "base-4", name: "Mixed Greens", price: 20 }
-    ],
-    dressings: [
-      { id: "dress-1", name: "Orange Ginger Dressing", price: 0 },
-      { id: "dress-2", name: "Sesame Soy Dressing", price: 0 },
-      { id: "dress-3", name: "Buttermilk Ranch", price: 0 },
-      { id: "dress-4", name: "Balsamic Vinaigrette", price: 0 },
-      { id: "dress-5", name: "Lemon & Herb Vinaigrette", price: 0 },
-      { id: "dress-6", name: "Honey Mustard", price: 0 },
-      { id: "dress-7", name: "Apple Cider Vinaigrette", price: 0 },
-      { id: "dress-8", name: "Authentic Greek Dressing", price: 0 },
-      { id: "dress-9", name: "Citrus Coriander Dressing", price: 0 },
-      { id: "dress-10", name: "Creamy Chipotle Yoghurt Sauce", price: 0 }
-    ],
-    includedIngredients: {
-      proteins: ["Spicy Roasted Chickpeas"],
-      veggies: ["Tomato", "Cucumber", "Grilled Zucchini", "Black Beans"],
-      toppings: ["Avocado", "Hummus", "Baby Spinach"],
-      finishes: ["Sesame Seeds"]
-    },
-    addOns: [
-      { id: "addon-1", name: "Chicken", price: 39 },
-      { id: "addon-2", name: "Beef", price: 45 },
-      { id: "addon-3", name: "Poached Egg", price: 15 },
-      { id: "addon-4", name: "Tofu", price: 35 },
-      { id: "addon-5", name: "Feta Cheese", price: 25 },
-      { id: "addon-6", name: "Extra Avocado", price: 25 }
-    ],
-    friesUpsell: friesUpsellOptions,
-    juiceUpsell: juiceUpsellOptions
-  }
-];
+    description: "Spicy roasted chickpeas with baby spinach, tomatoes, cucumber, grilled zucchini, black beans. Topped with avocado, hummus. Served with your choice of dressing and sesame seeds. A vegetarian delight with a kick!",
+    basePrice: 140,
+    image: "/images/bowls/fiery-chickpea-bowl.jpg",
+    tags: ["vegetarian", "chipotle", "spicy", "vegan-friendly"],
+    dressings: ["Orange Ginger Dressing", "Sesame Soy Dressing", "Sour Cream Dressing", "Balsamic Vinaigrette", "Lemon & Herb Vinaigrette", "Honey Mustard Dressing", "Apple Cider Vinaigrette", "Authentic Greek Dressing", "Citrus Coriander Dressing", "Creamy Chipotle Yoghurt Sauce", "No Dressing"],
+    addOns: commonAddOns,
+    friesUpsell: friesUpsell,
+    juiceUpsell: juiceGroup,
+    baseOptions: ["Quinoa", "Millet", "Couscous", "Brown Rice", "Bulgar Wheat", "Mixed Greens"]
+  },
 
-export const pokeBowls: BowlItem[] = [
+  // POKE BOWLS
   {
-    id: "egg-tofu-power",
-    slug: "egg-tofu-power-bowl",
+    id: "poke1",
+    slug: "boiled-egg-tofu-power-bowl",
     name: "Boiled Egg & Tofu Power Bowl",
-    description: "Soft-boiled egg halves with cubed marinated tofu and fresh vegetables",
-    price: 139,
-    image: "/images/bowls/egg-tofu-power.jpg",
-    category: "poke",
-    popular: true,
-    bases: [
-      { id: "base-1", name: "Quinoa", price: 35 },
-      { id: "base-2", name: "Millet", price: 30 },
-      { id: "base-3", name: "Brown Rice", price: 25 },
-      { id: "base-4", name: "Mixed Greens", price: 20 }
-    ],
-    dressings: [
-      { id: "dress-1", name: "Orange Ginger Dressing", price: 0 },
-      { id: "dress-2", name: "Sesame Soy Dressing", price: 0 },
-      { id: "dress-3", name: "Buttermilk Ranch", price: 0 },
-      { id: "dress-4", name: "Balsamic Vinaigrette", price: 0 },
-      { id: "dress-5", name: "Lemon & Herb Vinaigrette", price: 0 },
-      { id: "dress-6", name: "Honey Mustard", price: 0 },
-      { id: "dress-7", name: "Apple Cider Vinaigrette", price: 0 },
-      { id: "dress-8", name: "Authentic Greek Dressing", price: 0 },
-      { id: "dress-9", name: "Citrus Coriander Dressing", price: 0 },
-      { id: "dress-10", name: "Creamy Chipotle Yoghurt Sauce", price: 0 }
-    ],
-    includedIngredients: {
-      proteins: ["Soft-boiled Egg Halves", "Cubed Marinated Tofu"],
-      veggies: ["Cherry Tomatoes", "Radish", "Baby Spinach", "Carrots"],
-      toppings: ["Avocado", "Pickled Onion"],
-      finishes: ["Sesame Seeds", "Chili Flakes"]
-    },
-    addOns: [
-      { id: "addon-1", name: "Chicken", price: 39 },
-      { id: "addon-2", name: "Beef", price: 45 },
-      { id: "addon-3", name: "Extra Egg", price: 15 },
-      { id: "addon-4", name: "Extra Tofu", price: 35 },
-      { id: "addon-5", name: "Feta Cheese", price: 25 },
-      { id: "addon-6", name: "Extra Avocado", price: 25 }
-    ],
-    friesUpsell: friesUpsellOptions,
-    juiceUpsell: juiceUpsellOptions
+    description: "Soft-boiled egg halves and cubed marinated tofu with cherry tomatoes, radish, baby spinach, carrots. Topped with avocado, pickled onion. Served with your choice of dressing, sesame seeds and chili flakes.",
+    basePrice: 148,
+    image: "/images/bowls/boiled-egg-tofu-power-bowl.jpg",
+    tags: ["poke", "protein", "vegetarian", "healthy"],
+    dressings: ["Orange Ginger Dressing", "Sesame Soy Dressing", "Sour Cream Dressing", "Balsamic Vinaigrette", "Lemon & Herb Vinaigrette", "Honey Mustard Dressing", "Apple Cider Vinaigrette", "Authentic Greek Dressing", "Citrus Coriander Dressing", "Creamy Chipotle Yoghurt Sauce", "No Dressing"],
+    addOns: commonAddOns,
+    friesUpsell: friesUpsell,
+    juiceUpsell: juiceGroup,
+    baseOptions: ["Quinoa", "Millet", "Couscous", "Brown Rice", "Bulgar Wheat", "Mixed Greens"]
   },
   {
-    id: "grilled-chicken-poke",
+    id: "poke2",
     slug: "grilled-chicken-poke-bowl",
     name: "Grilled Chicken Poke Bowl",
-    description: "Teriyaki-glazed grilled chicken strips with fresh Asian-inspired vegetables",
-    price: 142,
-    image: "/images/bowls/grilled-chicken-poke.jpg",
-    category: "poke",
-    popular: true,
-    bases: [
-      { id: "base-1", name: "Quinoa", price: 35 },
-      { id: "base-2", name: "Millet", price: 30 },
-      { id: "base-3", name: "Brown Rice", price: 25 },
-      { id: "base-4", name: "Mixed Greens", price: 20 }
-    ],
-    dressings: [
-      { id: "dress-1", name: "Orange Ginger Dressing", price: 0 },
-      { id: "dress-2", name: "Sesame Soy Dressing", price: 0 },
-      { id: "dress-3", name: "Buttermilk Ranch", price: 0 },
-      { id: "dress-4", name: "Balsamic Vinaigrette", price: 0 },
-      { id: "dress-5", name: "Lemon & Herb Vinaigrette", price: 0 },
-      { id: "dress-6", name: "Honey Mustard", price: 0 },
-      { id: "dress-7", name: "Apple Cider Vinaigrette", price: 0 },
-      { id: "dress-8", name: "Authentic Greek Dressing", price: 0 },
-      { id: "dress-9", name: "Citrus Coriander Dressing", price: 0 },
-      { id: "dress-10", name: "Creamy Chipotle Yoghurt Sauce", price: 0 }
-    ],
-    includedIngredients: {
-      proteins: ["Teriyaki Grilled Chicken Strips"],
-      veggies: ["Cucumber", "Corn", "Avocado", "Edamame", "Slaw"],
-      toppings: ["Pineapple Salsa", "Chopped Chives"],
-      finishes: ["Sesame Seeds"]
-    },
-    addOns: [
-      { id: "addon-1", name: "Extra Chicken", price: 39 },
-      { id: "addon-2", name: "Beef", price: 45 },
-      { id: "addon-3", name: "Poached Egg", price: 15 },
-      { id: "addon-4", name: "Tofu", price: 35 },
-      { id: "addon-5", name: "Feta Cheese", price: 25 },
-      { id: "addon-6", name: "Extra Avocado", price: 25 }
-    ],
-    friesUpsell: friesUpsellOptions,
-    juiceUpsell: juiceUpsellOptions
+    description: "Teriyaki-glazed grilled chicken strips with cucumber, corn, avocado, edamame, slaw. Topped with pineapple salsa, chopped chives. Served with your choice of dressing and sesame seeds.",
+    basePrice: 163,
+    image: "/images/bowls/grilled-chicken-poke-bowl.jpg",
+    tags: ["poke", "protein", "popular", "bestseller"],
+    dressings: ["Orange Ginger Dressing", "Sesame Soy Dressing", "Sour Cream Dressing", "Balsamic Vinaigrette", "Lemon & Herb Vinaigrette", "Honey Mustard Dressing", "Apple Cider Vinaigrette", "Authentic Greek Dressing", "Citrus Coriander Dressing", "Creamy Chipotle Yoghurt Sauce", "No Dressing"],
+    addOns: commonAddOns,
+    friesUpsell: friesUpsell,
+    juiceUpsell: juiceGroup,
+    baseOptions: ["Quinoa", "Millet", "Couscous", "Brown Rice", "Bulgar Wheat", "Mixed Greens"]
   }
 ];
 
-export const allBowls = [...chipotleBowls, ...pokeBowls];
-
-// Default export
-export default allBowls;
+// Export all bowls for the menu page
+export const allBowls = bowls;

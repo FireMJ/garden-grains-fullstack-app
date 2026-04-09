@@ -6,6 +6,7 @@ import { CartProvider } from "@/context/CartContext";
 import { PaymentProvider } from "@/context/PaymentContext";
 import { DriverProvider } from "@/context/DriverContext";
 import MainHeader from "@/components/MainHeader";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -25,6 +26,7 @@ export default function RootLayout({
         className={inter.className}
         suppressHydrationWarning={true}
       >
+        <GoogleAnalytics />
         <AuthProvider>
           <CartProvider>
             <PaymentProvider>

@@ -5,796 +5,244 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSwipeable } from "react-swipeable";
 import { motion } from "framer-motion";
-import { collection, getDocs, doc, updateDoc, increment, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import {
-  FaArrowRight, FaCalendarAlt, FaChevronLeft, FaChevronRight, FaClock, FaEnvelope, FaFacebook, FaGift, FaHeart, FaInstagram, FaLeaf, FaMapMarkerAlt, FaPhone, FaShippingFast, FaSignInAlt, FaStar, FaTag, FaTiktok, FaTruck, FaTwitter, FaUser, FaUsers, FaUtensils, FaWhatsapp
-} from "react-icons/fa";
 import { useCart } from "@/context/CartContext";
+import {
+  FaArrowRight,
+  FaCalendarAlt,
+  FaChevronLeft,
+  FaChevronRight,
+  FaClock,
+  FaFacebook,
+  FaGift,
+  FaHeart,
+  FaInstagram,
+  FaLeaf,
+  FaMapMarkerAlt,
+  FaPhone,
+  FaShippingFast,
+  FaSignInAlt,
+  FaStar,
+  FaTiktok,
+  FaTruck,
+  FaTwitter,
+  FaUser,
+  FaUsers,
+  FaUtensils,
+  FaWhatsapp
+} from "react-icons/fa";
 
 // Banner Images
 const bannerImages = [
-  {
-    image: "/images/banners/bacon-egg-cheese.jpeg",
-    mobileImage: "/images/banners/egg-bacon-cheese.jpeg"
-  },
-  {
-    image: "/images/banners/live-off-the-land.jpeg",
-    mobileImage: "/images/banners/live-off-the-land.jpeg"
-  },
-  {
-    image: "/images/banners/cover-image.jpeg",
-    mobileImage: "/images/banners/cover-image.jpeg"
-  },
-  {
-    image: "/images/banners/protein-avo-stack-salad.jpeg",
-    mobileImage: "/images/banners/protein-avo-stack-salad.jpeg"
-  },
-  {
-    image: "/images/banners/protein-pack.jpeg",
-    mobileImage: "/images/banners/protein-pack.jpeg"
-  },
-  {
-    image: "/images/banners/quinoa-feta.jpeg",
-    mobileImage: "/images/banners/quinoa-feta.jpeg"
-  },
-  {
-    image: "/images/banners/salad.jpeg",
-    mobileImage: "/images/banners/salad.jpeg"
-  },
-  {
-    image: "/images/banners/vitality.jpeg",
-    mobileImage: "/images/banners/vitality.jpeg"
-  },
-  {
-    image: "/images/banners/health-salad.jpeg",
-    mobileImage: "/images/banners/health-salad.jpeg"
-  },
-  {
-    image: "/images/banners/garden-salad.jpeg",
-    mobileImage: "/images/banners/garden-salad.jpeg"
-  },
+  { image: "/images/banners/bacon-egg-cheese.jpeg", mobileImage: "/images/banners/bacon-egg-cheese.jpeg" },
+  { image: "/images/banners/live-off-the-land.jpeg", mobileImage: "/images/banners/live-off-the-land.jpeg" },
+  { image: "/images/banners/cover-image.jpeg", mobileImage: "/images/banners/cover-image.jpeg" },
+  { image: "/images/banners/protein-avo-stack-salad.jpeg", mobileImage: "/images/banners/protein-avo-stack-salad.jpeg" },
+  { image: "/images/banners/protein-pack.jpeg", mobileImage: "/images/banners/protein-pack.jpeg" },
+  { image: "/images/banners/quinoa-feta.jpeg", mobileImage: "/images/banners/quinoa-feta.jpeg" },
+  { image: "/images/banners/salad.jpeg", mobileImage: "/images/banners/salad.jpeg" },
+  { image: "/images/banners/vitality.jpeg", mobileImage: "/images/banners/vitality.jpeg" },
+  { image: "/images/banners/health-salad.jpeg", mobileImage: "/images/banners/health-salad.jpeg" },
+  { image: "/images/banners/garden-salad.jpeg", mobileImage: "/images/banners/garden-salad.jpeg" },
+  { image: "/images/banners/cover_image1.jpg", mobileImage: "/images/banners/cover_image1.jpg" },
+  { image: "/images/banners/banner1.jpeg", mobileImage: "/images/banners/banner1.jpeg" },
+  { image: "/images/banners/banner2.jpg", mobileImage: "/images/banners/banner2.jpg" },
+  { image: "/images/banners/banner3.jpg", mobileImage: "/images/banners/banner3.jpg" },
+  { image: "/images/banners/beef-slaw.jpeg", mobileImage: "/images/banners/beef-slaw.jpeg" },
+  { image: "/images/banners/cover-image2.jpeg", mobileImage: "/images/banners/cover-image2.jpeg" }
 ];
 
-// Menu highlight images with real food photos
+// Menu highlight images
 const menuHighlightImages = [
-  {
-    id: 1,
-    name: "Smoky Chipotle Chicken Bowl",
-    image: "/images/menu/chipotle-chicken-bowl.jpeg",
-    fallbackImage: "/images/menu/chipotle-chicken-bowl.jpeg",
-    category: "bowls"
-  },
-  {
-    id: 2,
-    name: "Protein Avocado Salad",
-    image: "/images/menu/avocado-stack.jpeg",
-    fallbackImage: "/images/menu/avocado-stack.jpeg",
-    category: "salads"
-  },
-  {
-    id: 3,
-    name: "Tangerine Dream Smoothie",
-    image: "/images/menu/tangerine-smoothie.jpeg",
-    fallbackImage: "/images/menu/tangerine-smoothie.jpeg",
-    category: "smoothies"
-  },
-  {
-    id: 4,
-    name: "Chicken Avocado Wrap",
-    image: "/images/menu/chicken-avo-wrap.jpeg",
-    fallbackImage: "/images/menu/chicken-avo-wrap.jpeg",
-    category: "wraps"
-  },
-  {
-    id: 5,
-    name: "Beef & Veg Stir-Fry",
-    image: "/images/menu/beef-stirfry.jpeg",
-    fallbackImage: "/images/menu/beef-stirfry.jpeg",
-    category: "stirfry"
-  },
-  {
-    id: 6,
-    name: "Creamy Sweet Potato Soup",
-    image: "/images/menu/sweet-potato-soup.jpeg",
-    fallbackImage: "/images/menu/sweet-potato-soup.jpeg",
-    category: "soups"
-  },
+  { id: 1, name: "Smoky Chipotle Chicken Bowl", image: "/images/menu/chipotle-chicken-bowl.jpeg", category: "bowls" },
+  { id: 2, name: "Protein Avocado Salad", image: "/images/menu/avocado-stack.jpeg", category: "salads" },
+  { id: 3, name: "Berry Bloom Smoothie", image: "/images/smoothies/berry_bloom.jpg", category: "smoothies" },
+  { id: 4, name: "Chicken Avocado Wrap", image: "/images/menu/chicken-avo-wrap.jpeg", category: "wraps" },
+  { id: 5, name: "Beef & Veg Stir-Fry", image: "/images/menu/beef-stirfry.jpeg", category: "stirfry" },
+  { id: 6, name: "Creamy Sweet Potato Soup", image: "/images/menu/sweet-potato-soup.jpeg", category: "soups" }
 ];
 
 // Features data
 const features = [
-  {
-    icon: "🌱",
-    title: "100% Organic",
-    description: "Locally sourced, chemical-free ingredients",
-    color: "from-green-100 to-green-50"
-  },
-  {
-    icon: "⚡",
-    title: "Fast Delivery",
-    description: "30-45 minute delivery guarantee",
-    color: "from-blue-100 to-blue-50"
-  },
-  {
-    icon: "❤️",
-    title: "Made with Love",
-    description: "Every dish prepared with care",
-    color: "from-pink-100 to-pink-50"
-  },
-  {
-    icon: "♻️",
-    title: "Eco-Friendly",
-    description: "Sustainable & biodegradable packaging",
-    color: "from-emerald-100 to-emerald-50"
-  },
-  {
-    icon: "👨‍🍳",
-    title: "Expert Chefs",
-    description: "Professional culinary team",
-    color: "from-amber-100 to-amber-50"
-  },
-  {
-    icon: "⭐",
-    title: "Top Rated",
-    description: "Rated 4.9/5 by customers",
-    color: "from-purple-100 to-purple-50"
-  },
+  { icon: "🌱", title: "100% Organic", description: "Locally sourced, chemical-free ingredients", color: "from-green-100 to-green-50" },
+  { icon: "⚡", title: "Fast Delivery", description: "30-45 minute delivery guarantee", color: "from-blue-100 to-blue-50" },
+  { icon: "❤️", title: "Made with Love", description: "Every dish prepared with care", color: "from-pink-100 to-pink-50" },
+  { icon: "♻️", title: "Eco-Friendly", description: "Sustainable & biodegradable packaging", color: "from-emerald-100 to-emerald-50" },
+  { icon: "👨‍🍳", title: "Expert Chefs", description: "Professional culinary team", color: "from-amber-100 to-amber-50" },
+  { icon: "⭐", title: "Top Rated", description: "Rated 4.9/5 by customers", color: "from-purple-100 to-purple-50" }
 ];
 
 // -------------------- Animated Counter Component --------------------
 function AnimatedCounter({ value, duration = 1000 }) {
   const [count, setCount] = useState(0);
-
   useEffect(() => {
     let start = 0;
     const end = value;
-    if (start === end) {
-      setCount(end);
-      return;
-    }
-
+    if (start === end) { setCount(end); return; }
     const incrementTime = Math.max(30, duration / end);
-    const timer = setInterval(() => {
-      start += 1;
-      setCount(start);
-      if (start >= end) clearInterval(timer);
-    }, incrementTime);
-
+    const timer = setInterval(() => { start += 1; setCount(start); if (start >= end) clearInterval(timer); }, incrementTime);
     return () => clearInterval(timer);
   }, [value, duration]);
-
   return <>{count.toLocaleString()}</>;
 }
 
-// -------------------- Like Counter Component with Real-time Analytics --------------------
+// -------------------- Like Counter Component --------------------
 function LikeCounterButton() {
   const [isLiking, setIsLiking] = useState(false);
   const [showLoveEffect, setShowLoveEffect] = useState(false);
   const [userHasLiked, setUserHasLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(1000);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [likeCount, setLikeCount] = useState(1247);
 
-  // Check if user has already liked (using localStorage)
-  useEffect(() => {
-    const hasLiked = localStorage.getItem('gardenGrainsLiked') === 'true';
-    setUserHasLiked(hasLiked);
-    
-    // Initialize from Firebase
-    const initializeLikeCount = async () => {
-      try {
-        const statsRef = doc(db, 'stats', 'customerStats');
-        const unsubscribe = onSnapshot(statsRef, (docSnapshot) => {
-          if (docSnapshot.exists()) {
-            const data = docSnapshot.data();
-            const newCount = data.happyCustomers || 1000;
-            setLikeCount(newCount);
-            setIsInitialized(true);
-          }
-        });
-        
-        return () => unsubscribe();
-      } catch (error) {
-        console.error("Error initializing like count:", error);
-        setIsInitialized(true);
-      }
-    };
-
-    initializeLikeCount();
-  }, []);
-
-  // Handle like button click with enhanced analytics
   const handleLikeClick = async () => {
     if (isLiking || userHasLiked) return;
-    
     setIsLiking(true);
     setShowLoveEffect(true);
-    
-    try {
-      // Track like click in Firebase analytics
-      const analyticsRef = doc(db, 'analytics', 'likes');
-      await updateDoc(analyticsRef, {
-        totalLikes: increment(1),
-        dailyLikes: increment(1),
-        lastLikeAt: new Date(),
-        [`likes_${new Date().toISOString().split('T')[0]}`]: increment(1)
-      }, { merge: true });
-      
-      // Update happy customers count
-      const statsRef = doc(db, 'stats', 'customerStats');
-      await updateDoc(statsRef, {
-        happyCustomers: increment(1),
-        updatedAt: new Date()
-      });
-      
-      // Mark user as having liked
-      localStorage.setItem('gardenGrainsLiked', 'true');
-      setUserHasLiked(true);
-      
-      // Update local state for instant feedback
-      setLikeCount(prev => prev + 1);
-      
-      // Show love effect animation
-      setTimeout(() => {
-        setShowLoveEffect(false);
-        setIsLiking(false);
-      }, 1000);
-      
-    } catch (error) {
-      console.error("Error updating like count:", error);
-      setIsLiking(false);
-      setShowLoveEffect(false);
-    }
+    setLikeCount(prev => prev + 1);
+    setUserHasLiked(true);
+    localStorage.setItem('gardenGrainsLiked', 'true');
+    setTimeout(() => { setShowLoveEffect(false); setIsLiking(false); }, 1000);
   };
 
   return (
-    <button
-      onClick={handleLikeClick}
-      disabled={isLiking || userHasLiked}
-      className="group relative w-full"
-      aria-label={userHasLiked ? "You've already liked this" : "Like our restaurant"}
-    >
-      {/* Love effect animation */}
+    <button onClick={handleLikeClick} disabled={isLiking || userHasLiked} className="group relative w-full">
       {showLoveEffect && (
         <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
-          <motion.div
-            initial={{ scale: 0, opacity: 1 }}
-            animate={{ scale: 3, opacity: 0 }}
-            transition={{ duration: 1 }}
-            className="text-4xl"
-          >
-            ❤️
-          </motion.div>
+          <motion.div initial={{ scale: 0, opacity: 1 }} animate={{ scale: 3, opacity: 0 }} transition={{ duration: 1 }} className="text-4xl">❤️</motion.div>
         </div>
       )}
-      
-      <div className={`flex items-center gap-3 backdrop-blur-sm p-3 rounded-2xl transition-all duration-300 border w-full ${
-        userHasLiked 
-          ? 'bg-[#ff6b6b]/30 border-[#ff6b6b]/50 cursor-default' 
-          : 'bg-white/10 hover:bg-white/20 border-white/20 hover:border-white/40 cursor-pointer'
-      }`}>
-        <div className={`w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform ${
-          userHasLiked 
-            ? 'bg-gradient-to-br from-[#ff6b6b]/40 to-[#ff6b6b]/60' 
-            : 'bg-gradient-to-br from-[#ff6b6b]/20 to-[#ff6b6b]/40'
-        }`}>
-          {isLiking ? (
-            <motion.div
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ duration: 0.5, repeat: Infinity }}
-              className="text-xl"
-            >
-              ❤️
-            </motion.div>
-          ) : userHasLiked ? (
-            <div className="text-xl animate-pulse">❤️</div>
-          ) : (
-            <FaHeart className="text-[#ff6b6b] text-lg group-hover:scale-110 transition-transform" />
-          )}
+      <div className={`flex items-center gap-3 backdrop-blur-sm p-3 rounded-2xl transition-all duration-300 border w-full ${userHasLiked ? 'bg-[#ff6b6b]/30 border-[#ff6b6b]/50 cursor-default' : 'bg-white/10 hover:bg-white/20 border-white/20 hover:border-white/40 cursor-pointer'}`}>
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform ${userHasLiked ? 'bg-gradient-to-br from-[#ff6b6b]/40 to-[#ff6b6b]/60' : 'bg-gradient-to-br from-[#ff6b6b]/20 to-[#ff6b6b]/40'}`}>
+          {isLiking ? <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 0.5, repeat: Infinity }} className="text-xl">❤️</motion.div> : userHasLiked ? <div className="text-xl animate-pulse">❤️</div> : <FaHeart className="text-[#ff6b6b] text-lg group-hover:scale-110 transition-transform" />}
         </div>
         <div className="flex-1 text-left">
-          <div className="text-2xl font-bold text-white">
-            {isInitialized ? (
-              <AnimatedCounter 
-                value={likeCount} 
-                duration={800} 
-                key={likeCount}
-              />
-            ) : (
-              "1,000"
-            )}
-          </div>
-          <div className="text-white/70 text-xs">
-            {userHasLiked ? 'You liked!' : 'Happy Customers'}
-          </div>
+          <div className="text-2xl font-bold text-white"><AnimatedCounter value={likeCount} duration={800} key={likeCount} /></div>
+          <div className="text-white/70 text-xs">{userHasLiked ? 'You liked!' : 'Happy Customers'}</div>
         </div>
-        
-        {/* Mobile responsive indicator */}
-        <div className="hidden sm:block text-white/50">
-          <FaArrowRight className="transform group-hover:translate-x-1 transition-transform" />
-        </div>
+        <div className="hidden sm:block text-white/50"><FaArrowRight className="transform group-hover:translate-x-1 transition-transform" /></div>
       </div>
     </button>
   );
 }
 
-// -------------------- New Client Promo Button with Registration Check --------------------
+// -------------------- New Client Promo Button --------------------
 function NewClientPromoButton() {
   const [isChecking, setIsChecking] = useState(false);
   const [isNewClient, setIsNewClient] = useState(true);
 
-  // Check if user is already registered
-  const checkIfRegistered = async () => {
+  const handleClick = async () => {
     setIsChecking(true);
-    
-    try {
-      // Check localStorage first (client-side check)
-      const hasVisitedBefore = localStorage.getItem('gardenGrainsVisited') === 'true';
-      
-      if (hasVisitedBefore) {
-        setIsNewClient(false);
-        setIsChecking(false);
-        return false;
-      }
-      
-      // In a real app, you would check with your backend/authentication
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Mark as visited for future reference
+    const hasVisitedBefore = localStorage.getItem('gardenGrainsVisited') === 'true';
+    if (!hasVisitedBefore) {
       localStorage.setItem('gardenGrainsVisited', 'true');
-      setIsNewClient(true);
-      
-    } catch (error) {
-      console.error("Error checking registration:", error);
-      setIsNewClient(true);
-    } finally {
-      setIsChecking(false);
-    }
-    
-    return true;
-  };
-
-  const handlePromoClick = async () => {
-    const isNew = await checkIfRegistered();
-    
-    if (isNew) {
-      // Navigate to signup with promo code
       window.location.href = '/signup?promo=WELCOME20';
     } else {
-      // Show message that promo is for new clients only
-      alert('Welcome back! This 20% discount is for new clients only. Check your email for exclusive offers!');
+      alert('Welcome back! This 20% discount is for new clients only.');
       window.location.href = '/signup';
     }
-  };
-
-  // Track promo clicks in Firebase
-  const trackPromoClick = async () => {
-    try {
-      const promoRef = doc(db, 'analytics', 'promotions');
-      await updateDoc(promoRef, {
-        newClientPromoClicks: increment(1),
-        lastPromoClick: new Date(),
-        [`promo_${new Date().toISOString().split('T')[0]}`]: increment(1)
-      }, { merge: true });
-    } catch (error) {
-      console.error("Error tracking promo click:", error);
-    }
-  };
-
-  const handleClick = async () => {
-    await trackPromoClick();
-    await handlePromoClick();
+    setIsChecking(false);
   };
 
   return (
-    <button
-      onClick={handleClick}
-      disabled={isChecking}
-      className="group relative w-full"
-      aria-label="Get 20% off as a new client"
-    >
+    <button onClick={handleClick} disabled={isChecking} className="group relative w-full">
       <div className="flex items-center gap-3 bg-gradient-to-r from-[#ff6b6b] to-[#ff9800] backdrop-blur-sm p-3 rounded-2xl hover:shadow-xl transition-all duration-300 border border-white/20 hover:border-white/40 hover:scale-105 w-full">
         <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-          {isChecking ? (
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            >
-              <FaGift className="text-white text-xl" />
-            </motion.div>
-          ) : (
-            <FaGift className="text-white text-xl group-hover:scale-110 transition-transform" />
-          )}
+          {isChecking ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}><FaGift className="text-white text-xl" /></motion.div> : <FaGift className="text-white text-xl group-hover:scale-110 transition-transform" />}
         </div>
         <div className="flex-1 text-left">
-          <div className="text-xl font-bold text-white flex items-center gap-1">
-            <span>20% OFF</span>
-            {!isNewClient && (
-              <span className="text-xs bg-white/30 px-2 py-1 rounded-full">New Only</span>
-            )}
-          </div>
-          <div className="text-white/90 text-xs font-medium">
-            {isChecking ? 'Checking...' : 'New Clients'}
-          </div>
+          <div className="text-xl font-bold text-white flex items-center gap-1"><span>20% OFF</span>{!isNewClient && <span className="text-xs bg-white/30 px-2 py-1 rounded-full">New Only</span>}</div>
+          <div className="text-white/90 text-xs font-medium">{isChecking ? 'Checking...' : 'New Clients'}</div>
         </div>
-        
-        {/* Mobile responsive indicator */}
-        <div className="hidden sm:block text-white">
-          <FaArrowRight className="transform group-hover:translate-x-1 transition-transform" />
-        </div>
-        
-        {/* Countdown timer for mobile */}
-        <div className="sm:hidden text-xs bg-white/30 px-2 py-1 rounded-full text-white">
-          🎁
-        </div>
+        <div className="hidden sm:block text-white"><FaArrowRight className="transform group-hover:translate-x-1 transition-transform" /></div>
+        <div className="sm:hidden text-xs bg-white/30 px-2 py-1 rounded-full text-white">🎁</div>
       </div>
     </button>
   );
 }
 
-// -------------------- Floating Buttons with Firebase Analytics --------------------
+// -------------------- Floating Buttons --------------------
 function FloatingCartButton() {
-  const { cartItems, totalItems } = useCart(); // FIXED: Use cartItems instead of cart
+  const { cartItems, totalItems } = useCart();
   const itemCount = totalItems || (cartItems && Array.isArray(cartItems) ? cartItems.reduce((total, item) => total + (item?.quantity || 1), 0) : 0);
-
-  // Track cart button clicks in Firebase
-  const trackCartClick = async () => {
-    try {
-      const statsRef = doc(db, 'stats', 'interactions');
-      await updateDoc(statsRef, {
-        cartClicks: increment(1),
-        lastCartClick: new Date()
-      }, { merge: true });
-    } catch (error) {
-      console.error("Error tracking cart click:", error);
-    }
-  };
-
   return (
-    <Link
-      href="/cart"
-      onClick={trackCartClick}
-      className="fixed bottom-6 right-6 bg-[#ff9800] text-white font-semibold py-3 px-4 md:px-5 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center gap-2 z-40 hover:scale-105"
-    >
-      <div className="relative">
-        🛒
-        {itemCount > 0 && (
-          <span className="absolute -top-2 -right-2 bg-[#1e4259] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
-            {itemCount > 99 ? '99+' : itemCount}
-          </span>
-        )}
-      </div>
-      <span className="hidden sm:inline">View Cart</span>
-      <span className="sm:hidden">Cart</span>
+    <Link href="/cart" className="fixed bottom-6 right-6 bg-[#ff9800] text-white font-semibold py-3 px-4 md:px-5 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center gap-2 z-40 hover:scale-105">
+      <div className="relative">🛒{itemCount > 0 && <span className="absolute -top-2 -right-2 bg-[#1e4259] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">{itemCount > 99 ? '99+' : itemCount}</span>}</div>
+      <span className="hidden sm:inline">View Cart</span><span className="sm:hidden">Cart</span>
     </Link>
   );
 }
 
 function FloatingWhatsAppButton() {
-  // Track WhatsApp button clicks in Firebase
-  const trackWhatsAppClick = async () => {
-    try {
-      const statsRef = doc(db, 'stats', 'interactions');
-      await updateDoc(statsRef, {
-        whatsAppClicks: increment(1),
-        lastWhatsAppClick: new Date()
-      }, { merge: true });
-    } catch (error) {
-      console.error("Error tracking WhatsApp click:", error);
-    }
-  };
-
   return (
-    <a
-      href="https://wa.me/27693765574"
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={trackWhatsAppClick}
-      className="fixed bottom-24 right-6 bg-[#25D366] text-white font-semibold py-3 px-4 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center gap-2 z-40 hover:scale-105"
-    >
-      <FaWhatsapp className="h-5 w-5 md:h-6 md:w-6" />
-      <span className="hidden sm:inline text-sm font-medium">Order via WhatsApp</span>
-      <span className="sm:hidden text-sm font-medium">WhatsApp</span>
+    <a href="https://wa.me/27693765574" target="_blank" rel="noopener noreferrer" className="fixed bottom-24 right-6 bg-[#25D366] text-white font-semibold py-3 px-4 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center gap-2 z-40 hover:scale-105">
+      <FaWhatsapp className="h-5 w-5 md:h-6 md:w-6" /><span className="hidden sm:inline text-sm font-medium">Order via WhatsApp</span><span className="sm:hidden text-sm font-medium">WhatsApp</span>
     </a>
   );
 }
 
-// Add a new Floating Call Button
 function FloatingCallButton() {
-  // Track call button clicks in Firebase
-  const trackCallClick = async () => {
-    try {
-      const statsRef = doc(db, 'stats', 'interactions');
-      await updateDoc(statsRef, {
-        callClicks: increment(1),
-        lastCallClick: new Date()
-      }, { merge: true });
-    } catch (error) {
-      console.error("Error tracking call click:", error);
-    }
-  };
-
   return (
-    <a
-      href="tel:+27693765574"
-      onClick={trackCallClick}
-      className="fixed bottom-42 right-6 bg-[#1e4259] text-white font-semibold py-3 px-4 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center gap-2 z-40 hover:scale-105"
-    >
-      <FaPhone className="h-5 w-5 md:h-6 md:w-6" />
-      <span className="hidden sm:inline text-sm font-medium">Call Us</span>
-      <span className="sm:hidden text-sm font-medium">Call</span>
+    <a href="tel:+27693765574" className="fixed bottom-42 right-6 bg-[#1e4259] text-white font-semibold py-3 px-4 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center gap-2 z-40 hover:scale-105">
+      <FaPhone className="h-5 w-5 md:h-6 md:w-6" /><span className="hidden sm:inline text-sm font-medium">Call Us</span><span className="sm:hidden text-sm font-medium">Call</span>
     </a>
   );
 }
 
-// Add a new Floating Menu Button
 function FloatingMenuButton() {
-  // Track menu button clicks in Firebase
-  const trackMenuClick = async () => {
-    try {
-      const statsRef = doc(db, 'stats', 'interactions');
-      await updateDoc(statsRef, {
-        menuClicks: increment(1),
-        lastMenuClick: new Date()
-      }, { merge: true });
-    } catch (error) {
-      console.error("Error tracking menu click:", error);
-    }
-  };
-
   return (
-    <Link
-      href="/menu"
-      onClick={trackMenuClick}
-      className="fixed bottom-60 right-6 bg-[#94aa4d] text-white font-semibold py-3 px-4 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center gap-2 z-40 hover:scale-105"
-    >
-      <FaUtensils className="h-5 w-5 md:h-6 md:w-6" />
-      <span className="hidden sm:inline text-sm font-medium">View Menu</span>
-      <span className="sm:hidden text-sm font-medium">Menu</span>
+    <Link href="/menu" className="fixed bottom-60 right-6 bg-[#94aa4d] text-white font-semibold py-3 px-4 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center gap-2 z-40 hover:scale-105">
+      <FaUtensils className="h-5 w-5 md:h-6 md:w-6" /><span className="hidden sm:inline text-sm font-medium">View Menu</span><span className="sm:hidden text-sm font-medium">Menu</span>
     </Link>
   );
 }
 
-// Add a new Floating Reserve Button
 function FloatingReserveButton() {
-  // Track reserve button clicks in Firebase
-  const trackReserveClick = async () => {
-    try {
-      const statsRef = doc(db, 'stats', 'interactions');
-      await updateDoc(statsRef, {
-        reserveClicks: increment(1),
-        lastReserveClick: new Date()
-      }, { merge: true });
-    } catch (error) {
-      console.error("Error tracking reserve click:", error);
-    }
-  };
-
   return (
-    <Link
-      href="/reserve"
-      onClick={trackReserveClick}
-      className="fixed bottom-78 right-6 bg-[#ff6b6b] text-white font-semibold py-3 px-4 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center gap-2 z-40 hover:scale-105"
-    >
-      <FaCalendarAlt className="h-5 w-5 md:h-6 md:w-6" />
-      <span className="hidden sm:inline text-sm font-medium">Reserve Table</span>
-      <span className="sm:hidden text-sm font-medium">Reserve</span>
+    <Link href="/reserve" className="fixed bottom-78 right-6 bg-[#ff6b6b] text-white font-semibold py-3 px-4 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center gap-2 z-40 hover:scale-105">
+      <FaCalendarAlt className="h-5 w-5 md:h-6 md:w-6" /><span className="hidden sm:inline text-sm font-medium">Reserve Table</span><span className="sm:hidden text-sm font-medium">Reserve</span>
     </Link>
   );
 }
 
-// -------------------- Updated Header with Auth & Driver Sign-In --------------------
+// -------------------- Enhanced Header --------------------
 function EnhancedHeader() {
-  const { cartItems, totalItems } = useCart(); // FIXED: Use cartItems and totalItems
+  const { cartItems, totalItems } = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const cartCount = totalItems || (cartItems && Array.isArray(cartItems) ? cartItems.reduce((sum, item) => sum + (item?.quantity || 0), 0) : 0);
-  
-  // Track navigation clicks in Firebase
-  const trackNavClick = async (page: string) => {
-    try {
-      const statsRef = doc(db, 'stats', 'navigation');
-      await updateDoc(statsRef, {
-        [page + 'Clicks']: increment(1),
-        [`last${page.charAt(0).toUpperCase() + page.slice(1)}Click`]: new Date()
-      }, { merge: true });
-    } catch (error) {
-      console.error("Error tracking navigation click:", error);
-    }
-  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md shadow-md">
       <div className="container mx-auto px-4 py-2 md:py-3">
         <div className="flex items-center justify-between">
-          {/* Logo with Brand Name */}
-          <Link href="/" className="flex items-center gap-2 md:gap-3 group" onClick={() => trackNavClick('home')}>
-            <div className="relative h-10 w-auto md:h-12 flex items-center">
-              <Image 
-                src="/logo/logo.png" 
-                alt="Garden & Grains" 
-                width={120} 
-                height={40}
-                className="object-contain w-auto h-full"
-                priority
-              />
-            </div>
-            {/* Brand Name - Bold and next to logo */}
-            <div className="flex flex-col leading-tight">
-              <span className="text-base md:text-lg font-extrabold text-gray-900">Garden & Grains</span>
-            </div>
+          <Link href="/" className="flex items-center gap-2 md:gap-3 group">
+            <div className="relative h-10 w-auto md:h-12 flex items-center"><Image src="/logo/logo.png" alt="Garden & Grains" width={120} height={40} className="object-contain w-auto h-full" priority /></div>
+            <div className="flex flex-col leading-tight"><span className="text-base md:text-lg font-extrabold text-gray-900">Garden & Grains</span></div>
           </Link>
-
-          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-4">
-            <Link 
-              href="/" 
-              className="text-gray-700 hover:text-[#94aa4d] transition font-medium px-3 py-2 text-sm lg:text-base"
-              onClick={() => trackNavClick('home')}
-            >
-              Home
-            </Link>
-            <Link 
-              href="/menu" 
-              className="text-gray-700 hover:text-[#94aa4d] transition font-medium px-3 py-2 text-sm lg:text-base"
-              onClick={() => trackNavClick('menu')}
-            >
-              Menu
-            </Link>
-            <Link 
-              href="/about" 
-              className="text-gray-700 hover:text-[#94aa4d] transition font-medium px-3 py-2 text-sm lg:text-base"
-              onClick={() => trackNavClick('about')}
-            >
-              About
-            </Link>
-            <Link 
-              href="/contact" 
-              className="text-gray-700 hover:text-[#94aa4d] transition font-medium px-3 py-2 text-sm lg:text-base"
-              onClick={() => trackNavClick('contact')}
-            >
-              Contact
-            </Link>
-            
-            {/* Auth Buttons - Compact */}
+            <Link href="/" className="text-gray-700 hover:text-[#94aa4d] transition font-medium px-3 py-2 text-sm lg:text-base">Home</Link>
+            <Link href="/menu" className="text-gray-700 hover:text-[#94aa4d] transition font-medium px-3 py-2 text-sm lg:text-base">Menu</Link>
+            <Link href="/about" className="text-gray-700 hover:text-[#94aa4d] transition font-medium px-3 py-2 text-sm lg:text-base">About</Link>
+            <Link href="/contact" className="text-gray-700 hover:text-[#94aa4d] transition font-medium px-3 py-2 text-sm lg:text-base">Contact</Link>
             <div className="flex items-center space-x-2 ml-2">
-              <Link 
-                href="/login" 
-                className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-1.5 px-3 rounded-xl transition-all duration-300 text-sm"
-                onClick={() => trackNavClick('login')}
-              >
-                <FaSignInAlt className="h-3.5 w-3.5" />
-                <span>Login</span>
-              </Link>
-              <Link 
-                href="/signup" 
-                className="flex items-center gap-1.5 bg-[#94aa4d] hover:bg-[#7d9243] text-white font-medium py-1.5 px-3 rounded-xl transition-all duration-300 text-sm"
-                onClick={() => trackNavClick('signup')}
-              >
-                <FaUser className="h-3.5 w-3.5" />
-                <span>Sign Up</span>
-              </Link>
-              <Link 
-                href="/driver" 
-                className="flex items-center gap-1.5 bg-[#1e4259] hover:bg-[#2c536b] text-white font-medium py-1.5 px-3 rounded-xl transition-all duration-300 text-sm"
-                onClick={() => trackNavClick('driver')}
-              >
-                <FaTruck className="h-3.5 w-3.5" />
-                <span>Driver</span>
-              </Link>
+              <Link href="/login" className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-1.5 px-3 rounded-xl transition-all duration-300 text-sm"><FaSignInAlt className="h-3.5 w-3.5" /><span>Login</span></Link>
+              <Link href="/signup" className="flex items-center gap-1.5 bg-[#94aa4d] hover:bg-[#7d9243] text-white font-medium py-1.5 px-3 rounded-xl transition-all duration-300 text-sm"><FaUser className="h-3.5 w-3.5" /><span>Sign Up</span></Link>
+              <Link href="/driver" className="flex items-center gap-1.5 bg-[#1e4259] hover:bg-[#2c536b] text-white font-medium py-1.5 px-3 rounded-xl transition-all duration-300 text-sm"><FaTruck className="h-3.5 w-3.5" /><span>Driver</span></Link>
             </div>
           </nav>
-
-          {/* Cart and Mobile Menu */}
           <div className="flex items-center space-x-3">
-            <Link href="/cart" className="relative" onClick={() => trackNavClick('cart')}>
-              <div className="w-9 h-9 md:w-10 md:h-10 bg-[#ff9800] rounded-full flex items-center justify-center hover:scale-105 transition-transform">
-                <span className="text-white text-sm md:text-base">🛒</span>
-                {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-[#1e4259] text-white text-xs w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center font-bold">
-                    {cartCount > 9 ? '9+' : cartCount}
-                  </span>
-                )}
-              </div>
-            </Link>
-
-            <button
-              className="md:hidden w-8 h-8 flex items-center justify-center text-[#1e4259]"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? (
-                <span className="text-xl font-bold">✕</span>
-              ) : (
-                <span className="text-xl">☰</span>
-              )}
-            </button>
+            <Link href="/cart" className="relative"><div className="w-9 h-9 md:w-10 md:h-10 bg-[#ff9800] rounded-full flex items-center justify-center hover:scale-105 transition-transform"><span className="text-white text-sm md:text-base">🛒</span>{cartCount > 0 && <span className="absolute -top-1 -right-1 bg-[#1e4259] text-white text-xs w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center font-bold">{cartCount > 9 ? '9+' : cartCount}</span>}</div></Link>
+            <button className="md:hidden w-8 h-8 flex items-center justify-center text-[#1e4259]" onClick={() => setIsMenuOpen(!isMenuOpen)}>{isMenuOpen ? <span className="text-xl font-bold">✕</span> : <span className="text-xl">☰</span>}</button>
           </div>
         </div>
-
-        {/* Mobile Navigation */}
         {isMenuOpen && (
-          <motion.div 
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden mt-3 pb-3 border-t pt-3 overflow-hidden"
-          >
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="md:hidden mt-3 pb-3 border-t pt-3 overflow-hidden">
             <nav className="flex flex-col space-y-3">
-              <Link 
-                href="/" 
-                className="text-gray-700 hover:text-[#94aa4d] transition font-medium py-2 px-2 rounded-lg hover:bg-gray-50"
-                onClick={() => {
-                  trackNavClick('home');
-                  setIsMenuOpen(false);
-                }}
-              >
-                Home
-              </Link>
-              <Link 
-                href="/menu" 
-                className="text-gray-700 hover:text-[#94aa4d] transition font-medium py-2 px-2 rounded-lg hover:bg-gray-50"
-                onClick={() => {
-                  trackNavClick('menu');
-                  setIsMenuOpen(false);
-                }}
-              >
-                Menu
-              </Link>
-              <Link 
-                href="/about" 
-                className="text-gray-700 hover:text-[#94aa4d] transition font-medium py-2 px-2 rounded-lg hover:bg-gray-50"
-                onClick={() => {
-                  trackNavClick('about');
-                  setIsMenuOpen(false);
-                }}
-              >
-                About
-              </Link>
-              <Link 
-                href="/contact" 
-                className="text-gray-700 hover:text-[#94aa4d] transition font-medium py-2 px-2 rounded-lg hover:bg-gray-50"
-                onClick={() => {
-                  trackNavClick('contact');
-                  setIsMenuOpen(false);
-                }}
-              >
-                Contact
-              </Link>
-              
-              {/* Mobile Auth Buttons - Compact Grid */}
+              <Link href="/" className="text-gray-700 hover:text-[#94aa4d] transition font-medium py-2 px-2 rounded-lg hover:bg-gray-50" onClick={() => setIsMenuOpen(false)}>Home</Link>
+              <Link href="/menu" className="text-gray-700 hover:text-[#94aa4d] transition font-medium py-2 px-2 rounded-lg hover:bg-gray-50" onClick={() => setIsMenuOpen(false)}>Menu</Link>
+              <Link href="/about" className="text-gray-700 hover:text-[#94aa4d] transition font-medium py-2 px-2 rounded-lg hover:bg-gray-50" onClick={() => setIsMenuOpen(false)}>About</Link>
+              <Link href="/contact" className="text-gray-700 hover:text-[#94aa4d] transition font-medium py-2 px-2 rounded-lg hover:bg-gray-50" onClick={() => setIsMenuOpen(false)}>Contact</Link>
               <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t">
-                <Link 
-                  href="/login" 
-                  className="flex flex-col items-center justify-center gap-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-1 rounded-xl transition-all duration-300 text-xs"
-                  onClick={() => {
-                    trackNavClick('login');
-                    setIsMenuOpen(false);
-                  }}
-                >
-                  <FaSignInAlt className="h-4 w-4" />
-                  <span>Login</span>
-                </Link>
-                <Link 
-                  href="/signup" 
-                  className="flex flex-col items-center justify-center gap-1 bg-[#94aa4d] hover:bg-[#7d9243] text-white font-medium py-2 px-1 rounded-xl transition-all duration-300 text-xs"
-                  onClick={() => {
-                    trackNavClick('signup');
-                    setIsMenuOpen(false);
-                  }}
-                >
-                  <FaUser className="h-4 w-4" />
-                  <span>Sign Up</span>
-                </Link>
-                <Link 
-                  href="/driver" 
-                  className="flex flex-col items-center justify-center gap-1 bg-[#1e4259] hover:bg-[#2c536b] text-white font-medium py-2 px-1 rounded-xl transition-all duration-300 text-xs"
-                  onClick={() => {
-                    trackNavClick('driver');
-                    setIsMenuOpen(false);
-                  }}
-                >
-                  <FaTruck className="h-4 w-4" />
-                  <span>Driver</span>
-                </Link>
+                <Link href="/login" className="flex flex-col items-center justify-center gap-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-1 rounded-xl transition-all duration-300 text-xs" onClick={() => setIsMenuOpen(false)}><FaSignInAlt className="h-4 w-4" /><span>Login</span></Link>
+                <Link href="/signup" className="flex flex-col items-center justify-center gap-1 bg-[#94aa4d] hover:bg-[#7d9243] text-white font-medium py-2 px-1 rounded-xl transition-all duration-300 text-xs" onClick={() => setIsMenuOpen(false)}><FaUser className="h-4 w-4" /><span>Sign Up</span></Link>
+                <Link href="/driver" className="flex flex-col items-center justify-center gap-1 bg-[#1e4259] hover:bg-[#2c536b] text-white font-medium py-2 px-1 rounded-xl transition-all duration-300 text-xs" onClick={() => setIsMenuOpen(false)}><FaTruck className="h-4 w-4" /><span>Driver</span></Link>
               </div>
             </nav>
           </motion.div>
@@ -804,280 +252,66 @@ function EnhancedHeader() {
   );
 }
 
-// -------------------- Modern Banner (Reduced Height) --------------------
+// -------------------- Modern Banner --------------------
 function ModernBanner() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [ratingData, setRatingData] = useState({
-    average: 4.9,
-    deliveryTime: 30,
-    happyCustomers: 1000,
-    totalReviews: 0
-  });
+  const [mounted, setMounted] = useState(false);
+  const [particles] = useState(() => [...Array(20)].map((_, i) => ({ id: i, left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%`, delay: `${Math.random() * 5}s`, duration: `${15 + Math.random() * 10}s` })));
 
-  const nextSlide = useCallback(() => {
-    setCurrentIndex((prevIndex) => (prevIndex + 1) % bannerImages.length);
-  }, []);
+  useEffect(() => { setMounted(true); }, []);
 
-  const prevSlide = useCallback(() => {
-    setCurrentIndex((prevIndex) => (prevIndex - 1 + bannerImages.length) % bannerImages.length);
-  }, []);
+  const nextSlide = useCallback(() => { setCurrentIndex((prevIndex) => (prevIndex + 1) % bannerImages.length); }, []);
+  const prevSlide = useCallback(() => { setCurrentIndex((prevIndex) => (prevIndex - 1 + bannerImages.length) % bannerImages.length); }, []);
 
-  useEffect(() => {
-    const interval = setInterval(nextSlide, 6000);
-    return () => clearInterval(interval);
-  }, [nextSlide]);
+  useEffect(() => { const interval = setInterval(nextSlide, 6000); return () => clearInterval(interval); }, [nextSlide]);
 
-  const handlers = useSwipeable({
-    onSwipedLeft: nextSlide,
-    onSwipedRight: prevSlide,
-    trackMouse: true,
-  });
-
-  // Fetch initial data
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        const statsRef = doc(db, 'stats', 'customerStats');
-        const statsSnap = await getDocs(collection(db, 'stats'));
-        
-        if (statsSnap.empty) {
-          // Create initial stats documents if they don't exist
-          await updateDoc(statsRef, {
-            happyCustomers: 1000,
-            totalReviews: 0,
-            averageRating: 4.9,
-            updatedAt: new Date()
-          }, { merge: true });
-        }
-        
-        // Fetch reviews count
-        const reviewsRef = collection(db, 'reviews');
-        const snapshot = await getDocs(reviewsRef);
-        
-        if (!snapshot.empty) {
-          let totalRating = 0;
-          let totalReviews = snapshot.size;
-          
-          snapshot.forEach(doc => {
-            const data = doc.data();
-            totalRating += data.rating || 0;
-          });
-          
-          const average = totalReviews > 0 ? Math.round((totalRating / totalReviews) * 10) / 10 : 4.9;
-          
-          setRatingData(prev => ({
-            ...prev,
-            totalReviews,
-            average
-          }));
-        }
-      } catch (error) {
-        console.error("Error fetching initial data:", error);
-      }
-    };
-
-    fetchInitialData();
-  }, []);
+  const handlers = useSwipeable({ onSwipedLeft: nextSlide, onSwipedRight: prevSlide, trackMouse: true });
 
   return (
     <section className="relative h-[70vh] min-h-[600px] overflow-hidden w-full">
-      {/* Moving Background Images - FIXED GRADIENT OPACITY */}
       <div className="absolute inset-0 overflow-hidden w-full">
-        {/* Current Image */}
         <div className="absolute inset-0 transition-opacity duration-1000 ease-in-out w-full">
-          {/* LIGHTER GRADIENT FOR BETTER IMAGE VISIBILITY */}
           <div className="absolute inset-0 bg-gradient-to-r from-[#1e4259]/40 via-[#1e4259]/20 to-transparent w-full z-10"></div>
-          <Image
-            src={bannerImages[currentIndex]?.image || "/images/banners/healthy-bowl.jpg"}
-            alt="Garden & Grains Banner"
-            fill
-            className="object-cover w-full h-full banner-image"
-            priority
-            sizes="100vw"
-            quality={90}
-            style={{ 
-              width: '100%',
-              height: '100%'
-            }}
-          />
+          <Image src={bannerImages[currentIndex]?.image || "/images/banners/healthy-bowl.jpg"} alt="Garden & Grains Banner" fill className="object-cover w-full h-full banner-image" priority sizes="100vw" quality={90} style={{ width: '100%', height: '100%' }} />
         </div>
-        
-        {/* Mobile-optimized images */}
         <div className="md:hidden absolute inset-0 w-full">
-          {/* LIGHTER GRADIENT FOR BETTER IMAGE VISIBILITY */}
           <div className="absolute inset-0 bg-gradient-to-r from-[#1e4259]/40 via-[#1e4259]/20 to-transparent w-full z-10"></div>
-          <Image
-            src={bannerImages[currentIndex]?.mobileImage || bannerImages[currentIndex]?.image || "/images/banners/healthy-bowl.jpg"}
-            alt="Garden & Grains Banner"
-            fill
-            className="object-cover w-full h-full banner-image"
-            priority
-            sizes="100vw"
-            quality={90}
-            style={{ 
-              width: '100%',
-              height: '100%'
-            }}
-          />
+          <Image src={bannerImages[currentIndex]?.mobileImage || bannerImages[currentIndex]?.image || "/images/banners/healthy-bowl.jpg"} alt="Garden & Grains Banner" fill className="object-cover w-full h-full banner-image" priority sizes="100vw" quality={90} style={{ width: '100%', height: '100%' }} />
         </div>
       </div>
-
-      {/* Floating Particles for Depth */}
-      <div className="absolute inset-0">
-        {[...Array(20)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-3 h-3 bg-[#94aa4d]/20 rounded-full animate-float"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 5}s`,
-              animationDuration: `${15 + Math.random() * 10}s`
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Content Overlay */}
+      {mounted && (
+        <div className="absolute inset-0">
+          {particles.map((particle) => (<div key={particle.id} className="absolute w-3 h-3 bg-[#94aa4d]/20 rounded-full animate-float" style={{ left: particle.left, top: particle.top, animationDelay: particle.delay, animationDuration: particle.duration }} />))}
+        </div>
+      )}
       <div className="relative h-full flex items-center justify-center" {...handlers}>
         <div className="container mx-auto px-6 lg:px-12">
           <div className="max-w-2xl">
-            {/* Since Badge */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-4 py-2 rounded-full mb-6 border border-white/30"
-            >
-              <FaLeaf className="text-[#94aa4d]" />
-              <span className="text-white text-sm font-medium">Since 2024</span>
-              <div className="w-1 h-1 bg-white/50 rounded-full"></div>
-              <span className="text-white/80 text-xs">Cape Town</span>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-4 py-2 rounded-full mb-6 border border-white/30">
+              <FaLeaf className="text-[#94aa4d]" /><span className="text-white text-sm font-medium">Since 2024</span><div className="w-1 h-1 bg-white/50 rounded-full"></div><span className="text-white/80 text-xs">Cape Town</span>
             </motion.div>
-            
-            {/* Main Title */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-                <span className="bg-gradient-to-r from-white via-white to-[#94aa4d] bg-clip-text text-transparent">
-                  Fresh & Healthy
-                </span>
-                <span className="block text-white mt-2">Every Day</span>
-              </h1>
-              
-              <p className="text-lg md:text-xl text-white/90 mb-8 max-w-xl leading-relaxed backdrop-blur-sm bg-white/5 p-4 rounded-xl">
-                Organic meals crafted with love at Uitsig Wine Farm. 
-                Experience farm-to-table dining with delivery & pickup available.
-              </p>
+            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight"><span className="bg-gradient-to-r from-white via-white to-[#94aa4d] bg-clip-text text-transparent">Fresh & Healthy</span><span className="block text-white mt-2">Every Day</span></h1>
+              <p className="text-lg md:text-xl text-white/90 mb-8 max-w-xl leading-relaxed backdrop-blur-sm bg-white/5 p-4 rounded-xl">Organic meals crafted with love at Uitsig Wine Farm. Experience farm-to-table dining with delivery & pickup available.</p>
             </motion.div>
-
-            {/* CTA Buttons */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-              className="flex flex-wrap gap-4 mb-12"
-            >
-              <Link
-                href="/menu"
-                className="group bg-[#94aa4d] hover:bg-[#7d9243] text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 flex items-center gap-2"
-              >
-                <FaUtensils className="group-hover:rotate-12 transition-transform" />
-                <span>Order Now</span>
-                <FaArrowRight className="group-hover:translate-x-1 transition-transform" />
-              </Link>
-              <Link
-                href="/about"
-                className="group bg-white/20 hover:bg-white/30 text-white font-bold py-3 px-6 rounded-xl backdrop-blur-sm transition-all duration-300 hover:scale-105 flex items-center gap-2 border border-white/30 hover:border-white/50"
-              >
-                <FaUsers />
-                <span>Learn More</span>
-              </Link>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="flex flex-wrap gap-4 mb-12">
+              <Link href="/menu" className="group bg-[#94aa4d] hover:bg-[#7d9243] text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 flex items-center gap-2"><FaUtensils className="group-hover:rotate-12 transition-transform" /><span>Order Now</span><FaArrowRight className="group-hover:translate-x-1 transition-transform" /></Link>
+              <Link href="/about" className="group bg-white/20 hover:bg-white/30 text-white font-bold py-3 px-6 rounded-xl backdrop-blur-sm transition-all duration-300 hover:scale-105 flex items-center gap-2 border border-white/30 hover:border-white/50"><FaUsers /><span>Learn More</span></Link>
             </motion.div>
-
-            {/* Stats Section with Real Data */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8 }}
-              className="grid grid-cols-2 lg:grid-cols-4 gap-4"
-            >
-              {/* Customer Rating with Link to Reviews */}
-              <Link href="/reviews" className="group">
-                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm p-3 rounded-2xl hover:bg-white/20 transition-all duration-300 border border-white/20 hover:border-white/40">
-                  <div className="w-12 h-12 bg-gradient-to-br from-[#ff9800]/20 to-[#ff9800]/40 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <FaStar className="text-[#ff9800] text-lg" />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-white">{ratingData.average}
-                      <span className="text-base text-white/70">/5</span>
-                    </div>
-                    <div className="text-white/70 text-xs">From {ratingData.totalReviews} reviews</div>
-                  </div>
-                </div>
-              </Link>
-
-              {/* Delivery Time */}
-              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm p-3 rounded-2xl">
-                <div className="w-12 h-12 bg-gradient-to-br from-[#94aa4d]/20 to-[#94aa4d]/40 rounded-xl flex items-center justify-center">
-                  <FaShippingFast className="text-[#94aa4d] text-lg" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-white">{ratingData.deliveryTime}
-                    <span className="text-base text-white/70">min</span>
-                  </div>
-                  <div className="text-white/70 text-xs">Avg Delivery</div>
-                </div>
-              </div>
-
-              {/* Happy Customers - Enhanced Like Button */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <Link href="/reviews" className="group"><div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm p-3 rounded-2xl hover:bg-white/20 transition-all duration-300 border border-white/20 hover:border-white/40"><div className="w-12 h-12 bg-gradient-to-br from-[#ff9800]/20 to-[#ff9800]/40 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform"><FaStar className="text-[#ff9800] text-lg" /></div><div><div className="text-2xl font-bold text-white">4.9<span className="text-base text-white/70">/5</span></div><div className="text-white/70 text-xs">From 1,247 reviews</div></div></div></Link>
+              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm p-3 rounded-2xl"><div className="w-12 h-12 bg-gradient-to-br from-[#94aa4d]/20 to-[#94aa4d]/40 rounded-xl flex items-center justify-center"><FaShippingFast className="text-[#94aa4d] text-lg" /></div><div><div className="text-2xl font-bold text-white">30<span className="text-base text-white/70">min</span></div><div className="text-white/70 text-xs">Avg Delivery</div></div></div>
               <LikeCounterButton />
-
-              {/* New Client Promo - Enhanced Button */}
               <NewClientPromoButton />
             </motion.div>
           </div>
         </div>
       </div>
-
-      {/* Slide Indicators */}
       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-3">
-        {bannerImages.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => setCurrentIndex(index)}
-            className={`relative transition-all duration-500 ${
-              index === currentIndex ? 'w-12' : 'w-3 hover:w-4'
-            }`}
-            aria-label={`Go to slide ${index + 1}`}
-          >
-            <div className={`h-1 rounded-full transition-all duration-500 ${
-              index === currentIndex 
-                ? 'bg-[#94aa4d]' 
-                : 'bg-white/50 hover:bg-white/70'
-            }`} />
-          </button>
-        ))}
+        {bannerImages.map((_, index) => (<button key={index} onClick={() => setCurrentIndex(index)} className={`relative transition-all duration-500 ${index === currentIndex ? 'w-12' : 'w-3 hover:w-4'}`} aria-label={`Go to slide ${index + 1}`}><div className={`h-1 rounded-full transition-all duration-500 ${index === currentIndex ? 'bg-[#94aa4d]' : 'bg-white/50 hover:bg-white/70'}`} /></button>))}
       </div>
-
-      {/* Navigation Arrows */}
-      <button
-        onClick={prevSlide}
-        className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-300 hover:scale-110"
-        aria-label="Previous slide"
-      >
-        <FaChevronLeft className="text-white" />
-      </button>
-      <button
-        onClick={nextSlide}
-        className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-300 hover:scale-110"
-        aria-label="Next slide"
-      >
-        <FaChevronRight className="text-white" />
-      </button>
+      <button onClick={prevSlide} className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-300 hover:scale-110" aria-label="Previous slide"><FaChevronLeft className="text-white" /></button>
+      <button onClick={nextSlide} className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-300 hover:scale-110" aria-label="Next slide"><FaChevronRight className="text-white" /></button>
     </section>
   );
 }
@@ -1087,24 +321,12 @@ function FeaturesSection() {
   return (
     <section className="py-16 px-6 bg-gradient-to-b from-white to-gray-50">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#1e4259] mb-4">
-            Why Choose <span className="text-[#94aa4d]">Garden & Grains</span>
-          </h2>
-          <p className="text-lg text-[#666666] max-w-3xl mx-auto">
-            We're committed to providing the best farm-to-table dining experience in Cape Town
-          </p>
-        </div>
+        <div className="text-center mb-12"><h2 className="text-3xl md:text-4xl font-bold text-[#1e4259] mb-4">Why Choose <span className="text-[#94aa4d]">Garden & Grains</span></h2><p className="text-lg text-[#666666] max-w-3xl mx-auto">We're committed to providing the best farm-to-table dining experience in Cape Town</p></div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((feature, index) => (
-            <div 
-              key={index} 
-              className="group relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2"
-            >
+            <div key={index} className="group relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#94aa4d] to-[#6c8665] rounded-t-2xl"></div>
-              <div className={`w-16 h-16 bg-gradient-to-br ${feature.color} rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                <span className="text-3xl">{feature.icon}</span>
-              </div>
+              <div className={`w-16 h-16 bg-gradient-to-br ${feature.color} rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300`}><span className="text-3xl">{feature.icon}</span></div>
               <h3 className="text-xl font-bold text-[#1e4259] mb-2 text-center">{feature.title}</h3>
               <p className="text-[#666666] text-sm text-center">{feature.description}</p>
             </div>
@@ -1121,176 +343,56 @@ function HoursBanner() {
     <section className="py-10 px-6 bg-gradient-to-r from-[#1e4259] to-[#2c536b]">
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-3">
-            <div className="w-14 h-14 bg-white/10 rounded-xl flex items-center justify-center">
-              <FaClock className="h-7 w-7 text-white" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-white">Operating Hours</h3>
-              <p className="text-white/80 text-sm">Visit us or order online</p>
-            </div>
-          </div>
-          
+          <div className="flex items-center gap-3"><div className="w-14 h-14 bg-white/10 rounded-xl flex items-center justify-center"><FaClock className="h-7 w-7 text-white" /></div><div><h3 className="text-xl font-bold text-white">Operating Hours</h3><p className="text-white/80 text-sm">Visit us or order online</p></div></div>
           <div className="flex flex-col md:flex-row items-center gap-4">
-            <div className="text-center md:text-right">
-              <div className="text-white font-bold text-lg">Sunday - Wednesday</div>
-              <div className="text-white/90">09:00 AM - 17:30 PM</div>
-              <div className="text-white font-bold text-lg mt-2">Thursday - Saturday</div>
-              <div className="text-white/90">09:00 AM - 21:00 PM</div>
-            </div>
-            
+            <div className="text-center md:text-right"><div className="text-white font-bold text-lg">Sunday - Wednesday</div><div className="text-white/90">09:00 AM - 17:30 PM</div><div className="text-white font-bold text-lg mt-2">Thursday - Saturday</div><div className="text-white/90">09:00 AM - 21:00 PM</div></div>
             <div className="h-10 w-px bg-white/30 hidden md:block"></div>
-            
-            <div className="text-center md:text-left">
-              <div className="text-[#ff9800] font-bold">Dinner Prep Break</div>
-              <div className="text-white/80">4:00 PM - 5:00 PM</div>
-            </div>
+            <div className="text-center md:text-left"><div className="text-[#ff9800] font-bold">Dinner Prep Break</div><div className="text-white/80">4:00 PM - 5:00 PM</div></div>
           </div>
-          
-          <Link 
-            href="/reserve" 
-            className="bg-white hover:bg-gray-100 text-[#1e4259] font-bold py-2 px-5 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg"
-          >
-            Reserve Table
-          </Link>
+          <Link href="/reserve" className="bg-white hover:bg-gray-100 text-[#1e4259] font-bold py-2 px-5 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg">Reserve Table</Link>
         </div>
       </div>
     </section>
   );
 }
 
-// -------------------- Menu Highlights with Real Images --------------------
+// -------------------- Menu Highlights Section --------------------
 function MenuHighlightsSection() {
-  // Define highlights inside the function scope
   const highlights = [
-    { 
-      name: "Smoky Chipotle Chicken Bowl", 
-      price: "R163", 
-      category: "Bowls",
-      description: "grilled chipotle-marinated chicken strips, corn, black beans, grilled peppers & red onion, avocado slices, tomato salsa, shredded lettuce, cheddar cheese, served with a dressing of your choice,sesame seeds",
-      popular: true,
-      imageId: 1
-    },
-    { 
-      name: "Protein Avocado Stack Salad", 
-      price: "R125", 
-      category: "Salads",
-      description: "avocado diced, cherry tomatoes, cucumber, red onion thinly sliced, bell peppers, fresh cilantro, sweet corn kernels, sprinkle of sesame seeds",
-      vegetarian: true,
-      imageId: 2
-    },
-    { 
-      name: "Tangerine Dream Smoothie", 
-      price: "From R65", 
-      category: "Smoothies",
-      description: "fresh naartjie, orange, banana, Greek yoghurt, honey, and milk blended to perfection, a refreshing and vitamin C-packed smoothie to brighten your day.",
-      popular: true,
-      imageId: 3
-    },
-    { 
-      name: "Chicken Avocado Wrap", 
-      price: "R135", 
-      category: "Wraps",
-      description: "grilled chicken breast, creamy avocado slices, sautéed cherry tomatoes, spinach, and greek yoghurt in a whole wheat wrap",
-      imageId: 4
-    },
-    { 
-      name: "Beef & Veg Stir-Fry", 
-      price: "R159", 
-      category: "Stir-Fry",
-      description: "tender beef, broccoli, carrots, bell peppers, green onions, beef stock, low sodium soy sauce, honey, sesame oil, fresh ginger, garlic, cornstarch, with a sprinkle of sesame seeds",
-      imageId: 5
-    },
-    { 
-      name: "Creamy Spiced Sweet Potato Soup", 
-      price: "R135", 
-      category: "Soups",
-      description: "olive oil, onion, garlic, fresh ginger, ground cumin, smoked paprika, cinnamon, ground coriander, sweet potatoes, carrot, vegetable broth, coconut milk, orange juice",
-      vegetarian: true,
-      imageId: 6
-    },
+    { name: "Smoky Chipotle Chicken Bowl", price: "R163", category: "Bowls", description: "grilled chipotle-marinated chicken strips, corn, black beans, grilled peppers & red onion, avocado slices, tomato salsa, shredded lettuce, cheddar cheese, served with a dressing of your choice,sesame seeds", popular: true, imageId: 1 },
+    { name: "Protein Avocado Stack Salad", price: "R135", category: "Salads", description: "avocado diced, cherry tomatoes, cucumber, red onion thinly sliced, bell peppers, fresh cilantro, sweet corn kernels, sprinkle of sesame seeds", vegetarian: true, imageId: 2 },
+    { name: "Berry Bloom Smoothie", price: "From R65", category: "Smoothies", description: "mixed berries, Greek yoghurt, banana, whole milk & honey. a burst of berry goodness in every sip!", popular: true, imageId: 3 },
+    { name: "Chicken Avocado Wrap", price: "R135", category: "Wraps", description: "grilled chicken breast, creamy avocado slices, sautéed cherry tomatoes, spinach, and greek yoghurt in a whole wheat wrap", imageId: 4 },
+    { name: "Beef & Veg Stir-Fry", price: "R159", category: "Stir-Fry", description: "tender beef, broccoli, carrots, bell peppers, green onions, beef stock, low sodium soy sauce, honey, sesame oil, fresh ginger, garlic, cornstarch, with a sprinkle of sesame seeds", imageId: 5 },
+    { name: "Creamy Spiced Sweet Potato Soup", price: "R135", category: "Soups", description: "olive oil, onion, garlic, fresh ginger, ground cumin, smoked paprika, cinnamon, ground coriander, sweet potatoes, carrot, vegetable broth, coconut milk, orange juice", vegetarian: true, imageId: 6 }
   ];
 
   return (
     <section className="py-16 px-6 bg-gradient-to-b from-gray-50 to-white">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#1e4259] mb-4">
-            Menu <span className="text-[#94aa4d]">Highlights</span>
-          </h2>
-          <p className="text-lg text-[#666666] max-w-3xl mx-auto">
-            Discover our most popular dishes made with fresh, local ingredients
-          </p>
-        </div>
-        
+        <div className="text-center mb-12"><h2 className="text-3xl md:text-4xl font-bold text-[#1e4259] mb-4">Menu <span className="text-[#94aa4d]">Highlights</span></h2><p className="text-lg text-[#666666] max-w-3xl mx-auto">Discover our most popular dishes made with fresh, local ingredients</p></div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {highlights.map((item, index) => {
             const imageInfo = menuHighlightImages.find(img => img.id === item.imageId);
-            
             return (
-              <div 
-                key={index} 
-                className="group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2"
-              >
-                {/* Image Container with real food photos */}
+              <div key={index} className="group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2">
                 <div className="h-40 relative overflow-hidden">
-                  <Image
-                    src={imageInfo?.image || "/images/menu/placeholder.jpg"}
-                    alt={item.name}
-                    fill
-                    className="object-cover group-hover:scale-110 transition-transform duration-500"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  />
+                  <Image src={imageInfo?.image || "/images/menu/placeholder.jpg"} alt={item.name} fill className="object-cover group-hover:scale-110 transition-transform duration-500" sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                  
-                  {/* Category Badge */}
-                  <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-bold text-[#1e4259]">
-                    {item.category}
-                  </div>
-                  
-                  {/* Popular Badge */}
-                  {item.popular && (
-                    <div className="absolute top-3 right-3 bg-[#ff9800] text-white px-2 py-1 rounded-full text-xs font-bold">
-                      Popular
-                    </div>
-                  )}
-                  
-                  {/* Vegetarian Badge */}
-                  {item.vegetarian && (
-                    <div className="absolute top-10 right-3 bg-[#94aa4d] text-white px-2 py-1 rounded-full text-xs font-bold">
-                      Vegetarian
-                    </div>
-                  )}
+                  <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-bold text-[#1e4259]">{item.category}</div>
+                  {item.popular && <div className="absolute top-3 right-3 bg-[#ff9800] text-white px-2 py-1 rounded-full text-xs font-bold">Popular</div>}
+                  {item.vegetarian && <div className="absolute top-10 right-3 bg-[#94aa4d] text-white px-2 py-1 rounded-full text-xs font-bold">Vegetarian</div>}
                 </div>
-                
-                {/* Content */}
                 <div className="p-5">
                   <h3 className="text-lg font-bold text-[#1e4259] mb-2">{item.name}</h3>
                   <p className="text-[#666666] text-sm mb-3 leading-relaxed">{item.description}</p>
-                  <div className="flex justify-between items-center pt-3 border-t border-gray-100">
-                    <span className="text-xl font-bold text-[#94aa4d]">{item.price}</span>
-                    <Link
-                      href="/menu"
-                      className="bg-[#1e4259] hover:bg-[#2c536b] text-white font-semibold py-2 px-4 rounded-xl transition duration-300 group-hover:scale-105 text-sm"
-                    >
-                      Order Now
-                    </Link>
-                  </div>
+                  <div className="flex justify-between items-center pt-3 border-t border-gray-100"><span className="text-xl font-bold text-[#94aa4d]">{item.price}</span><Link href="/menu" className="bg-[#1e4259] hover:bg-[#2c536b] text-white font-semibold py-2 px-4 rounded-xl transition duration-300 group-hover:scale-105 text-sm">Order Now</Link></div>
                 </div>
               </div>
             );
           })}
         </div>
-        
-        <div className="text-center mt-10">
-          <Link
-            href="/menu"
-            className="inline-flex items-center gap-2 bg-[#94aa4d] hover:bg-[#7d9243] text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
-          >
-            View Full Menu
-            <span className="group-hover:translate-x-1 transition-transform">→</span>
-          </Link>
-        </div>
+        <div className="text-center mt-10"><Link href="/menu" className="inline-flex items-center gap-2 bg-[#94aa4d] hover:bg-[#7d9243] text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105">View Full Menu<span className="group-hover:translate-x-1 transition-transform">→</span></Link></div>
       </div>
     </section>
   );
@@ -1301,51 +403,13 @@ function ActionSection() {
   return (
     <section className="py-14 px-6 bg-gradient-to-b from-[#1e4259] to-[#2c536b]">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl font-bold text-white mb-4">How to Enjoy Garden & Grains</h2>
-          <p className="text-lg text-white/80 max-w-2xl mx-auto">
-            Choose your preferred way to experience our fresh, healthy meals
-          </p>
-        </div>
-        
+        <div className="text-center mb-10"><h2 className="text-3xl font-bold text-white mb-4">How to Enjoy Garden & Grains</h2><p className="text-lg text-white/80 max-w-2xl mx-auto">Choose your preferred way to experience our fresh, healthy meals</p></div>
         <div className="flex flex-wrap justify-center gap-4 mt-8">
-          <Link 
-            href="/order" 
-            className="flex-1 max-w-sm bg-[#94aa4d] text-white px-6 py-5 rounded-xl hover:bg-[#7d9243] transition-all duration-300 flex flex-col items-center justify-center gap-3 shadow-lg hover:shadow-xl"
-          >
-            <div className="text-3xl">📱</div>
-            <div className="text-center">
-              <div className="font-bold">Order Online</div>
-              <div className="text-sm opacity-80 mt-1">Quick delivery & pickup</div>
-            </div>
-          </Link>
-          
-          <Link 
-            href="/catering" 
-            className="flex-1 max-w-sm bg-[#a5bbb9] text-[#1e4259] px-6 py-5 rounded-xl hover:bg-[#94aa9d] transition-all duration-300 flex flex-col items-center justify-center gap-3 shadow-lg hover:shadow-xl"
-          >
-            <div className="text-3xl">🎉</div>
-            <div className="text-center">
-              <div className="font-bold">Book Catering</div>
-              <div className="text-sm opacity-90 mt-1">Events & gatherings</div>
-            </div>
-          </Link>
-          
-          <Link 
-            href="/reserve" 
-            className="flex-1 max-w-sm bg-[#b6cac5] text-[#1e4259] px-6 py-5 rounded-xl hover:bg-[#a5b9b4] transition-all duration-300 flex flex-col items-center justify-center gap-3 shadow-lg hover:shadow-xl"
-          >
-            <div className="text-3xl">🪑</div>
-            <div className="text-center">
-              <div className="font-bold">Reserve Table</div>
-              <div className="text-sm opacity-90 mt-1">Dine-in experience</div>
-            </div>
-          </Link>
+          <Link href="/order" className="flex-1 max-w-sm bg-[#94aa4d] text-white px-6 py-5 rounded-xl hover:bg-[#7d9243] transition-all duration-300 flex flex-col items-center justify-center gap-3 shadow-lg hover:shadow-xl"><div className="text-3xl">📱</div><div className="text-center"><div className="font-bold">Order Online</div><div className="text-sm opacity-80 mt-1">Quick delivery & pickup</div></div></Link>
+          <Link href="/catering" className="flex-1 max-w-sm bg-[#a5bbb9] text-[#1e4259] px-6 py-5 rounded-xl hover:bg-[#94aa9d] transition-all duration-300 flex flex-col items-center justify-center gap-3 shadow-lg hover:shadow-xl"><div className="text-3xl">🎉</div><div className="text-center"><div className="font-bold">Book Catering</div><div className="text-sm opacity-90 mt-1">Events & gatherings</div></div></Link>
+          <Link href="/reserve" className="flex-1 max-w-sm bg-[#b6cac5] text-[#1e4259] px-6 py-5 rounded-xl hover:bg-[#a5b9b4] transition-all duration-300 flex flex-col items-center justify-center gap-3 shadow-lg hover:shadow-xl"><div className="text-3xl">🪑</div><div className="text-center"><div className="font-bold">Reserve Table</div><div className="text-sm opacity-90 mt-1">Dine-in experience</div></div></Link>
         </div>
-        
-        <div className="text-center mt-8 text-white/90 text-sm">
-          <p>📍 Uitsig Wine Farm: Spaanschemat River Rd, Fir Grove, Cape Town, 7806</p>
-        </div>
+        <div className="text-center mt-8 text-white/90 text-sm"><p>📍 Uitsig Wine Farm: Spaanschemat River Rd, Fir Grove, Cape Town, 7806</p></div>
       </div>
     </section>
   );
@@ -1356,134 +420,26 @@ function ContactLocationSection() {
   return (
     <section className="py-16 px-6 bg-gradient-to-b from-white to-[#f8f9fa]">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#1e4259] mb-4">
-            Visit Our <span className="text-[#94aa4d]">Farm Restaurant</span>
-          </h2>
-          <p className="text-lg text-[#666666] max-w-3xl mx-auto">
-            Located at the beautiful Uitsig Wine Farm in Fir Grove, Cape Town
-          </p>
-        </div>
-        
+        <div className="text-center mb-12"><h2 className="text-3xl md:text-4xl font-bold text-[#1e4259] mb-4">Visit Our <span className="text-[#94aa4d]">Farm Restaurant</span></h2><p className="text-lg text-[#666666] max-w-3xl mx-auto">Located at the beautiful Uitsig Wine Farm in Fir Grove, Cape Town</p></div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="bg-white rounded-2xl p-6 shadow-xl">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 bg-[#94aa4d]/10 rounded-xl flex items-center justify-center">
-                <FaMapMarkerAlt className="h-5 w-5 text-[#94aa4d]" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-[#1e4259]">Location & Contact</h3>
-                <p className="text-[#666666] text-sm">Find us at Uitsig Wine Farm</p>
-              </div>
-            </div>
-            
+            <div className="flex items-center gap-3 mb-6"><div className="w-12 h-12 bg-[#94aa4d]/10 rounded-xl flex items-center justify-center"><FaMapMarkerAlt className="h-5 w-5 text-[#94aa4d]" /></div><div><h3 className="text-xl font-bold text-[#1e4259]">Location & Contact</h3><p className="text-[#666666] text-sm">Find us at Uitsig Wine Farm</p></div></div>
             <div className="space-y-4">
-              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
-                <FaMapMarkerAlt className="h-5 w-5 mt-1 text-[#1e4259]" />
-                <div>
-                  <h4 className="font-bold mb-1 text-[#1e4259]">Address</h4>
-                  <p className="text-[#666666] text-sm">
-                    Uitsig Wine Farm<br />
-                    ERF12995 Spaanschemat River Rd<br />
-                    Fir Grove, Cape Town, 7806
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
-                <FaPhone className="h-5 w-5 mt-1 text-[#1e4259]" />
-                <div>
-                  <h4 className="font-bold mb-1 text-[#1e4259]">Contact Information</h4>
-                  <p className="text-[#666666] text-sm">
-                    <strong>Phone:</strong> (069) 376-5574<br />
-                    <strong>WhatsApp:</strong> +27 69 376 5574<br />
-                    <strong>Email:</strong> hello@gardengrains.co.za<br />
-                    <strong>Website:</strong> https://gardengrains.co.za
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
-                <FaClock className="h-5 w-5 mt-1 text-[#1e4259]" />
-                <div>
-                  <h4 className="font-bold mb-1 text-[#1e4259]">Operating Hours</h4>
-                  <p className="text-[#666666] text-sm">
-                    <strong>Sunday - Monday:</strong> 09:00 AM - 17:30 PM<br />
-                    <strong>Thursday - Saturday:</strong> 09:00 AM - 21:00 PM<br />
-                    <strong className="text-[#ff9800]">Dinner Prep Break:</strong> 4:00 PM - 5:00 PM<br />
-                    <em className="text-xs text-gray-500">Closed daily for dinner prep</em>
-                  </p>
-                </div>
-              </div>
+              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl"><FaMapMarkerAlt className="h-5 w-5 mt-1 text-[#1e4259]" /><div><h4 className="font-bold mb-1 text-[#1e4259]">Address</h4><p className="text-[#666666] text-sm">Uitsig Wine Farm<br />ERF12995 Spaanschemat River Rd<br />Fir Grove, Cape Town, 7806</p></div></div>
+              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl"><FaPhone className="h-5 w-5 mt-1 text-[#1e4259]" /><div><h4 className="font-bold mb-1 text-[#1e4259]">Contact Information</h4><p className="text-[#666666] text-sm"><strong>Phone:</strong> (069) 376-5574<br /><strong>WhatsApp:</strong> +27 69 376 5574<br /><strong>Email:</strong> hello@gardengrains.co.za<br /><strong>Website:</strong> https://gardengrains.co.za</p></div></div>
+              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl"><FaClock className="h-5 w-5 mt-1 text-[#1e4259]" /><div><h4 className="font-bold mb-1 text-[#1e4259]">Operating Hours</h4><p className="text-[#666666] text-sm"><strong>Sunday - Monday:</strong> 09:00 AM - 17:30 PM<br /><strong>Thursday - Saturday:</strong> 09:00 AM - 21:00 PM<br /><strong className="text-[#ff9800]">Dinner Prep Break:</strong> 4:00 PM - 5:00 PM<br /><em className="text-xs text-gray-500">Closed daily for dinner prep</em></p></div></div>
             </div>
-            
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link 
-                href="/contact" 
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all duration-300 hover:scale-105 bg-[#6c8665] text-white hover:bg-[#5a7054] text-sm"
-              >
-                Get Directions →
-              </Link>
-              <a 
-                href="https://wa.me/27693765574"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all duration-300 hover:scale-105 bg-[#25D366] text-white hover:bg-[#1da851] text-sm"
-              >
-                <FaWhatsapp /> WhatsApp Order
-              </a>
-            </div>
+            <div className="mt-6 flex flex-wrap gap-3"><Link href="/contact" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all duration-300 hover:scale-105 bg-[#6c8665] text-white hover:bg-[#5a7054] text-sm">Get Directions →</Link><a href="https://wa.me/27693765574" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all duration-300 hover:scale-105 bg-[#25D366] text-white hover:bg-[#1da851] text-sm"><FaWhatsapp /> WhatsApp Order</a></div>
           </div>
-          
           <div className="bg-gradient-to-br from-[#1e4259] to-[#2c536b] rounded-2xl p-6 text-white shadow-xl">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
-                <FaUsers className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-white">Services & Information</h3>
-                <p className="text-white/80 text-sm">Everything you need to know</p>
-              </div>
-            </div>
-            
+            <div className="flex items-center gap-3 mb-6"><div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center"><FaUsers className="h-5 w-5 text-white" /></div><div><h3 className="text-xl font-bold text-white">Services & Information</h3><p className="text-white/80 text-sm">Everything you need to know</p></div></div>
             <div className="space-y-4 mb-6">
-              <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm">
-                <h4 className="font-bold mb-1 text-lg">Delivery Service</h4>
-                <p className="text-white/90 text-sm">
-                  Fast delivery within Cape Town area. Estimated delivery time: 30-45 minutes.
-                </p>
-              </div>
-              
-              <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm">
-                <h4 className="font-bold mb-1 text-lg">Pickup Available</h4>
-                <p className="text-white/90 text-sm">
-                  Order online and pickup at our farm restaurant. Skip the wait!
-                </p>
-              </div>
-              
-              <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm">
-                <h4 className="font-bold mb-1 text-lg">Dine-In Experience</h4>
-                <p className="text-white/90 text-sm">
-                  Enjoy our beautiful farm setting. Reservations recommended for dinner.
-                </p>
-              </div>
-              
-              <div className="p-3 bg-[#ff9800]/20 rounded-xl backdrop-blur-sm">
-                <h4 className="font-bold mb-1 text-lg">Service Charge Notice</h4>
-                <p className="text-white/90 text-sm">
-                  A 10% service charge is automatically added to tables of 6 guests or more.
-                </p>
-              </div>
+              <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm"><h4 className="font-bold mb-1 text-lg">Delivery Service</h4><p className="text-white/90 text-sm">Fast delivery within Cape Town area. Estimated delivery time: 30-45 minutes.</p></div>
+              <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm"><h4 className="font-bold mb-1 text-lg">Pickup Available</h4><p className="text-white/90 text-sm">Order online and pickup at our farm restaurant. Skip the wait!</p></div>
+              <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm"><h4 className="font-bold mb-1 text-lg">Dine-In Experience</h4><p className="text-white/90 text-sm">Enjoy our beautiful farm setting. Reservations recommended for dinner.</p></div>
+              <div className="p-3 bg-[#ff9800]/20 rounded-xl backdrop-blur-sm"><h4 className="font-bold mb-1 text-lg">Service Charge Notice</h4><p className="text-white/90 text-sm">A 10% service charge is automatically added to tables of 6 guests or more.</p></div>
             </div>
-            
-            <div className="text-center">
-              <Link 
-                href="/reserve" 
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all duration-300 hover:scale-105 bg-white text-[#1e4259] hover:bg-gray-100 text-sm"
-              >
-                <FaCalendarAlt /> Reserve Your Table Now
-              </Link>
-            </div>
+            <div className="text-center"><Link href="/reserve" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all duration-300 hover:scale-105 bg-white text-[#1e4259] hover:bg-gray-100 text-sm"><FaCalendarAlt /> Reserve Your Table Now</Link></div>
           </div>
         </div>
       </div>
@@ -1494,69 +450,27 @@ function ContactLocationSection() {
 // -------------------- Footer --------------------
 function FooterSection() {
   const currentYear = new Date().getFullYear();
-
   return (
     <footer className="bg-gradient-to-r from-[#1e4259] to-[#2c536b] text-white">
       <div className="max-w-7xl mx-auto px-6 py-10">
         <div className="flex flex-col lg:flex-row justify-between items-center gap-6 mb-6">
-          <div className="text-center lg:text-left">
-            <div className="text-2xl font-bold mb-1">Garden & Grains</div>
-            <p className="text-white/70 text-sm">Fresh, healthy meals since 2024</p>
-            <p className="text-white/60 text-xs mt-1">
-              Uitsig Wine Farm • Fir Grove, Cape Town, 7806
-            </p>
-          </div>
-          
-          <div className="flex gap-4">
-            {[
-              { Icon: FaInstagram, name: "Instagram", url: "https://instagram.com/gardenandgrains" },
-              { Icon: FaFacebook, name: "Facebook", url: "https://facebook.com/gardenandgrains" },
-              { Icon: FaTiktok, name: "TikTok", url: "https://tiktok.com/@gardenandgrains" },
-              { Icon: FaTwitter, name: "Twitter", url: "https://twitter.com/gardenandgrains" }
-            ].map(({ Icon, name, url }, i) => (
-              <a 
-                key={i} 
-                href={url}
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="text-xl text-white hover:text-[#94aa4d] transition-colors duration-300 hover:scale-110"
-                title={name}
-                aria-label={name}
-              >
-                <Icon />
-              </a>
-            ))}
-          </div>
+          <div className="text-center lg:text-left"><div className="text-2xl font-bold mb-1">Garden & Grains</div><p className="text-white/70 text-sm">Fresh, healthy meals since 2024</p><p className="text-white/60 text-xs mt-1">Uitsig Wine Farm • Fir Grove, Cape Town, 7806</p></div>
+          <div className="flex gap-4">{[
+            { Icon: FaInstagram, name: "Instagram", url: "https://instagram.com/gardenandgrains" },
+            { Icon: FaFacebook, name: "Facebook", url: "https://facebook.com/gardenandgrains" },
+            { Icon: FaTiktok, name: "TikTok", url: "https://tiktok.com/@gardenandgrains" },
+            { Icon: FaTwitter, name: "Twitter", url: "https://twitter.com/gardenandgrains" }
+          ].map(({ Icon, name, url }, i) => (<a key={i} href={url} target="_blank" rel="noopener noreferrer" className="text-xl text-white hover:text-[#94aa4d] transition-colors duration-300 hover:scale-110" title={name} aria-label={name}><Icon /></a>))}</div>
         </div>
-        
         <div className="flex flex-wrap justify-center gap-4 mb-6 text-center">
-          <Link href="/menu" className="text-white/80 hover:text-white transition-colors text-sm">
-            Menu
-          </Link>
-          <Link href="/about" className="text-white/80 hover:text-white transition-colors text-sm">
-            About Us
-          </Link>
-          <Link href="/contact" className="text-white/80 hover:text-white transition-colors text-sm">
-            Contact
-          </Link>
-          <Link href="/catering" className="text-white/80 hover:text-white transition-colors text-sm">
-            Catering
-          </Link>
-          <Link href="/reviews" className="text-white/80 hover:text-white transition-colors text-sm">
-            Reviews
-          </Link>
-          <Link href="/faq" className="text-white/80 hover:text-white transition-colors text-sm">
-            FAQ
-          </Link>
+          <Link href="/menu" className="text-white/80 hover:text-white transition-colors text-sm">Menu</Link>
+          <Link href="/about" className="text-white/80 hover:text-white transition-colors text-sm">About Us</Link>
+          <Link href="/contact" className="text-white/80 hover:text-white transition-colors text-sm">Contact</Link>
+          <Link href="/catering" className="text-white/80 hover:text-white transition-colors text-sm">Catering</Link>
+          <Link href="/reviews" className="text-white/80 hover:text-white transition-colors text-sm">Reviews</Link>
+          <Link href="/faq" className="text-white/80 hover:text-white transition-colors text-sm">FAQ</Link>
         </div>
-        
-        <div className="border-t border-white/20 pt-4 text-center">
-          <p className="text-white/60 text-xs">
-            &copy; {currentYear} Garden & Grains. All rights reserved.<br />
-            Phone: (069) 376-5574 • WhatsApp: +27 69 376 5574<br />
-            Operating Hours: Sunday - Wednesday 09:00-17:30 Thursday-Saturday 09:00-21:00 • Closed 16:00-17:00 for dinner prep
-          </p>
-        </div>
+        <div className="border-t border-white/20 pt-4 text-center"><p className="text-white/60 text-xs">&copy; {currentYear} Garden & Grains. All rights reserved.<br />Phone: (069) 376-5574 • WhatsApp: +27 69 376 5574<br />Operating Hours: Sunday - Wednesday 09:00-17:30 Thursday-Saturday 09:00-21:00 • Closed 16:00-17:00 for dinner prep</p></div>
       </div>
     </footer>
   );
@@ -1567,44 +481,14 @@ export default function HomePage() {
   return (
     <>
       <style jsx global>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0) rotate(0deg); }
-          50% { transform: translateY(-20px) rotate(180deg); }
-        }
-        .animate-float {
-          animation: float linear infinite;
-        }
-        
-        @keyframes pulse-heart {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.1); }
-        }
-        .animate-pulse-heart {
-          animation: pulse-heart 0.5s ease-in-out;
-        }
-        
-        @keyframes count-up {
-          from { transform: translateY(10px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-        .animate-count-up {
-          animation: count-up 0.3s ease-out;
-        }
-        
-        /* Banner image optimization */
-        .banner-image {
-          image-rendering: -webkit-optimize-contrast;
-          image-rendering: crisp-edges;
-          -webkit-font-smoothing: antialiased;
-          -moz-osx-font-smoothing: grayscale;
-        }
-
-        /* Floating buttons responsive spacing */
-        @media (max-width: 640px) {
-          .floating-button {
-            padding: 0.75rem;
-          }
-        }
+        @keyframes float { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-20px) rotate(180deg); } }
+        .animate-float { animation: float linear infinite; }
+        @keyframes pulse-heart { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        .animate-pulse-heart { animation: pulse-heart 0.5s ease-in-out; }
+        @keyframes count-up { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .animate-count-up { animation: count-up 0.3s ease-out; }
+        .banner-image { image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        @media (max-width: 640px) { .floating-button { padding: 0.75rem; } }
       `}</style>
       <EnhancedHeader />
       <main className="min-h-screen bg-white">
@@ -1615,8 +499,6 @@ export default function HomePage() {
         <ActionSection />
         <ContactLocationSection />
         <FooterSection />
-        
-        {/* Floating Action Buttons - Responsive and Analytics Enabled */}
         <FloatingCartButton />
         <FloatingWhatsAppButton />
         <FloatingCallButton />
