@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { db } from "@/lib/firebase";
-import { doc, updateDoc, increment, FieldValue } from "firebase/firestore";
+import { doc, updateDoc, increment, setDoc, getDoc } from "firebase/firestore";
 
 export default function MainHeader() {
   const { user, logout } = useAuth();
@@ -24,8 +24,31 @@ export default function MainHeader() {
   const trackClick = async (page: string) => {
     try {
       const statsRef = doc(db, 'stats', 'navigation');
+      
+      // Check if document exists, create if not
+      const docSnap = await getDoc(statsRef);
+      if (!docSnap.exists()) {
+        await setDoc(statsRef, {
+          homeClicks: 0,
+          menuClicks: 0,
+          reviewsClicks: 0,
+          reserveClicks: 0,
+          loginClicks: 0,
+          profileClicks: 0,
+          orderClicks: 0,
+          lastHomeClick: null,
+          lastMenuClick: null,
+          lastReviewsClick: null,
+          lastReserveClick: null,
+          lastLoginClick: null,
+          lastProfileClick: null,
+          lastOrderClick: null,
+        });
+      }
+      
+      // Update the click count
       const updateData: Record<string, any> = {
-        [page + 'Clicks']: increment(1),
+        [`${page}Clicks`]: increment(1),
         [`last${page.charAt(0).toUpperCase() + page.slice(1)}Click`]: new Date()
       };
       await updateDoc(statsRef, updateData);
@@ -53,6 +76,9 @@ export default function MainHeader() {
           </Link>
           <Link href="/reserve" className="text-gray-700 hover:text-[#2F5D50] transition" onClick={() => trackClick('reserve')}>
             Reserve
+          </Link>
+          <Link href="/driver" className="text-gray-700 hover:text-[#2F5D50] transition" onClick={() => trackClick('driver')}>
+            Driver
           </Link>
           
           {user ? (
@@ -103,6 +129,9 @@ export default function MainHeader() {
             </Link>
             <Link href="/reserve" className="text-gray-700 hover:text-[#2F5D50] transition py-2" onClick={() => trackClick('reserve')}>
               Reserve
+            </Link>
+            <Link href="/driver" className="text-gray-700 hover:text-[#2F5D50] transition py-2" onClick={() => trackClick('driver')}>
+              Driver
             </Link>
             
             {user ? (

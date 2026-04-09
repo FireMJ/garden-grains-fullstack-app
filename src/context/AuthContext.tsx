@@ -1,9 +1,9 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { 
-  User, 
-  onAuthStateChanged, 
+import {
+  User,
+  onAuthStateChanged,
   signOut,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -13,6 +13,8 @@ import {
   signInWithPopup
 } from 'firebase/auth';
 import { auth } from '@/lib/auth';
+import { db } from '@/lib/firebase';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 interface AuthContextType {
   user: User | null;
@@ -23,6 +25,7 @@ interface AuthContextType {
   signup: (email: string, password: string, name: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateUserProfile: (displayName: string, photoURL?: string) => Promise<void>;
+  updateUserPhone: (phoneNumber: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,7 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       setLoading(false);
     });
@@ -69,12 +72,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      
+
       if (userCredential.user) {
         await updateProfile(userCredential.user, {
           displayName: name
         });
         
+        // Create user document in Firestore
+        await setDoc(doc(db, 'users', userCredential.user.uid), {
+          email,
+          displayName: name,
+          createdAt: new Date(),
+          phoneNumber: '',
+        });
+
         await userCredential.user.reload();
         setUser({ ...userCredential.user });
       }
@@ -109,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateUserProfile = async (displayName: string, photoURL?: string) => {
     if (!auth.currentUser) throw new Error("No user logged in");
-    
+
     setLoading(true);
     try {
       await updateProfile(auth.currentUser, {
@@ -117,10 +128,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         photoURL
       });
       
+      // Update Firestore
+      const userDocRef = doc(db, 'users', auth.currentUser.uid);
+      await setDoc(userDocRef, { displayName }, { merge: true });
+
       await auth.currentUser.reload();
       setUser({ ...auth.currentUser });
     } catch (error: any) {
       console.error('Profile update error:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateUserPhone = async (phoneNumber: string) => {
+    if (!auth.currentUser) throw new Error("No user logged in");
+
+    setLoading(true);
+    try {
+      // Store phone number in Firestore (Firebase Auth requires re-authentication for phone updates)
+      const userDocRef = doc(db, 'users', auth.currentUser.uid);
+      await setDoc(userDocRef, { phoneNumber }, { merge: true });
+      
+      // Also store in localStorage for quick access
+      localStorage.setItem(`user_phone_${auth.currentUser.uid}`, phoneNumber);
+    } catch (error: any) {
+      console.error('Phone update error:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -136,6 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signup,
     resetPassword,
     updateUserProfile,
+    updateUserPhone,
   };
 
   return (
