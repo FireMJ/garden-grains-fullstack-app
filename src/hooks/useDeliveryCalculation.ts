@@ -1,10 +1,12 @@
 import { useState, useCallback } from 'react';
-import { getDrivingDistanceFromCoords, loadGoogleMaps, isDeliveryAvailable, geocodeAddress } from '@/lib/googleMaps';
-
-const BASE_DELIVERY_FEE = 35; // R35 for first 5km
-const BASE_DISTANCE_KM = 5; // 5km base
-const EXTRA_KM_RATE = 5; // R5 per additional km
-const MAX_DELIVERY_DISTANCE = 15; // 15km max
+import { 
+  getDrivingDistanceFromCoords, 
+  loadGoogleMaps, 
+  isDeliveryAvailable, 
+  calculateDeliveryFee,
+  DELIVERY_CONFIG 
+} from '@/lib/googleMaps';
+import { geocodeAddress } from '@/lib/googleMaps';
 
 export interface DeliveryInfo {
   distance: number | null;
@@ -13,6 +15,7 @@ export interface DeliveryInfo {
   isAvailable: boolean;
   address?: string;
   coordinates?: { lat: number; lng: number };
+  reason?: string;
 }
 
 interface UseDeliveryCalculationReturn {
@@ -37,12 +40,20 @@ export const useDeliveryCalculation = (): UseDeliveryCalculationReturn => {
       const coordinates = await geocodeAddress(address);
       
       if (!coordinates) {
-        throw new Error('Could not find coordinates for this address');
+        throw new Error('Could not find coordinates for this address. Please check the address and try again.');
       }
       
       await calculateFromCoordinates(coordinates.lat, coordinates.lng, address);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to calculate delivery');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to calculate delivery';
+      setError(errorMessage);
+      setDeliveryInfo({
+        distance: null,
+        duration: null,
+        fee: 0,
+        isAvailable: false,
+        reason: errorMessage,
+      });
       setIsLoading(false);
     }
   };
@@ -54,10 +65,13 @@ export const useDeliveryCalculation = (): UseDeliveryCalculationReturn => {
     try {
       await loadGoogleMaps();
       
-      // Check if delivery is available
-      const availability = await isDeliveryAvailable(lat, lng, MAX_DELIVERY_DISTANCE);
+      const availability = await isDeliveryAvailable(lat, lng, DELIVERY_CONFIG.MAX_DISTANCE_KM);
       
       if (!availability.available) {
+        const errorReason = availability.reason || 
+          `Delivery not available to this location. Maximum delivery distance is ${DELIVERY_CONFIG.MAX_DISTANCE_KM}km.`;
+        
+        setError(errorReason);
         setDeliveryInfo({
           distance: availability.distance || null,
           duration: availability.duration || null,
@@ -65,24 +79,17 @@ export const useDeliveryCalculation = (): UseDeliveryCalculationReturn => {
           isAvailable: false,
           coordinates: { lat, lng },
           address,
+          reason: errorReason,
         });
-        setError('Delivery not available to this location. Please consider pickup.');
         setIsLoading(false);
         return;
       }
       
-      // Calculate delivery fee based on distance
-      const distance = availability.distance || 0;
-      let fee = BASE_DELIVERY_FEE;
-      
-      if (distance > BASE_DISTANCE_KM) {
-        const extraKm = Math.ceil(distance - BASE_DISTANCE_KM);
-        fee += extraKm * EXTRA_KM_RATE;
-      }
+      const fee = calculateDeliveryFee(availability.distance || 0);
       
       setDeliveryInfo({
-        distance: distance,
-        duration: availability.duration || null,
+        distance: availability.distance,
+        duration: availability.duration,
         fee: fee,
         isAvailable: true,
         coordinates: { lat, lng },
@@ -91,7 +98,15 @@ export const useDeliveryCalculation = (): UseDeliveryCalculationReturn => {
       
     } catch (err) {
       console.error('Error calculating delivery:', err);
-      setError('Failed to calculate delivery. Please try again.');
+      const errorMessage = 'Failed to calculate delivery. Please ensure Routes API is enabled in Google Cloud Console.';
+      setError(errorMessage);
+      setDeliveryInfo({
+        distance: null,
+        duration: null,
+        fee: 0,
+        isAvailable: false,
+        reason: errorMessage,
+      });
     } finally {
       setIsLoading(false);
     }

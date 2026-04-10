@@ -7,64 +7,149 @@ import { useCart } from "@/context/CartContext";
 import { useDeliveryCalculation } from "@/hooks/useDeliveryCalculation";
 import { RESTAURANT_ADDRESS } from "@/lib/googleMaps";
 import Link from "next/link";
-import { MapPin, Truck, Store, AlertCircle } from "lucide-react";
+import { MapPin, Truck, Store, AlertCircle, CreditCard, Loader2, CheckCircle } from "lucide-react";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { cartItems, totalPrice, clearCart } = useCart();
   const { deliveryInfo, calculateFromAddress, calculateFromCoordinates, isLoading, error } = useDeliveryCalculation();
-  
+
   const [orderType, setOrderType] = useState<'delivery' | 'pickup'>('delivery');
   const [address, setAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [postalCode, setPostalCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+  const [paymentError, setPaymentError] = useState('');
+  const [addressValidated, setAddressValidated] = useState(false);
+  const [validatedAddress, setValidatedAddress] = useState<any>(null);
+  const [isValidatingAddress, setIsValidatingAddress] = useState(false);
+
   useEffect(() => {
     if (!user) {
       router.push('/login');
     }
   }, [user, router]);
-  
+
   useEffect(() => {
     if (cartItems.length === 0) {
       router.push('/menu');
     }
   }, [cartItems, router]);
-  
+
+  const handleAddressSelect = async (selectedAddress: {
+    street: string;
+    city: string;
+    postalCode: string;
+    formattedAddress: string;
+    coordinates: { lat: number; lng: number };
+  }) => {
+    setAddress(selectedAddress.street);
+    setCity(selectedAddress.city);
+    setPostalCode(selectedAddress.postalCode);
+    setAddressValidated(false);
+    
+    // Auto-calculate delivery
+    setIsValidatingAddress(true);
+    await calculateFromCoordinates(selectedAddress.coordinates.lat, selectedAddress.coordinates.lng, selectedAddress.formattedAddress);
+    setIsValidatingAddress(false);
+    setAddressValidated(true);
+    setValidatedAddress(selectedAddress);
+  };
+
   const handleAddressSubmit = async () => {
     if (address) {
-      await calculateFromAddress(address);
+      const fullAddress = `${address}, ${city}, South Africa`;
+      await calculateFromAddress(fullAddress);
+      setAddressValidated(true);
     }
   };
-  
+
+  const handleVodaPayPayment = async () => {
+    if (orderType === 'delivery') {
+      if (!addressValidated || !deliveryInfo?.isAvailable) {
+        setPaymentError('Please validate your delivery address first');
+        return;
+      }
+      if (!deliveryInfo.isAvailable) {
+        setPaymentError('Delivery not available to this address. Please try pickup.');
+        return;
+      }
+    }
+
+    setIsSubmitting(true);
+    setPaymentError('');
+
+    try {
+      const subtotal = totalPrice || 0;
+      const deliveryFee = orderType === 'delivery' && deliveryInfo?.isAvailable ? deliveryInfo.fee : 0;
+      const total = subtotal + deliveryFee;
+
+      const order = {
+        orderId: `ORDER_${Date.now()}`,
+        amount: total,
+        items: cartItems,
+        orderType: orderType,
+        deliveryAddress: orderType === 'delivery' && validatedAddress ? {
+          street: address,
+          city: city,
+          postalCode: postalCode,
+          coordinates: validatedAddress.coordinates,
+          distance: deliveryInfo?.distance,
+          fee: deliveryInfo?.fee
+        } : null,
+        pickupLocation: orderType === 'pickup' ? RESTAURANT_ADDRESS : null,
+        customerEmail: user?.email,
+        customerName: user?.displayName,
+        timestamp: new Date().toISOString(),
+      };
+
+      sessionStorage.setItem('pendingOrder', JSON.stringify(order));
+
+      const response = await fetch('/api/vodapay/initiate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: total,
+          currency: 'ZAR',
+          orderId: order.orderId,
+          customerEmail: user?.email,
+          customerName: user?.displayName,
+          customerPhone: user?.phoneNumber || '27721234567',
+          returnUrl: `${window.location.origin}/payment/vodapay/return`,
+          cancelUrl: `${window.location.origin}/payment/vodapay/cancel`,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.paymentUrl) {
+        sessionStorage.setItem('currentTransactionId', data.transactionId);
+        window.location.href = data.paymentUrl;
+      } else {
+        setPaymentError(data.message || 'Payment initiation failed');
+      }
+    } catch (err: any) {
+      console.error('Payment error:', err);
+      setPaymentError('Failed to connect to payment service. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const subtotal = totalPrice || 0;
   const deliveryFee = orderType === 'delivery' && deliveryInfo?.isAvailable ? deliveryInfo.fee : 0;
   const total = subtotal + deliveryFee;
-  
-  if (!user) {
+
+  if (!user || cartItems.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Redirecting to login...</p>
-        </div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
       </div>
     );
   }
-  
-  if (cartItems.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-12">
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <h1 className="text-2xl font-bold mb-4">Your cart is empty</h1>
-          <Link href="/menu" className="bg-green-600 text-white px-6 py-2 rounded-lg">
-            Browse Menu
-          </Link>
-        </div>
-      </div>
-    );
-  }
-  
+
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-6xl mx-auto px-4">
@@ -80,27 +165,23 @@ export default function CheckoutPage() {
                 <button
                   onClick={() => setOrderType('pickup')}
                   className={`p-4 border-2 rounded-lg text-center transition ${
-                    orderType === 'pickup' 
-                      ? 'border-green-500 bg-green-50' 
-                      : 'border-gray-200 hover:border-green-300'
+                    orderType === 'pickup' ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-green-300'
                   }`}
                 >
                   <Store className="w-6 h-6 mx-auto mb-2" />
                   <div className="font-semibold">Pickup</div>
-                  <div className="text-sm text-gray-600">Free</div>
+                  <div className="text-sm text-gray-600">Free • 15-20 min</div>
                 </button>
                 
                 <button
                   onClick={() => setOrderType('delivery')}
                   className={`p-4 border-2 rounded-lg text-center transition ${
-                    orderType === 'delivery' 
-                      ? 'border-green-500 bg-green-50' 
-                      : 'border-gray-200 hover:border-green-300'
+                    orderType === 'delivery' ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-green-300'
                   }`}
                 >
                   <Truck className="w-6 h-6 mx-auto mb-2" />
                   <div className="font-semibold">Delivery</div>
-                  <div className="text-sm text-gray-600">From R35</div>
+                  <div className="text-sm text-gray-600">From R35 • Up to 50km</div>
                 </button>
               </div>
               
@@ -109,25 +190,33 @@ export default function CheckoutPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Delivery Address
                   </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      placeholder="Enter your address"
-                      className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                    />
-                    <button
-                      onClick={handleAddressSubmit}
-                      disabled={isLoading || !address}
-                      className="px-6 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-                    >
-                      Calculate
-                    </button>
-                  </div>
                   
-                  {isLoading && (
-                    <p className="text-sm text-gray-500 mt-2">Calculating delivery...</p>
+                  <AddressAutocomplete
+                    onAddressSelect={handleAddressSelect}
+                    placeholder="Start typing your address..."
+                    className="mb-3"
+                  />
+                  
+                  {isValidatingAddress && (
+                    <div className="mt-2 p-3 bg-blue-50 rounded-lg flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                      <span className="text-sm text-blue-600">Validating address and calculating delivery...</span>
+                    </div>
+                  )}
+                  
+                  {addressValidated && deliveryInfo?.isAvailable && (
+                    <div className="mt-3 p-3 bg-green-50 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                        <div className="text-sm text-green-800">
+                          <p className="font-medium">Delivery Available!</p>
+                          <p>{deliveryInfo.distance?.toFixed(1)} km away • Estimated delivery fee: R{deliveryInfo.fee?.toFixed(2)}</p>
+                          {deliveryInfo.duration && (
+                            <p className="text-xs mt-1">Estimated delivery time: {Math.ceil(deliveryInfo.duration)} minutes</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   )}
                   
                   {error && (
@@ -136,35 +225,44 @@ export default function CheckoutPage() {
                       <span className="text-sm">{error}</span>
                     </div>
                   )}
-                  
-                  {deliveryInfo && !error && (
-                    <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                      <p className="text-sm">
-                        <strong>Distance:</strong> {deliveryInfo.distance?.toFixed(1)} km
-                      </p>
-                      <p className="text-sm mt-1">
-                        <strong>Delivery Fee:</strong> R{deliveryInfo.fee.toFixed(2)}
-                      </p>
-                      {deliveryInfo.duration && (
-                        <p className="text-sm mt-1">
-                          <strong>Estimated Time:</strong> {Math.ceil(deliveryInfo.duration)} minutes
-                        </p>
-                      )}
-                    </div>
-                  )}
                 </div>
               )}
               
               {orderType === 'pickup' && (
                 <div className="p-4 bg-green-50 rounded-lg">
-                  <h3 className="font-semibold mb-2">Pickup Location</h3>
-                  <p className="text-sm text-gray-600">{RESTAURANT_ADDRESS}</p>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Your order will be ready in 15-20 minutes
-                  </p>
+                  <div className="flex items-start gap-3">
+                    <Store className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h3 className="font-semibold text-green-900 mb-1">Pickup Location</h3>
+                      <p className="text-sm text-green-800 whitespace-pre-line">{RESTAURANT_ADDRESS}</p>
+                      <div className="mt-3 flex gap-4 text-xs text-green-700">
+                        <span>⏱️ Ready in 15-20 minutes</span>
+                        <span>📍 Free parking available</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
+
+            {paymentError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                {paymentError}
+              </div>
+            )}
+
+            <button
+              onClick={handleVodaPayPayment}
+              disabled={isSubmitting || (orderType === 'delivery' && (!addressValidated || !deliveryInfo?.isAvailable))}
+              className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition disabled:opacity-50 font-semibold flex items-center justify-center gap-2"
+            >
+              {isSubmitting ? (
+                <><Loader2 className="w-5 h-5 animate-spin" /> Processing...</>
+              ) : (
+                <><CreditCard className="w-5 h-5" /> Pay R{total.toFixed(2)} with VodaPay</>
+              )}
+            </button>
+            <p className="text-xs text-gray-500 text-center mt-2">Secure payment powered by VodaPay</p>
           </div>
           
           {/* Order Summary */}
@@ -195,13 +293,13 @@ export default function CheckoutPage() {
                   <span>R{total.toFixed(2)}</span>
                 </div>
               </div>
-              
-              <button
-                disabled={orderType === 'delivery' && (!deliveryInfo || !deliveryInfo.isAvailable)}
-                className="w-full mt-6 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Place Order
-              </button>
+
+              {orderType === 'delivery' && deliveryInfo?.distance && (
+                <div className="mt-4 pt-3 border-t text-xs text-gray-500">
+                  <p>📍 Distance: {deliveryInfo.distance.toFixed(1)} km</p>
+                  <p className="text-green-600 mt-1">✓ Free delivery on orders over R350</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

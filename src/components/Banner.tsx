@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import { useState, useEffect } from "react";
+import Image from 'next/image';
+import { useState, useEffect } from 'react';
 
 interface BannerProps {
   images: { src: string; alt: string }[];
@@ -21,23 +21,19 @@ export default function Banner({ images }: BannerProps) {
 
   return (
     <div className="relative w-full h-[400px] md:h-[500px] lg:h-[600px] overflow-hidden">
-      {/* Optimized banner image */}
       <div className="absolute inset-0">
         <Image
           src={images[currentIndex].src}
           alt={images[currentIndex].alt}
           fill
           priority={currentIndex === 0}
-          sizes="100vw"
-          style={{ objectFit: "cover" }}
+          // Fix: Adjust sizes based on actual viewport usage
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
+          style={{ objectFit: 'cover' }}
           quality={85}
         />
       </div>
-
-      {/* Overlay */}
       <div className="absolute inset-0 bg-black bg-opacity-40" />
-
-      {/* Content */}
       <div className="relative h-full flex items-center justify-center text-center text-white px-4">
         <div className="max-w-3xl">
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-4">
@@ -54,15 +50,13 @@ export default function Banner({ images }: BannerProps) {
           </a>
         </div>
       </div>
-
-      {/* Dots */}
       <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
         {images.map((_, idx) => (
           <button
             key={idx}
             onClick={() => setCurrentIndex(idx)}
             className={`w-2 h-2 rounded-full transition-all ${
-              idx === currentIndex ? "bg-white w-4" : "bg-white bg-opacity-50"
+              idx === currentIndex ? 'bg-white w-4' : 'bg-white bg-opacity-50'
             }`}
           />
         ))}

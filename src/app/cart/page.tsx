@@ -4,13 +4,18 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { useCart, CartItem } from "@/context/CartContext";
 import Link from "next/link";
-import { Minus, Plus, Trash2, X, MapPin, Truck, Store, Navigation } from "lucide-react";
+import { Minus, Plus, Trash2, X, MapPin, Truck, Store, Navigation, CheckCircle } from "lucide-react";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
+import { getDrivingDistance, RESTAURANT_COORDS } from "@/lib/googleMaps";
 
 // Delivery calculation function
-const calculateDeliveryFee = (distance: number): number => {
+const calculateDeliveryFee = (distance: number, subtotal: number = 0): number => {
+  const FREE_DELIVERY_THRESHOLD = 850;
+  if (subtotal >= FREE_DELIVERY_THRESHOLD) return 0;
+  
   const BASE_RATE = 35;
   const BASE_DISTANCE = 5;
-  const EXTRA_RATE_PER_KM = 5;
+  const EXTRA_RATE_PER_KM = 2.75;
   
   if (distance <= BASE_DISTANCE) {
     return BASE_RATE;
@@ -18,23 +23,6 @@ const calculateDeliveryFee = (distance: number): number => {
     const extraDistance = distance - BASE_DISTANCE;
     return BASE_RATE + (extraDistance * EXTRA_RATE_PER_KM);
   }
-};
-
-const RESTAURANT_COORDS = {
-  lat: -34.0,
-  lng: 18.4167
-};
-
-const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
 };
 
 export default function CartPage() {
@@ -50,7 +38,7 @@ export default function CartPage() {
   const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
   const [addressError, setAddressError] = useState('');
   const [deliveryFee, setDeliveryFee] = useState(0);
-  const [useCurrentLocation, setUseCurrentLocation] = useState(false);
+  const [isAddressValid, setIsAddressValid] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -58,12 +46,16 @@ export default function CartPage() {
 
   useEffect(() => {
     if (distance !== null && deliveryMethod === 'delivery') {
-      const fee = calculateDeliveryFee(distance);
+      const fee = calculateDeliveryFee(distance, cart.totalPrice);
       setDeliveryFee(fee);
+      // Address is valid if we have a distance and it's within limits
+      setIsAddressValid(distance <= 50);
+    } else if (deliveryMethod === 'pickup') {
+      setIsAddressValid(true);
     } else {
-      setDeliveryFee(0);
+      setIsAddressValid(false);
     }
-  }, [distance, deliveryMethod]);
+  }, [distance, deliveryMethod, cart.totalPrice]);
 
   const handleImageError = (itemId: string) => {
     setImageErrors(prev => ({ ...prev, [itemId]: true }));
@@ -73,88 +65,58 @@ export default function CartPage() {
     setExpandedItems(prev => ({ ...prev, [itemId]: !prev[itemId] }));
   };
 
-  const getCurrentLocation = () => {
+  const handleAddressSelect = async (selectedAddress: {
+    street: string;
+    city: string;
+    postalCode: string;
+    formattedAddress: string;
+    coordinates: { lat: number; lng: number };
+  }) => {
+    setDeliveryAddress(selectedAddress.formattedAddress);
+    setDeliveryCoordinates(selectedAddress.coordinates);
     setIsCalculatingDistance(true);
     setAddressError('');
+    setIsAddressValid(false);
     
-    if (!navigator.geolocation) {
-      setAddressError('Geolocation is not supported by your browser');
-      setIsCalculatingDistance(false);
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const coords = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        };
-        setDeliveryCoordinates(coords);
-        setUseCurrentLocation(true);
-        
-        const dist = calculateDistance(
-          RESTAURANT_COORDS.lat, RESTAURANT_COORDS.lng,
-          coords.lat, coords.lng
-        );
-        setDistance(dist);
-        
-        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.lat}&lon=${coords.lng}`)
-          .then(res => res.json())
-          .then(data => {
-            if (data.display_name) {
-              setDeliveryAddress(data.display_name);
-            }
-          })
-          .catch(err => console.error('Reverse geocoding error:', err))
-          .finally(() => setIsCalculatingDistance(false));
-      },
-      (error) => {
-        console.error('Geolocation error:', error);
-        setAddressError('Unable to get your location. Please enter your address manually.');
-        setIsCalculatingDistance(false);
+    try {
+      const dist = await getDrivingDistance(
+        selectedAddress.coordinates,
+        RESTAURANT_COORDS
+      );
+      
+      if (dist && dist.distance) {
+        setDistance(dist.distance);
+        if (dist.distance <= 50) {
+          setIsAddressValid(true);
+          setAddressError('');
+        } else {
+          setAddressError(`Location is ${dist.distance.toFixed(1)} km away. Maximum delivery distance is 50 km.`);
+        }
+      } else {
+        setAddressError('Could not calculate distance to this address');
       }
-    );
+    } catch (error) {
+      console.error('Distance calculation error:', error);
+      setAddressError('Error calculating distance. Please try again.');
+    } finally {
+      setIsCalculatingDistance(false);
+    }
   };
 
-  const handleAddressChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const address = e.target.value;
-    setDeliveryAddress(address);
-    setUseCurrentLocation(false);
-    
-    if (address.length > 10) {
-      setIsCalculatingDistance(true);
-      setAddressError('');
-      
-      try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address + ', Cape Town, South Africa')}`
-        );
-        const data = await response.json();
-        
-        if (data && data.length > 0) {
-          const coords = {
-            lat: parseFloat(data[0].lat),
-            lng: parseFloat(data[0].lon)
-          };
-          setDeliveryCoordinates(coords);
-          
-          const dist = calculateDistance(
-            RESTAURANT_COORDS.lat, RESTAURANT_COORDS.lng,
-            coords.lat, coords.lng
-          );
-          setDistance(dist);
-        } else {
-          setAddressError('Address not found. Please check and try again.');
-          setDistance(null);
-        }
-      } catch (error) {
-        console.error('Geocoding error:', error);
-        setAddressError('Error finding address. Please try again.');
-        setDistance(null);
-      } finally {
-        setIsCalculatingDistance(false);
-      }
+  const subtotal = cart.totalPrice || 0;
+  const freeDeliveryThreshold = 850;
+  const qualifiesForFreeDelivery = subtotal >= freeDeliveryThreshold;
+  const finalDeliveryFee = (deliveryMethod === 'delivery' && !qualifiesForFreeDelivery && distance !== null) ? deliveryFee : 0;
+  const finalTotal = subtotal + finalDeliveryFee;
+
+  // Determine if checkout should be enabled
+  const isCheckoutEnabled = () => {
+    if (cart.cartItems?.length === 0) return false;
+    if (deliveryMethod === 'pickup') return true;
+    if (deliveryMethod === 'delivery') {
+      return isAddressValid && distance !== null && !isCalculatingDistance;
     }
+    return false;
   };
 
   if (!mounted) {
@@ -168,11 +130,6 @@ export default function CartPage() {
   }
 
   const cartItems = cart.cartItems || [];
-  const subtotal = cart.totalPrice || 0;
-  const freeDeliveryThreshold = 850;
-  const qualifiesForFreeDelivery = subtotal >= freeDeliveryThreshold;
-  const finalDeliveryFee = (deliveryMethod === 'delivery' && !qualifiesForFreeDelivery) ? deliveryFee : 0;
-  const finalTotal = subtotal + finalDeliveryFee;
 
   if (cartItems.length === 0) {
     return (
@@ -206,7 +163,11 @@ export default function CartPage() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <button
-              onClick={() => setDeliveryMethod('pickup')}
+              onClick={() => {
+                setDeliveryMethod('pickup');
+                setIsAddressValid(true);
+                setAddressError('');
+              }}
               className={`p-4 rounded-xl border-2 transition-all ${
                 deliveryMethod === 'pickup'
                   ? 'border-[#2F5D50] bg-[#2F5D50]/5'
@@ -256,7 +217,7 @@ export default function CartPage() {
             </button>
           </div>
 
-          {/* Delivery Address Input */}
+          {/* Delivery Address Input with Autocomplete */}
           {deliveryMethod === 'delivery' && (
             <div className="border-t pt-6">
               <div className="flex items-center gap-2 mb-4">
@@ -264,72 +225,50 @@ export default function CartPage() {
                 <h3 className="font-semibold text-gray-900">Delivery Address</h3>
               </div>
 
-              {!useCurrentLocation && (
-                <button
-                  onClick={getCurrentLocation}
-                  disabled={isCalculatingDistance}
-                  className="mb-4 flex items-center gap-2 text-[#2F5D50] hover:text-[#1a3a30] transition text-sm font-medium"
-                >
-                  <Navigation size={16} />
-                  <span>Use my current location</span>
-                </button>
+              <AddressAutocomplete
+                onAddressSelect={handleAddressSelect}
+                placeholder="Start typing your address in Cape Town..."
+                initialValue={deliveryAddress}
+              />
+
+              {isCalculatingDistance && (
+                <div className="mt-4 flex items-center gap-2 text-gray-500">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#2F5D50]"></div>
+                  <span className="text-sm">Calculating distance...</span>
+                </div>
               )}
 
-              <div className="relative">
-                <input
-                  type="text"
-                  value={deliveryAddress}
-                  onChange={handleAddressChange}
-                  placeholder="Enter your delivery address in Cape Town"
-                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#2F5D50] focus:border-transparent pr-24"
-                  disabled={isCalculatingDistance}
-                />
-                
-                {isCalculatingDistance && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[#2F5D50]"></div>
-                  </div>
-                )}
-              </div>
-
-              {distance !== null && (
-                <div className="mt-4 p-4 bg-blue-50 rounded-xl">
-                  <div className="flex justify-between items-center">
+              {isAddressValid && distance !== null && (
+                <div className="mt-4 p-4 bg-green-50 rounded-xl border border-green-200">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-sm text-gray-600">Distance from restaurant</p>
-                      <p className="text-xl font-bold text-[#2F5D50]">{distance.toFixed(1)} km</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-600">Delivery Fee</p>
-                      <p className="text-xl font-bold text-[#2F5D50]">
-                        {qualifiesForFreeDelivery ? (
-                          <span className="text-green-600">FREE</span>
-                        ) : (
-                          `R${deliveryFee}`
-                        )}
-                      </p>
+                      <p className="font-medium text-green-800">Address Verified!</p>
+                      <div className="flex justify-between items-center mt-2">
+                        <div>
+                          <p className="text-sm text-gray-600">Distance from restaurant</p>
+                          <p className="text-xl font-bold text-[#2F5D50]">{distance.toFixed(1)} km</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-gray-600">Delivery Fee</p>
+                          <p className="text-xl font-bold text-[#2F5D50]">
+                            {qualifiesForFreeDelivery ? (
+                              <span className="text-green-600">FREE</span>
+                            ) : (
+                              `R${deliveryFee}`
+                            )}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  
-                  {!qualifiesForFreeDelivery && (
-                    <div className="mt-2 text-xs text-gray-500">
-                      <p>Base rate (first 5km): R35</p>
-                      {distance > 5 && (
-                        <p>Extra {Math.ceil(distance - 5)}km: R{deliveryFee - 35}</p>
-                      )}
-                    </div>
-                  )}
-
-                  {qualifiesForFreeDelivery && (
-                    <p className="mt-2 text-sm text-green-600 font-medium">
-                      🎉 Your order qualifies for free delivery!
-                    </p>
-                  )}
                 </div>
               )}
 
               {addressError && (
-                <p className="mt-2 text-sm text-red-500">{addressError}</p>
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-600">{addressError}</p>
+                </div>
               )}
             </div>
           )}
@@ -352,17 +291,15 @@ export default function CartPage() {
           )}
         </div>
 
-        {/* Cart Items with Add-on Management */}
+        {/* Cart Items */}
         <div className="space-y-4">
+          {/* Cart items rendering code remains the same */}
           {cartItems.map((item: CartItem) => {
-            // Safely get add-ons (handles both old and new structure)
-            const addOnsList = (item as any).addOns || (item as any).addOnsOld || [];
-            
-            // Calculate item total including add-ons
+            const addOnsList = (item as any).addOns || [];
             const addOnsTotal = addOnsList.reduce((sum: number, addOn: any) => 
               sum + ((addOn.price || 0) * (addOn.quantity || 1)), 0);
-            const friesPrice = (item as any).fries?.price || (item as any).friesOld?.price || 0;
-            const juicePrice = (item as any).juice?.price || (item as any).juiceOld?.price || 0;
+            const friesPrice = (item as any).fries?.price || 0;
+            const juicePrice = (item as any).juice?.price || 0;
             const baseExtra = (item as any).baseExtra || 0;
             
             const itemBasePrice = (item.price || 0) * (item.quantity || 1);
@@ -373,13 +310,8 @@ export default function CartPage() {
             const isExpanded = expandedItems[item.id];
 
             return (
-              <div
-                key={item.id}
-                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition"
-              >
-                {/* Main Item Row */}
+              <div key={item.id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition">
                 <div className="p-4 flex flex-col sm:flex-row gap-4">
-                  {/* Item Image */}
                   <div className="relative w-24 h-24 flex-shrink-0 mx-auto sm:mx-0 bg-gray-100 rounded-lg overflow-hidden">
                     {item.image && !imageErrors[item.id] ? (
                       <Image
@@ -396,7 +328,6 @@ export default function CartPage() {
                     )}
                   </div>
 
-                  {/* Item Details */}
                   <div className="flex-1">
                     <div className="flex flex-col sm:flex-row sm:justify-between">
                       <div>
@@ -404,7 +335,6 @@ export default function CartPage() {
                         <p className="text-sm text-gray-500">R{(item.price || 0).toFixed(2)} each</p>
                       </div>
                       
-                      {/* Item Quantity Controls */}
                       <div className="flex items-center gap-2 mt-2 sm:mt-0">
                         <button
                           onClick={() => cart.updateQuantity(item.id, Math.max(1, (item.quantity || 1) - 1))}
@@ -423,7 +353,6 @@ export default function CartPage() {
                       </div>
                     </div>
 
-                    {/* Base and Dressing */}
                     {(item as any).base && (
                       <p className="text-sm text-gray-600 mt-1">
                         <span className="font-medium">Base:</span> {(item as any).base}
@@ -435,7 +364,6 @@ export default function CartPage() {
                       </p>
                     )}
 
-                    {/* Add-ons Summary (when collapsed) */}
                     {hasAddOns && !isExpanded && (
                       <div 
                         onClick={() => toggleExpandItem(item.id)}
@@ -446,7 +374,6 @@ export default function CartPage() {
                       </div>
                     )}
 
-                    {/* Fries & Juice */}
                     {(item as any).fries && (
                       <p className="text-sm text-gray-600 mt-1">
                         <span className="font-medium">Fries:</span> {(item as any).fries.name} 
@@ -461,14 +388,12 @@ export default function CartPage() {
                       </p>
                     )}
 
-                    {/* Special Instructions */}
                     {(item as any).specialInstructions && (
                       <p className="text-sm italic text-gray-500 mt-2">
                         📝 "{(item as any).specialInstructions}"
                       </p>
                     )}
 
-                    {/* Action Buttons */}
                     <div className="flex items-center gap-3 mt-3">
                       {hasAddOns && (
                         <button
@@ -488,7 +413,6 @@ export default function CartPage() {
                     </div>
                   </div>
 
-                  {/* Item Total */}
                   <div className="text-right sm:w-32 flex-shrink-0">
                     <p className="text-lg font-bold text-[#2F5D50]">
                       R{itemTotal.toFixed(2)}
@@ -502,7 +426,6 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                {/* Expanded Add-ons Section */}
                 {isExpanded && hasAddOns && (
                   <div className="border-t border-gray-100 bg-gray-50 p-4">
                     <div className="flex justify-between items-center mb-3">
@@ -525,7 +448,6 @@ export default function CartPage() {
                           </div>
                           
                           <div className="flex items-center gap-3">
-                            {/* Add-on Quantity Controls */}
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={() => cart.updateAddOnQuantity(item.id, idx, (addOn.quantity || 1) - 1)}
@@ -543,7 +465,6 @@ export default function CartPage() {
                               </button>
                             </div>
                             
-                            {/* Remove Add-on */}
                             <button
                               onClick={() => cart.removeAddOn(item.id, idx)}
                               className="text-red-400 hover:text-red-600 transition"
@@ -575,15 +496,13 @@ export default function CartPage() {
                 <span className="font-medium capitalize">{deliveryMethod}</span>
               </div>
 
-              {deliveryMethod === 'delivery' && (
+              {deliveryMethod === 'delivery' && distance !== null && (
                 <div className="flex justify-between text-gray-600">
                   <span>Delivery Fee</span>
                   <span className={qualifiesForFreeDelivery ? 'text-green-600 font-medium' : ''}>
                     {qualifiesForFreeDelivery 
                       ? 'FREE' 
-                      : distance 
-                        ? `R ${deliveryFee.toFixed(2)}` 
-                        : 'To be calculated'
+                      : `R ${deliveryFee.toFixed(2)}`
                     }
                   </span>
                 </div>
@@ -599,7 +518,7 @@ export default function CartPage() {
                     <div 
                       className="bg-green-600 h-2 rounded-full transition-all duration-300"
                       style={{ width: `${Math.min(100, (subtotal / 850) * 100)}%` }}
-                    ></div>
+                    />
                   </div>
                 </div>
               )}
@@ -618,8 +537,20 @@ export default function CartPage() {
                 Clear Cart
               </button>
               <Link
-                href="/checkout"
-                className="flex-1 bg-[#2F5D50] hover:bg-[#244a3f] text-white py-3 px-4 rounded-lg font-medium transition text-center"
+                href={isCheckoutEnabled() ? "/checkout" : "#"}
+                onClick={(e) => {
+                  if (!isCheckoutEnabled()) {
+                    e.preventDefault();
+                    if (deliveryMethod === 'delivery' && !isAddressValid) {
+                      setAddressError('Please enter a valid delivery address within 50km');
+                    }
+                  }
+                }}
+                className={`flex-1 text-white py-3 px-4 rounded-lg font-medium transition text-center ${
+                  isCheckoutEnabled() 
+                    ? 'bg-[#2F5D50] hover:bg-[#244a3f] cursor-pointer' 
+                    : 'bg-gray-400 cursor-not-allowed'
+                }`}
               >
                 Proceed to Checkout →
               </Link>
@@ -628,6 +559,12 @@ export default function CartPage() {
             {deliveryMethod === 'pickup' && (
               <p className="text-sm text-center text-gray-500 mt-4">
                 🏪 Your order will be ready for pickup at Uitsig Wine Farm. We'll notify you when it's ready.
+              </p>
+            )}
+            
+            {deliveryMethod === 'delivery' && !isAddressValid && !isCalculatingDistance && (
+              <p className="text-sm text-center text-amber-600 mt-4">
+                📍 Please enter a valid delivery address to proceed
               </p>
             )}
           </div>
