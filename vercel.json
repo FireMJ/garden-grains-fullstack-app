@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm install --legacy-peer-deps && next build --no-lint",
+  "buildCommand": "npm install --legacy-peer-deps && next build",
   "installCommand": "npm install --legacy-peer-deps",
   "env": {
     "NEXT_TYPESCRIPT_IGNORE_BUILD_ERRORS": "1"
