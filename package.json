@@ -5,31 +5,26 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:ignore-types": "next build --no-lint",
     "start": "next start",
-    "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "lint": "next lint"
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^1.16.8",
     "@react-google-maps/api": "^2.19.3",
-    "@stripe/react-stripe-js": "^2.5.0",
-    "@stripe/stripe-js": "^2.4.0",
     "axios": "^1.7.2",
     "firebase": "^10.12.0",
     "framer-motion": "^11.2.10",
     "lucide-react": "^0.394.0",
     "next": "16.2.2",
-    "react": "19.2.0",
-    "react-dom": "19.2.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
     "react-icons": "^5.2.1",
-    "react-swipeable": "^7.0.1",
-    "stripe": "^16.4.0"
+    "react-swipeable": "^7.0.1"
   },
   "devDependencies": {
     "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
     "autoprefixer": "^10.4.19",
     "eslint": "^8",
     "eslint-config-next": "16.2.2",
