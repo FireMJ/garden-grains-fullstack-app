@@ -54,8 +54,8 @@ export const commonAddOns: BowlAddOn[] = [
 
 // ✅ Fries upsell options
 export const friesUpsell: FriesUpsell[] = [
-  { id: "fries1", name: "Skinny French Fries", price: 25 },
-  { id: "fries2", name: "Sweet Potato Fries", price: 25 },
+  { id: "fries1", name: "Skinny French Fries", price: 45 },
+  { id: "fries2", name: "Sweet Potato Fries", price: 59 },
 ];
 
 // ✅ Juice upsell options
@@ -129,7 +129,7 @@ export const bowls: Bowl[] = [
     name: "Smoky Chipotle Chicken Bowl",
     description: "Grilled chipotle-marinated chicken strips with corn, black beans, grilled peppers & red onion. Topped with avocado slices, tomato salsa, shredded lettuce, cheddar cheese. Served with your choice of dressing, lime wedge and sesame seeds.",
     basePrice: 163,
-    image: "/images/bowls/smoky-chipotle-chicken.jpg",
+    image: "/images/bowls/smoky_chipotle.jpeg",
     tags: ["chipotle", "protein", "spicy", "popular"],
     dressings: ["Orange Ginger Dressing", "Sesame Soy Dressing", "Sour Cream Dressing", "Balsamic Vinaigrette", "Lemon & Herb Vinaigrette", "Honey Mustard Dressing", "Apple Cider Vinaigrette", "Authentic Greek Dressing", "Citrus Coriander Dressing", "Creamy Chipotle Yoghurt Sauce", "No Dressing"],
     addOns: commonAddOns,
@@ -187,7 +187,7 @@ export const bowls: Bowl[] = [
     name: "Grilled Chicken Poke Bowl",
     description: "Teriyaki-glazed grilled chicken strips with cucumber, corn, avocado, edamame, slaw. Topped with pineapple salsa, chopped chives. Served with your choice of dressing and sesame seeds.",
     basePrice: 163,
-    image: "/images/bowls/grilled-chicken-poke-bowl.jpg",
+    image: "/images/bowls/chicken_poke.jpeg",
     tags: ["poke", "protein", "popular", "bestseller"],
     dressings: ["Orange Ginger Dressing", "Sesame Soy Dressing", "Sour Cream Dressing", "Balsamic Vinaigrette", "Lemon & Herb Vinaigrette", "Honey Mustard Dressing", "Apple Cider Vinaigrette", "Authentic Greek Dressing", "Citrus Coriander Dressing", "Creamy Chipotle Yoghurt Sauce", "No Dressing"],
     addOns: commonAddOns,

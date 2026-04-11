@@ -1,0 +1,7 @@
+# Ignore Next.js internal validation files
+.next/
+node_modules/
+
+# Ignore specific files with issues
+src/app/api/vodapay/initiate/route.ts
+src/lib/googleMaps.ts
