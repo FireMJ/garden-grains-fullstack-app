@@ -1,15 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Ignore ESLint during build
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  
-  // Ignore TypeScript errors during build
+  // TypeScript configuration (still valid)
   typescript: {
     ignoreBuildErrors: true,
   },
   
+  // Image configuration
   images: {
     unoptimized: process.env.NODE_ENV === 'production',
     remotePatterns: [
@@ -21,9 +17,9 @@ const nextConfig = {
     qualities: [25, 50, 75, 100],
   },
   
+  // Other valid options
   compress: true,
   reactStrictMode: true,
-  swcMinify: true,
   poweredByHeader: false,
 };
 
