@@ -1,37 +1,21 @@
-import nextPlugin from '@next/eslint-plugin-next';
-import reactPlugin from 'eslint-plugin-react';
-import reactHooksPlugin from 'eslint-plugin-react-hooks';
+import { FlatCompat } from '@eslint/eslintrc';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const compat = new FlatCompat({
+  baseDirectory: __dirname,
+});
 
 export default [
+  ...compat.extends('next/core-web-vitals'),
   {
-    ignores: [
-      '.next/**',
-      'node_modules/**',
-      'out/**',
-      'public/**',
-      'backup_current/**',
-      'src/app/menu.current_backup/**',
-      '**/*.d.ts'
-    ],
-    files: ['**/*.{js,jsx,ts,tsx}'],
-    plugins: {
-      react: reactPlugin,
-      'react-hooks': reactHooksPlugin,
-      '@next/next': nextPlugin,
-    },
     rules: {
-      // Disable problematic rules for build
-      'react-hooks/rules-of-hooks': 'off',
-      'react-hooks/exhaustive-deps': 'off',
-      'react/react-in-jsx-scope': 'off',
-      'react/prop-types': 'off',
-      '@next/next/no-html-link-for-pages': 'off',
-      '@next/next/no-img-element': 'warn',
-    },
-    settings: {
-      react: {
-        version: 'detect',
-      },
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': 'warn',
+      'react/no-unescaped-entities': 'off',
     },
   },
 ];
