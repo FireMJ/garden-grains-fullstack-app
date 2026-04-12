@@ -80,11 +80,11 @@ export const juiceUpsellOptions: JuiceGroup[] = [
 
 // Common add-ons for soups
 export const soupAddOns: AddOn[] = [
-  { id: "addon1", name: "Extra Bread Roll", price: 15 },
-  { id: "addon2", name: "Cheese Topping", price: 15 },
-  { id: "addon3", name: "Croutons", price: 10 },
+  { id: "addon1", name: "Roasted Sunflower Seeds", price: 15 },
+  { id: "addon2", name: "Parmesan Cheese Topping", price: 20 },
+  { id: "addon3", name: "Cashew Nuts", price: 20 },
   { id: "addon4", name: "Bacon Bits", price: 20 },
-  { id: "addon5", name: "Sourdough Toast", price: 15 },
+  { id: "addon5", name: "Extra Sourdough Toast", price: 15 },
 ];
 
 // Soup items from the menu
@@ -93,8 +93,8 @@ export const soups: SoupItem[] = [
     id: "soup-1",
     slug: "creamy-broccoli-cauliflower-soup",
     name: "Creamy Broccoli & Cauliflower Soup",
-    description: "Broccoli, cauliflower, onion, garlic, dried thyme, olive oil, chicken stock, topped with blue cheese, fresh cream & olive oil.",
-    price: 85,
+    description: "Fresh broccoli florets, onion, potato, garlic, stock, cream, cheddar cheese, Wholegrain mustard.",
+    price: 135,
     image: "/images/soups/broccoli-cauliflower.jpg",
     tags: ["popular", "creamy", "vegetarian"],
     popular: true,
@@ -107,7 +107,7 @@ export const soups: SoupItem[] = [
     slug: "creamy-butternut-soup",
     name: "Creamy Butternut Soup",
     description: "Roasted butternut, onion, garlic, carrot, apple, vegetable stock, cinnamon, nutmeg, smoked paprika, topped with parmesan, fresh cream & roasted pumpkin seeds.",
-    price: 85,
+    price: 130,
     image: "/images/soups/butternut.jpg",
     tags: ["popular", "creamy", "vegetarian"],
     popular: true,
@@ -120,7 +120,7 @@ export const soups: SoupItem[] = [
     slug: "pea-bacon-soup",
     name: "Pea & Bacon Soup",
     description: "Peas, chopped bacon, garlic, chicken stock, topped with fresh cream & parmesan cheese.",
-    price: 95,
+    price: 139,
     image: "/images/soups/pea-bacon.jpg",
     tags: ["popular", "hearty", "protein-rich"],
     popular: true,
@@ -133,7 +133,7 @@ export const soups: SoupItem[] = [
     slug: "spiced-sweet-potato-soup",
     name: "Spiced Sweet Potato Soup",
     description: "Roasted sweet potatoes, carrot, onion, garlic, ginger, orange juice, vegetable broth, ground coriander, ground cumin, smoked paprika, coconut milk, cinnamon.",
-    price: 90,
+    price: 135,
     image: "/images/soups/sweet-potato.jpg",
     tags: ["vegetarian", "spicy", "healthy"],
     popular: false,
