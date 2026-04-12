@@ -41,7 +41,7 @@ export default function SoupDetailPage({ params }: PageProps) {
   const [quantity, setQuantity] = useState(1);
   const [slug, setSlug] = useState<string>("");
   const [mounted, setMounted] = useState(false);
-  
+
   // Upsell states
   const [selectedFries, setSelectedFries] = useState<UpsellItem | null>(null);
   const [selectedJuice, setSelectedJuice] = useState<UpsellItem | null>(null);
@@ -64,7 +64,7 @@ export default function SoupDetailPage({ params }: PageProps) {
   // Load soup data
   useEffect(() => {
     if (!slug) return;
-    
+
     const item = soups?.find((s: any) => s.slug === slug);
     if (item) {
       setSoupItem(item);
@@ -97,301 +97,247 @@ export default function SoupDetailPage({ params }: PageProps) {
   const calculateTotal = () => {
     let total = soupItem?.price || 0;
     
-    if (selectedAddOns.length > 0) {
-      total += selectedAddOns.reduce((sum, addOn) => sum + (addOn.price * addOn.quantity), 0);
-    }
+    // Add add-ons total
+    selectedAddOns.forEach(addOn => {
+      total += addOn.price * addOn.quantity;
+    });
     
+    // Add fries if selected
     if (selectedFries) {
       total += selectedFries.price;
     }
     
+    // Add juice if selected
     if (selectedJuice) {
       total += selectedJuice.price;
     }
     
-    return total * quantity;
+    // Multiply by quantity
+    total *= quantity;
+    
+    return total;
   };
 
   const handleAddToCart = () => {
-    const cartItem = {
-      id: `${soupItem?.id}-${Date.now()}`,
-      name: soupItem?.name || "",
-      price: soupItem?.price || 0,
+    if (!soupItem) return;
+    
+    addToCart({
+      id: `${soupItem.id}-${Date.now()}`,
+      name: soupItem.name,
+      price: soupItem.price,
       quantity: quantity,
-      image: soupItem?.image || "",
-      category: "soups",
-      description: soupItem?.description || "",
+      image: soupItem.image,
       addOns: selectedAddOns,
-      specialInstructions: specialInstructions,
       friesUpsell: selectedFries,
       juiceUpsell: selectedJuice,
-      juiceSize: selectedJuiceSize
-    };
+      specialInstructions: specialInstructions || undefined,
+    });
     
-    console.log("Adding soup to cart:", cartItem);
-    addToCart(cartItem);
-    router.push("/cart");
-  };
-
-  // Get available juice options for selected size
-  const getJuiceOptionsForSize = () => {
-    const juiceSizeGroup = juiceUpsellOptions.find(g => g.size === selectedJuiceSize);
-    return juiceSizeGroup?.options || [];
+    alert(`Added ${quantity} x ${soupItem.name} to cart`);
+    router.push('/cart');
   };
 
   if (!mounted || !soupItem) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading soup details...</p>
-        </div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <Link href="/menu/soups" className="inline-flex items-center text-gray-600 hover:text-green-600 transition">
-            <FaArrowLeft className="mr-2" />
-            Back to Soups
-          </Link>
-        </div>
-      </div>
+  const total = calculateTotal();
 
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Column - Image */}
-          <div>
-            <div className="relative h-96 rounded-2xl overflow-hidden shadow-lg">
+  return (
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="max-w-4xl mx-auto px-4">
+        <Link href="/menu/soups" className="inline-flex items-center gap-2 text-gray-600 hover:text-green-600 mb-6 transition">
+          <FaArrowLeft /> Back to Soups
+        </Link>
+
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Image Section */}
+            <div className="relative h-64 md:h-full min-h-[300px] bg-gray-100">
               <Image
                 src={soupItem.image}
                 alt={soupItem.name}
                 fill
                 className="object-cover"
+                unoptimized
               />
             </div>
-          </div>
 
-          {/* Right Column - Details */}
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{soupItem.name}</h1>
-            <p className="text-gray-600 mb-4">{soupItem.description}</p>
-            <div className="text-2xl font-bold text-green-600 mb-6">R{soupItem.price}</div>
+            {/* Details Section */}
+            <div className="p-6">
+              <h1 className="text-3xl font-bold text-gray-900 mb-3">{soupItem.name}</h1>
+              <p className="text-gray-600 mb-4 leading-relaxed">{soupItem.description}</p>
+              <p className="text-2xl font-bold text-green-600 mb-6">R{soupItem.price}</p>
 
-            {/* Tags */}
-            {soupItem.tags && soupItem.tags.length > 0 && (
+              {/* Add-ons Section */}
               <div className="mb-6">
-                <div className="flex flex-wrap gap-2">
-                  {soupItem.tags.map((tag, idx) => (
-                    <span key={idx} className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Add-ons */}
-            {soupAddOns && soupAddOns.length > 0 && (
-              <div className="mb-6">
-                <h3 className="font-semibold text-gray-900 mb-2">Add-ons (Optional)</h3>
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {soupAddOns.map((addOn, index) => {
+                <h3 className="font-semibold text-gray-900 mb-3">Add-ons</h3>
+                <div className="space-y-2">
+                  {soupAddOns.map((addOn) => {
                     const selected = selectedAddOns.find(a => a.name === addOn.name);
                     return (
-                      <div key={`addon-${index}-${addOn.name}`} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div>
-                          <p className="font-medium text-gray-900">{addOn.name}</p>
-                          <p className="text-sm text-green-600">+R{addOn.price}</p>
-                        </div>
-                        {selected ? (
-                          <div className="flex items-center gap-3">
+                      <div key={addOn.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                        <label className="flex items-center gap-3 cursor-pointer flex-1">
+                          <input
+                            type="checkbox"
+                            checked={!!selected}
+                            onChange={() => handleAddOnToggle(addOn)}
+                            className="w-4 h-4 text-green-600 rounded"
+                          />
+                          <span>{addOn.name}</span>
+                          <span className="text-green-600 font-medium">+R{addOn.price}</span>
+                        </label>
+                        {selected && (
+                          <div className="flex items-center gap-2">
                             <button
                               onClick={() => updateAddOnQuantity(addOn.name, selected.quantity - 1)}
-                              className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
+                              className="w-7 h-7 bg-gray-200 rounded-full hover:bg-gray-300 flex items-center justify-center"
                             >
-                              <FaMinus className="text-sm" />
+                              <FaMinus size={12} />
                             </button>
-                            <span className="w-8 text-center">{selected.quantity}</span>
+                            <span className="w-6 text-center">{selected.quantity}</span>
                             <button
                               onClick={() => updateAddOnQuantity(addOn.name, selected.quantity + 1)}
-                              className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
+                              className="w-7 h-7 bg-gray-200 rounded-full hover:bg-gray-300 flex items-center justify-center"
                             >
-                              <FaPlus className="text-sm" />
+                              <FaPlus size={12} />
                             </button>
                           </div>
-                        ) : (
-                          <button
-                            onClick={() => handleAddOnToggle(addOn)}
-                            className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
-                          >
-                            Add
-                          </button>
                         )}
                       </div>
                     );
                   })}
                 </div>
               </div>
-            )}
 
-            {/* Upsells Section - Fries & Juice */}
-            <div className="mb-6">
-              <button
-                onClick={() => setShowUpsells(!showUpsells)}
-                className="flex items-center gap-2 text-green-600 font-medium mb-3 hover:text-green-700"
-              >
-                {showUpsells ? '▼' : '▶'} Add Fries & Drink to Complete Your Meal
-              </button>
-              
+              {/* Complete Your Meal - Toggle */}
+              <div className="mb-4">
+                <button
+                  onClick={() => setShowUpsells(!showUpsells)}
+                  className="w-full flex items-center justify-between p-3 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+                >
+                  <span className="font-semibold text-gray-800">Complete Your Meal</span>
+                  <span className="text-green-600">{showUpsells ? '▲' : '▼'}</span>
+                </button>
+              </div>
+
+              {/* Upsells Section */}
               {showUpsells && (
-                <div className="space-y-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
-                  {/* Fries Selection */}
+                <div className="mb-6 p-4 bg-gray-50 rounded-lg space-y-4">
+                  {/* Fries Options */}
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                      <FaTruck className="text-amber-600" />
-                      Add Fries
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
+                    <h4 className="font-medium text-gray-700 mb-2 flex items-center gap-2">
+                      <FaTruck className="text-green-600" /> Add Fries
+                    </h4>
+                    <div className="space-y-2">
                       {friesUpsellOptions.map((fries) => (
-                        <button
-                          key={fries.id}
-                          onClick={() => setSelectedFries(selectedFries?.id === fries.id ? null : fries)}
-                          className={`px-3 py-2 rounded-lg border text-sm transition ${
-                            selectedFries?.id === fries.id
-                              ? 'border-amber-500 bg-amber-100 text-amber-700'
-                              : 'border-gray-300 hover:border-amber-300'
-                          }`}
-                        >
-                          {fries.name} <span className="text-green-600">+R{fries.price}</span>
-                        </button>
+                        <label key={fries.id} className="flex items-center justify-between p-2 bg-white rounded-lg cursor-pointer">
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="radio"
+                              name="fries"
+                              checked={selectedFries?.id === fries.id}
+                              onChange={() => setSelectedFries(fries)}
+                              className="w-4 h-4 text-green-600"
+                            />
+                            <span>{fries.name}</span>
+                          </div>
+                          <span className="text-green-600 font-medium">+R{fries.price}</span>
+                        </label>
                       ))}
                     </div>
-                    {selectedFries && (
-                      <p className="text-xs text-green-600 mt-2">✓ {selectedFries.name} added</p>
-                    )}
                   </div>
 
-                  {/* Juice Selection */}
+                  {/* Juice/Drink Options */}
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                      <FaCocktail className="text-amber-600" />
-                      Add Juice
-                    </h3>
-                    
-                    {/* Juice Size Selector */}
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {juiceUpsellOptions.map((size) => (
-                        <button
-                          key={size.size}
-                          onClick={() => setSelectedJuiceSize(size.size)}
-                          className={`px-3 py-1 rounded-lg text-sm transition ${
-                            selectedJuiceSize === size.size
-                              ? 'bg-green-600 text-white'
-                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                          }`}
-                        >
-                          {size.size}
-                        </button>
-                      ))}
+                    <h4 className="font-medium text-gray-700 mb-2 flex items-center gap-2">
+                      <FaCocktail className="text-green-600" /> Add a Drink
+                    </h4>
+                    <div className="mb-2">
+                      <select
+                        value={selectedJuiceSize}
+                        onChange={(e) => setSelectedJuiceSize(e.target.value)}
+                        className="p-2 border border-gray-300 rounded-lg text-sm"
+                      >
+                        {juiceUpsellOptions.map((group) => (
+                          <option key={group.size} value={group.size}>{group.size}</option>
+                        ))}
+                      </select>
                     </div>
-                    
-                    {/* Juice Options for Selected Size */}
-                    <div className="flex flex-wrap gap-2">
-                      {getJuiceOptionsForSize().map((juice) => (
-                        <button
-                          key={juice.id}
-                          onClick={() => setSelectedJuice(selectedJuice?.id === juice.id ? null : juice)}
-                          className={`px-3 py-2 rounded-lg border text-sm transition ${
-                            selectedJuice?.id === juice.id
-                              ? 'border-amber-500 bg-amber-100 text-amber-700'
-                              : 'border-gray-300 hover:border-amber-300'
-                          }`}
-                        >
-                          {juice.name} <span className="text-green-600">+R{juice.price}</span>
-                        </button>
-                      ))}
+                    <div className="space-y-2">
+                      {juiceUpsellOptions
+                        .find(g => g.size === selectedJuiceSize)
+                        ?.options.map((juice) => (
+                          <label key={juice.id} className="flex items-center justify-between p-2 bg-white rounded-lg cursor-pointer">
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="radio"
+                                name="juice"
+                                checked={selectedJuice?.id === juice.id}
+                                onChange={() => setSelectedJuice(juice)}
+                                className="w-4 h-4 text-green-600"
+                              />
+                              <span>{juice.name}</span>
+                            </div>
+                            <span className="text-green-600 font-medium">+R{juice.price}</span>
+                          </label>
+                        ))}
                     </div>
-                    {selectedJuice && (
-                      <p className="text-xs text-green-600 mt-2">✓ {selectedJuice.name} ({selectedJuiceSize}) added</p>
-                    )}
                   </div>
                 </div>
               )}
-            </div>
 
-            {/* Special Instructions */}
-            <div className="mb-6">
-              <h3 className="font-semibold text-gray-900 mb-2">Special Instructions</h3>
-              <textarea
-                value={specialInstructions}
-                onChange={(e) => setSpecialInstructions(e.target.value)}
-                placeholder="Any special requests or dietary requirements?"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                rows={2}
-              />
-            </div>
+              {/* Special Instructions */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Special Instructions (Optional)
+                </label>
+                <textarea
+                  value={specialInstructions}
+                  onChange={(e) => setSpecialInstructions(e.target.value)}
+                  placeholder="e.g., no cheese, extra bread, etc."
+                  rows={2}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+              </div>
 
-            {/* Quantity */}
-            <div className="mb-6">
-              <h3 className="font-semibold text-gray-900 mb-2">Quantity</h3>
-              <div className="flex items-center gap-3">
+              {/* Quantity and Add to Cart */}
+              <div className="border-t pt-4">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="font-semibold text-gray-700">Quantity:</span>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="w-8 h-8 bg-gray-200 rounded-full hover:bg-gray-300 transition flex items-center justify-center"
+                    >
+                      <FaMinus size={12} />
+                    </button>
+                    <span className="text-lg font-semibold w-8 text-center">{quantity}</span>
+                    <button
+                      onClick={() => setQuantity(quantity + 1)}
+                      className="w-8 h-8 bg-gray-200 rounded-full hover:bg-gray-300 transition flex items-center justify-center"
+                    >
+                      <FaPlus size={12} />
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-center mb-4">
+                  <span className="font-semibold text-gray-700">Total:</span>
+                  <span className="text-2xl font-bold text-green-600">R{total.toFixed(2)}</span>
+                </div>
+                
                 <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
+                  onClick={handleAddToCart}
+                  className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold"
                 >
-                  <FaMinus />
-                </button>
-                <span className="text-xl font-medium w-12 text-center">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
-                >
-                  <FaPlus />
+                  Add to Cart
                 </button>
               </div>
-            </div>
-
-            {/* Total and Add to Cart */}
-            <div className="border-t pt-6">
-              <div className="mb-4">
-                <div className="flex justify-between items-center text-gray-600 mb-2">
-                  <span>Base Price:</span>
-                  <span>R{soupItem.price}</span>
-                </div>
-                {selectedAddOns.length > 0 && (
-                  <div className="flex justify-between items-center text-gray-600 mb-2">
-                    <span>Add-ons:</span>
-                    <span>+R{selectedAddOns.reduce((sum, addOn) => sum + (addOn.price * addOn.quantity), 0)}</span>
-                  </div>
-                )}
-                {selectedFries && (
-                  <div className="flex justify-between items-center text-gray-600 mb-2">
-                    <span>Fries:</span>
-                    <span>+R{selectedFries.price}</span>
-                  </div>
-                )}
-                {selectedJuice && (
-                  <div className="flex justify-between items-center text-gray-600 mb-2">
-                    <span>Juice:</span>
-                    <span>+R{selectedJuice.price}</span>
-                  </div>
-                )}
-                <div className="flex justify-between items-center text-gray-600 pt-2 border-t">
-                  <span className="font-semibold">Subtotal ({quantity} item{quantity > 1 ? 's' : ''}):</span>
-                  <span className="font-semibold">R{calculateTotal().toFixed(2)}</span>
-                </div>
-              </div>
-              <button
-                onClick={handleAddToCart}
-                className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-medium"
-              >
-                Add to Cart - R{calculateTotal().toFixed(2)}
-              </button>
             </div>
           </div>
         </div>

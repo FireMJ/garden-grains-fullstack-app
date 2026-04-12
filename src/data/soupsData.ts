@@ -8,7 +8,6 @@ export interface FriesUpsell {
   id: string;
   name: string;
   price: number;
-  optional?: boolean;
 }
 
 export interface JuiceOption {
@@ -38,8 +37,8 @@ export interface SoupItem {
 
 // Fries upsell options
 export const friesUpsellOptions: FriesUpsell[] = [
-  { id: "fries1", name: "Skinny French Fries", price: 25 },
-  { id: "fries2", name: "Sweet Potato Fries", price: 25 },
+  { id: "fries1", name: "Skinny French Fries", price: 45 },
+  { id: "fries2", name: "Sweet Potato Fries", price: 59 },
 ];
 
 // Juice upsell options
@@ -92,9 +91,9 @@ export const soupAddOns: AddOn[] = [
 export const soups: SoupItem[] = [
   {
     id: "soup-1",
-    slug: "creamy-broccoli-soup",
-    name: "Creamy Broccoli Soup",
-    description: "Fresh broccoli florets, onion, potato, stock, cheddar, mustard. A rich and creamy classic.",
+    slug: "creamy-broccoli-cauliflower-soup",
+    name: "Creamy Broccoli & Cauliflower Soup",
+    description: "Broccoli, cauliflower, onion, garlic, dried thyme, olive oil, chicken stock, topped with blue cheese, fresh cream & olive oil.",
     price: 85,
     image: "/images/soups/broccoli-cauliflower.jpg",
     tags: ["popular", "creamy", "vegetarian"],
@@ -107,10 +106,10 @@ export const soups: SoupItem[] = [
     id: "soup-2",
     slug: "creamy-butternut-soup",
     name: "Creamy Butternut Soup",
-    description: "Roasted butternut, onion, garlic, carrot, apple, vegetable stock, cinnamon, nutmeg, smoked paprika, topped with parmesan, fresh cream & roasted pumpkin seeds",
+    description: "Roasted butternut, onion, garlic, carrot, apple, vegetable stock, cinnamon, nutmeg, smoked paprika, topped with parmesan, fresh cream & roasted pumpkin seeds.",
     price: 85,
     image: "/images/soups/butternut.jpg",
-    tags: ["popular", "creamy", "vegetarian", "winter-warmer"],
+    tags: ["popular", "creamy", "vegetarian"],
     popular: true,
     addOns: soupAddOns,
     friesUpsell: friesUpsellOptions,
@@ -120,10 +119,11 @@ export const soups: SoupItem[] = [
     id: "soup-3",
     slug: "pea-bacon-soup",
     name: "Pea & Bacon Soup",
-    description: "Fresh peas, chopped bacon, garlic, chicken stock, topped with fresh cream & parmesan cheese. A hearty and flavorful combination.",
+    description: "Peas, chopped bacon, garlic, chicken stock, topped with fresh cream & parmesan cheese.",
     price: 95,
     image: "/images/soups/pea-bacon.jpg",
     tags: ["popular", "hearty", "protein-rich"],
+    popular: true,
     addOns: soupAddOns,
     friesUpsell: friesUpsellOptions,
     juiceUpsell: juiceUpsellOptions,
@@ -132,39 +132,15 @@ export const soups: SoupItem[] = [
     id: "soup-4",
     slug: "spiced-sweet-potato-soup",
     name: "Spiced Sweet Potato Soup",
-    description: "Roasted sweet potatoes, carrot, onion, garlic, ginger, orange juice, vegetable broth, ground coriander, ground cumin, smoked paprika, coconut milk, cinnamon. A warming blend of spices.",
+    description: "Roasted sweet potatoes, carrot, onion, garlic, ginger, orange juice, vegetable broth, ground coriander, ground cumin, smoked paprika, coconut milk, cinnamon.",
     price: 90,
     image: "/images/soups/sweet-potato.jpg",
-    tags: ["vegetarian", "spicy", "healthy", "vegan-friendly"],
-    addOns: soupAddOns,
-    friesUpsell: friesUpsellOptions,
-    juiceUpsell: juiceUpsellOptions,
-  },
-  {
-    id: "soup-5",
-    slug: "tomato-basil-soup",
-    name: "Tomato & Basil Soup",
-    description: "Ripe tomatoes, fresh basil, garlic, onion, vegetable stock, touch of cream. A timeless classic.",
-    price: 80,
-    image: "/images/soups/tomato-basil.jpg",
-    tags: ["vegetarian", "classic", "popular"],
-    addOns: soupAddOns,
-    friesUpsell: friesUpsellOptions,
-    juiceUpsell: juiceUpsellOptions,
-  },
-  {
-    id: "soup-6",
-    slug: "chicken-noodle-soup",
-    name: "Chicken Noodle Soup",
-    description: "Tender chicken, egg noodles, carrots, celery, onion, garlic, fresh herbs, chicken broth. Comfort in a bowl.",
-    price: 95,
-    image: "/images/soups/chicken-noodle.jpg",
-    tags: ["popular", "hearty", "protein-rich", "comfort-food"],
+    tags: ["vegetarian", "spicy", "healthy"],
+    popular: false,
     addOns: soupAddOns,
     friesUpsell: friesUpsellOptions,
     juiceUpsell: juiceUpsellOptions,
   },
 ];
 
-// Export as allSoups for compatibility
 export const allSoups = soups;
