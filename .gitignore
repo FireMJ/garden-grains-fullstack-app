@@ -70,7 +70,6 @@ nul
 serviceAccountKey.json
 
 # Package manager files
-package-lock.json
 
 # Build artifacts
 .next/
