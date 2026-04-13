@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { loadGoogleMaps, geocodeAddress } from '@/lib/googleMaps';
-import { FaMapMarkerAlt, FaSpinner, FaCrosshairs, FaSearch } from 'react-icons/fa';
+import { loadGoogleMaps } from '@/lib/googleMaps';
+import { getCurrentLocation as getCurrentLocationService } from '@/lib/locationService';
+import { FaMapMarkerAlt, FaSpinner, FaCrosshairs, FaSearch, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
 
 interface AddressAutocompleteProps {
   onAddressSelect: (address: {
@@ -29,6 +30,8 @@ export default function AddressAutocomplete({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [locationStatus, setLocationStatus] = useState<'idle' | 'acquiring' | 'success' | 'error'>('idle');
+  const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
   const autocompleteServiceRef = useRef<any>(null);
   const geocoderRef = useRef<any>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -94,102 +97,86 @@ export default function AddressAutocomplete({
     return () => clearTimeout(debounceTimer);
   }, [inputValue]);
 
-  // Get current location
-  const getCurrentLocation = () => {
+  // Get current location with high accuracy GPS
+  const handleGetCurrentLocation = async () => {
     setIsGettingLocation(true);
     setLocationError(null);
-    setInputValue("Getting your location...");
+    setLocationStatus('acquiring');
+    setLocationAccuracy(null);
+    setInputValue("Acquiring GPS signal...");
 
-    if (!navigator.geolocation) {
-      setLocationError("Geolocation is not supported by your browser");
-      setIsGettingLocation(false);
-      setInputValue("");
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        
-        try {
-          if (geocoderRef.current) {
-            const latLng = { lat: latitude, lng: longitude };
-            // Don't use componentRestrictions with location-based geocoding
-            geocoderRef.current.geocode(
-              { location: latLng },
-              (results: any[], status: string) => {
-                if (status === 'OK' && results && results[0]) {
-                  const address = results[0];
-                  const formattedAddress = address.formatted_address;
-                  
-                  setInputValue(formattedAddress);
-                  
-                  // Extract address components
-                  let street = '';
-                  let city = '';
-                  let postalCode = '';
-                  
-                  address.address_components.forEach((component: any) => {
-                    if (component.types.includes('street_number')) {
-                      street = component.long_name + ' ' + street;
-                    }
-                    if (component.types.includes('route')) {
-                      street = street + component.long_name;
-                    }
-                    if (component.types.includes('locality')) {
-                      city = component.long_name;
-                    }
-                    if (component.types.includes('postal_code')) {
-                      postalCode = component.long_name;
-                    }
-                  });
-                  
-                  onAddressSelect({
-                    street: street.trim(),
-                    city: city,
-                    postalCode: postalCode,
-                    formattedAddress: formattedAddress,
-                    coordinates: { lat: latitude, lng: longitude },
-                  });
-                } else {
-                  setLocationError("Could not get address from your location");
+    const result = await getCurrentLocationService();
+    
+    if (result.success && result.coordinates) {
+      setLocationStatus('success');
+      setLocationAccuracy(result.accuracy || null);
+      
+      // Format the display address
+      let displayAddress = result.address || `${result.coordinates.lat.toFixed(4)}, ${result.coordinates.lng.toFixed(4)}`;
+      setInputValue(displayAddress);
+      
+      // Extract address components
+      let street = '';
+      let city = '';
+      let postalCode = '';
+      let formattedAddress = displayAddress;
+      
+      if (result.address && geocoderRef.current) {
+        geocoderRef.current.geocode(
+          { location: result.coordinates },
+          (results: any[], status: string) => {
+            if (status === 'OK' && results && results[0]) {
+              const address = results[0];
+              formattedAddress = address.formatted_address;
+              
+              address.address_components.forEach((component: any) => {
+                if (component.types.includes('street_number')) {
+                  street = component.long_name + ' ' + street;
                 }
-                setIsGettingLocation(false);
-              }
-            );
+                if (component.types.includes('route')) {
+                  street = street + component.long_name;
+                }
+                if (component.types.includes('locality')) {
+                  city = component.long_name;
+                }
+                if (component.types.includes('postal_code')) {
+                  postalCode = component.long_name;
+                }
+              });
+            }
+            
+            onAddressSelect({
+              street: street.trim() || displayAddress.split(',')[0],
+              city: city,
+              postalCode: postalCode,
+              formattedAddress: formattedAddress,
+              coordinates: result.coordinates!,
+            });
           }
-        } catch (error) {
-          console.error('Error reverse geocoding:', error);
-          setLocationError("Could not get address from location");
-          setIsGettingLocation(false);
-          setInputValue("");
-        }
-      },
-      (error) => {
-        console.error('Geolocation error:', error);
-        let errorMessage = "Unable to get your location";
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = "Please allow location access to use this feature";
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = "Location information is unavailable";
-            break;
-          case error.TIMEOUT:
-            errorMessage = "Location request timed out";
-            break;
-        }
-        setLocationError(errorMessage);
-        setIsGettingLocation(false);
-        setInputValue("");
-        setTimeout(() => setLocationError(null), 3000);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
+        );
+      } else {
+        onAddressSelect({
+          street: displayAddress.split(',')[0],
+          city: '',
+          postalCode: '',
+          formattedAddress: displayAddress,
+          coordinates: result.coordinates,
+        });
       }
-    );
+      
+      // Clear success status after 3 seconds
+      setTimeout(() => setLocationStatus('idle'), 3000);
+    } else {
+      setLocationStatus('error');
+      setLocationError(result.error || "Could not get your location");
+      setInputValue("");
+      setTimeout(() => {
+        setLocationStatus('idle');
+        setLocationError(null);
+      }, 5000);
+    }
+    
+    setIsGettingLocation(false);
   };
 
   const handleSelectSuggestion = async (suggestion: { description: string; placeId: string }) => {
@@ -199,7 +186,6 @@ export default function AddressAutocomplete({
 
     try {
       if (geocoderRef.current) {
-        // Use placeId only, without componentRestrictions
         geocoderRef.current.geocode(
           { placeId: suggestion.placeId },
           (results: any[], status: string) => {
@@ -247,6 +233,39 @@ export default function AddressAutocomplete({
     }
   };
 
+  const getLocationButtonContent = () => {
+    if (locationStatus === 'acquiring') {
+      return (
+        <>
+          <FaSpinner className="w-4 h-4 animate-spin" />
+          <span className="hidden sm:inline text-sm">Acquiring GPS...</span>
+        </>
+      );
+    }
+    if (locationStatus === 'success') {
+      return (
+        <>
+          <FaCheckCircle className="w-4 h-4 text-green-600" />
+          <span className="hidden sm:inline text-sm">GPS Located!</span>
+        </>
+      );
+    }
+    if (locationStatus === 'error') {
+      return (
+        <>
+          <FaExclamationTriangle className="w-4 h-4 text-red-600" />
+          <span className="hidden sm:inline text-sm">Retry</span>
+        </>
+      );
+    }
+    return (
+      <>
+        <FaCrosshairs className="w-4 h-4" />
+        <span className="hidden sm:inline text-sm">My Location</span>
+      </>
+    );
+  };
+
   return (
     <div ref={wrapperRef} className="relative">
       <div className="relative flex gap-2">
@@ -259,6 +278,7 @@ export default function AddressAutocomplete({
               setInputValue(e.target.value);
               setShowSuggestions(true);
               setLocationError(null);
+              setLocationStatus('idle');
             }}
             onFocus={() => setShowSuggestions(true)}
             placeholder={placeholder}
@@ -269,22 +289,39 @@ export default function AddressAutocomplete({
           )}
         </div>
         
-        {/* My Location Button */}
+        {/* My Location Button with Enhanced UI */}
         <button
-          onClick={getCurrentLocation}
+          onClick={handleGetCurrentLocation}
           disabled={isGettingLocation}
-          className="px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition flex items-center gap-2 disabled:opacity-50"
-          title="Use my current location"
+          className={`px-4 py-3 rounded-lg transition flex items-center gap-2 disabled:opacity-50 whitespace-nowrap ${
+            locationStatus === 'success' 
+              ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+              : locationStatus === 'error'
+              ? 'bg-red-100 text-red-700 hover:bg-red-200'
+              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+          }`}
+          title="Use my current GPS location for accurate delivery address"
         >
-          <FaCrosshairs className="w-4 h-4 text-green-600" />
-          <span className="hidden sm:inline text-sm">My Location</span>
+          {getLocationButtonContent()}
         </button>
       </div>
       
-      {/* Error Message */}
+      {/* Error Message with Helpful Text */}
       {locationError && (
-        <div className="mt-2 p-2 bg-red-50 text-red-600 text-xs rounded-lg">
-          {locationError}
+        <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-700 text-sm font-medium">Location Error</p>
+          <p className="text-red-600 text-xs mt-1">{locationError}</p>
+          <p className="text-red-500 text-xs mt-2">
+            💡 Tip: For best accuracy, enable GPS and ensure you're in an open area
+          </p>
+        </div>
+      )}
+      
+      {/* Success Feedback with Accuracy */}
+      {locationStatus === 'success' && !locationError && locationAccuracy && (
+        <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg text-green-700 text-xs flex items-center gap-2">
+          <FaCheckCircle className="w-3 h-3" />
+          <span>GPS acquired! Accuracy: {locationAccuracy.toFixed(0)} meters</span>
         </div>
       )}
       
@@ -304,8 +341,9 @@ export default function AddressAutocomplete({
         </div>
       )}
       
+      {/* Help Text */}
       <p className="text-xs text-gray-400 mt-1">
-        Enter a Cape Town address (e.g., "1 Long Street, Cape Town")
+        📍 Use "My Location" for GPS-accurate positioning (best in open areas)
       </p>
     </div>
   );
