@@ -1,5 +1,5 @@
 {
-  "buildCommand": "rm -rf .next node_modules && npm install --legacy-peer-deps && next build",
+  "buildCommand": "next build --webpack",
   "installCommand": "npm install --legacy-peer-deps",
   "framework": "nextjs",
   "env": {
