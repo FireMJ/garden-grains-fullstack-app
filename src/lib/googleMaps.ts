@@ -6,13 +6,12 @@ export const RESTAURANT_COORDS = {
 
 export const RESTAURANT_ADDRESS = "Uitsig Wine Farm, Spaanschemat River Rd, Fir Grove, Cape Town, 7806";
 
-// Delivery configuration
 export const DELIVERY_CONFIG = {
   MAX_DISTANCE_KM: 50,
   BASE_DELIVERY_FEE: 35,
   BASE_DISTANCE_KM: 5,
-  EXTRA_KM_RATE: 5,
-  FREE_DELIVERY_THRESHOLD: 350,
+  EXTRA_KM_RATE: 2.75,
+  FREE_DELIVERY_THRESHOLD: 850,
 };
 
 let googleMapsPromise: Promise<typeof google> | null = null;
@@ -73,6 +72,7 @@ export const loadGoogleMaps = async () => {
   }
 };
 
+// Get driving distance using Distance Matrix API
 export const getDrivingDistance = async (
   origin: google.maps.LatLngLiteral,
   destination: google.maps.LatLngLiteral
@@ -81,7 +81,6 @@ export const getDrivingDistance = async (
     const google = await loadGoogleMaps();
     if (!google) return null;
     
-    // Use Distance Matrix API (more reliable than Routes API)
     const distanceMatrixService = new google.maps.DistanceMatrixService();
     
     return new Promise((resolve) => {
@@ -117,6 +116,7 @@ export const getDrivingDistance = async (
   }
 };
 
+// Get driving distance from user coordinates to restaurant
 export const getDrivingDistanceFromCoords = async (
   userLat: number,
   userLng: number
@@ -132,19 +132,26 @@ export const getDrivingDistanceFromCoords = async (
   }
 };
 
+// Calculate delivery fee based on distance
 export const calculateDeliveryFee = (distanceKm: number, subtotal: number = 0): number => {
+  // Free delivery for orders over threshold
   if (subtotal >= DELIVERY_CONFIG.FREE_DELIVERY_THRESHOLD) {
     return 0;
   }
   
+  // Base fee for first 5km
   if (distanceKm <= DELIVERY_CONFIG.BASE_DISTANCE_KM) {
     return DELIVERY_CONFIG.BASE_DELIVERY_FEE;
   }
   
+  // Calculate extra kilometers beyond base
   const extraKm = Math.ceil(distanceKm - DELIVERY_CONFIG.BASE_DISTANCE_KM);
-  return DELIVERY_CONFIG.BASE_DELIVERY_FEE + (extraKm * DELIVERY_CONFIG.EXTRA_KM_RATE);
+  const extraFee = extraKm * DELIVERY_CONFIG.EXTRA_KM_RATE;
+  
+  return DELIVERY_CONFIG.BASE_DELIVERY_FEE + extraFee;
 };
 
+// Check if delivery is available
 export const isDeliveryAvailable = async (
   userLat: number,
   userLng: number,
@@ -182,6 +189,7 @@ export const isDeliveryAvailable = async (
   }
 };
 
+// Geocode address to coordinates
 export const geocodeAddress = async (address: string): Promise<{ lat: number; lng: number } | null> => {
   try {
     const google = await loadGoogleMaps();
@@ -189,19 +197,30 @@ export const geocodeAddress = async (address: string): Promise<{ lat: number; ln
     
     const geocoder = new google.maps.Geocoder();
     
+    // Add South Africa to the address to bias results
+    const fullAddress = address.toLowerCase().includes('south africa') || address.toLowerCase().includes('za') 
+      ? address 
+      : `${address}, South Africa`;
+    
     return new Promise((resolve) => {
-      geocoder.geocode({ address }, (results, status) => {
-        if (status === 'OK' && results && results[0]) {
-          const location = results[0].geometry.location;
-          resolve({
-            lat: location.lat(),
-            lng: location.lng(),
-          });
-        } else {
-          console.error(`Geocoding failed for "${address}": ${status}`);
-          resolve(null);
+      geocoder.geocode(
+        { 
+          address: fullAddress,
+          componentRestrictions: { country: 'ZA' } // Restrict to South Africa
+        }, 
+        (results, status) => {
+          if (status === 'OK' && results && results[0]) {
+            const location = results[0].geometry.location;
+            resolve({
+              lat: location.lat(),
+              lng: location.lng(),
+            });
+          } else {
+            console.error(`Geocoding failed for "${address}": ${status}`);
+            resolve(null);
+          }
         }
-      });
+      );
     });
   } catch (error) {
     console.error('Geocoding error:', error);
@@ -209,6 +228,7 @@ export const geocodeAddress = async (address: string): Promise<{ lat: number; ln
   }
 };
 
+// Get address suggestions for autocomplete (restricted to South Africa)
 export const getAddressSuggestions = async (input: string): Promise<Array<{ description: string; placeId: string }>> => {
   try {
     const google = await loadGoogleMaps();
@@ -220,7 +240,7 @@ export const getAddressSuggestions = async (input: string): Promise<Array<{ desc
       autocompleteService.getPlacePredictions(
         { 
           input, 
-          componentRestrictions: { country: 'za' },
+          componentRestrictions: { country: 'za' }, // Restrict to South Africa
           types: ['address']
         },
         (predictions, status) => {
