@@ -4,18 +4,16 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
-import { useDeliveryCalculation } from "@/hooks/useDeliveryCalculation";
-import { RESTAURANT_ADDRESS } from "@/lib/googleMaps";
-import { calculateCustomerDeliveryFee, calculateDriverPayment, getDeliveryBreakdown } from "@/lib/deliveryCalculator";
+import { RESTAURANT_ADDRESS, RESTAURANT_COORDS, getDrivingDistance, geocodeAddress } from "@/lib/googleMaps";
+import { calculateCustomerDeliveryFee, calculateDriverPayment, DELIVERY_CONFIG } from "@/lib/deliveryCalculator";
 import Link from "next/link";
-import { MapPin, Truck, Store, AlertCircle, CreditCard, Loader2, CheckCircle } from "lucide-react";
+import { Truck, Store, AlertCircle, CreditCard, Loader2, CheckCircle, MapPin } from "lucide-react";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { cartItems, totalPrice } = useCart();
-  const { deliveryInfo, calculateFromAddress, calculateFromCoordinates, isLoading, error } = useDeliveryCalculation();
 
   const [orderType, setOrderType] = useState<'delivery' | 'pickup'>('delivery');
   const [address, setAddress] = useState('');
@@ -26,7 +24,12 @@ export default function CheckoutPage() {
   const [addressValidated, setAddressValidated] = useState(false);
   const [validatedAddress, setValidatedAddress] = useState<any>(null);
   const [isValidatingAddress, setIsValidatingAddress] = useState(false);
+  const [distance, setDistance] = useState<number | null>(null);
+  const [duration, setDuration] = useState<number | null>(null);
+  const [deliveryFee, setDeliveryFee] = useState(0);
   const [mounted, setMounted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isCalculating, setIsCalculating] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -44,6 +47,14 @@ export default function CheckoutPage() {
     }
   }, [cartItems, router, mounted]);
 
+  // Calculate delivery fee when distance or subtotal changes
+  useEffect(() => {
+    if (distance !== null && orderType === 'delivery') {
+      const fee = calculateCustomerDeliveryFee(distance, totalPrice);
+      setDeliveryFee(fee);
+    }
+  }, [distance, totalPrice, orderType]);
+
   const handleAddressSelect = useCallback(async (selectedAddress: {
     street: string;
     city: string;
@@ -55,30 +66,57 @@ export default function CheckoutPage() {
     setCity(selectedAddress.city);
     setPostalCode(selectedAddress.postalCode);
     setAddressValidated(false);
+    setError(null);
     
     setIsValidatingAddress(true);
-    setPaymentError('');
+    setIsCalculating(true);
     
     try {
-      await calculateFromCoordinates(selectedAddress.coordinates.lat, selectedAddress.coordinates.lng, selectedAddress.formattedAddress);
-      setAddressValidated(true);
-      setValidatedAddress(selectedAddress);
+      console.log('Calculating distance from:', selectedAddress.coordinates);
+      console.log('To restaurant:', RESTAURANT_COORDS);
+      
+      // Calculate driving distance from selected address to restaurant
+      const result = await getDrivingDistance(
+        selectedAddress.coordinates,
+        RESTAURANT_COORDS
+      );
+      
+      if (result && result.distance) {
+        setDistance(result.distance);
+        setDuration(result.duration);
+        setAddressValidated(true);
+        setValidatedAddress(selectedAddress);
+        
+        console.log(`✅ Distance calculated: ${result.distance.toFixed(2)} km`);
+        console.log(`✅ Duration: ${result.duration.toFixed(0)} minutes`);
+        
+        // Check if within delivery radius
+        if (result.distance > DELIVERY_CONFIG.MAX_DISTANCE_KM) {
+          setError(`Location is ${result.distance.toFixed(1)} km away. Maximum delivery distance is ${DELIVERY_CONFIG.MAX_DISTANCE_KM} km. Please consider pickup.`);
+          setAddressValidated(false);
+        }
+      } else {
+        setError('Could not calculate distance to this address. Please try a different address.');
+        setDistance(null);
+      }
     } catch (err) {
-      console.error('Address validation error:', err);
-      setPaymentError('Failed to validate address. Please try again.');
+      console.error('Distance calculation error:', err);
+      setError('Failed to calculate delivery distance. Please try again.');
+      setDistance(null);
     } finally {
       setIsValidatingAddress(false);
+      setIsCalculating(false);
     }
-  }, [calculateFromCoordinates]);
+  }, []);
 
   const handleVodaPayPayment = async () => {
     if (orderType === 'delivery') {
-      if (!addressValidated || !deliveryInfo?.isAvailable) {
+      if (!addressValidated || !distance) {
         setPaymentError('Please validate your delivery address first');
         return;
       }
-      if (!deliveryInfo.isAvailable) {
-        setPaymentError('Delivery not available to this address. Please try pickup.');
+      if (distance > DELIVERY_CONFIG.MAX_DISTANCE_KM) {
+        setPaymentError(`Location is ${distance.toFixed(1)} km away. Maximum delivery distance is ${DELIVERY_CONFIG.MAX_DISTANCE_KM} km. Please try pickup.`);
         return;
       }
     }
@@ -88,7 +126,7 @@ export default function CheckoutPage() {
 
     try {
       const subtotal = totalPrice || 0;
-      const customerDeliveryFee = calculateCustomerDeliveryFee(deliveryInfo?.distance || 0, subtotal);
+      const customerDeliveryFee = orderType === 'delivery' ? calculateCustomerDeliveryFee(distance || 0, subtotal) : 0;
       const total = subtotal + customerDeliveryFee;
 
       const order = {
@@ -96,8 +134,8 @@ export default function CheckoutPage() {
         amount: total,
         subtotal: subtotal,
         customerDeliveryFee: customerDeliveryFee,
-        driverPayment: calculateDriverPayment(deliveryInfo?.distance || 0),
-        distance: deliveryInfo?.distance,
+        driverPayment: orderType === 'delivery' ? calculateDriverPayment(distance || 0) : 0,
+        distance: distance,
         items: cartItems,
         orderType: orderType,
         deliveryAddress: orderType === 'delivery' && validatedAddress ? {
@@ -105,7 +143,7 @@ export default function CheckoutPage() {
           city: city,
           postalCode: postalCode,
           coordinates: validatedAddress.coordinates,
-          distance: deliveryInfo?.distance,
+          distance: distance,
           customerFee: customerDeliveryFee,
         } : null,
         pickupLocation: orderType === 'pickup' ? RESTAURANT_ADDRESS : null,
@@ -148,9 +186,8 @@ export default function CheckoutPage() {
   };
 
   const subtotal = totalPrice || 0;
-  const customerDeliveryFee = calculateCustomerDeliveryFee(deliveryInfo?.distance || 0, subtotal);
-  const total = subtotal + customerDeliveryFee;
-  const isFreeDelivery = subtotal >= 850;
+  const total = subtotal + (orderType === 'delivery' ? deliveryFee : 0);
+  const isFreeDelivery = subtotal >= DELIVERY_CONFIG.FREE_DELIVERY_THRESHOLD;
 
   if (!mounted) {
     return (
@@ -194,7 +231,10 @@ export default function CheckoutPage() {
               
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <button
-                  onClick={() => setOrderType('pickup')}
+                  onClick={() => {
+                    setOrderType('pickup');
+                    setError(null);
+                  }}
                   className={`p-4 border-2 rounded-lg text-center transition ${
                     orderType === 'pickup' 
                       ? 'border-green-500 bg-green-50' 
@@ -203,7 +243,7 @@ export default function CheckoutPage() {
                 >
                   <Store className="w-6 h-6 mx-auto mb-2" />
                   <div className="font-semibold">Pickup</div>
-                  <div className="text-sm text-gray-600">Free</div>
+                  <div className="text-sm text-gray-600">Free • 15-20 min</div>
                 </button>
                 
                 <button
@@ -217,7 +257,7 @@ export default function CheckoutPage() {
                   <Truck className="w-6 h-6 mx-auto mb-2" />
                   <div className="font-semibold">Delivery</div>
                   <div className="text-sm text-gray-600">
-                    {isFreeDelivery ? 'FREE delivery!' : 'From R35'}
+                    {isFreeDelivery ? 'FREE delivery!' : `From R${DELIVERY_CONFIG.BASE_DELIVERY_FEE}`}
                   </div>
                 </button>
               </div>
@@ -234,22 +274,41 @@ export default function CheckoutPage() {
                     className="mb-3"
                   />
                   
-                  {isValidatingAddress && (
+                  {(isValidatingAddress || isCalculating) && (
                     <div className="mt-2 p-3 bg-blue-50 rounded-lg flex items-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                      <span className="text-sm text-blue-600">Validating address...</span>
+                      <span className="text-sm text-blue-600">Calculating distance...</span>
                     </div>
                   )}
                   
-                  {addressValidated && deliveryInfo?.isAvailable && (
+                  {addressValidated && distance !== null && (
                     <div className="mt-3 p-4 bg-green-50 rounded-lg">
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                        <div className="text-sm text-green-800">
-                          <p className="font-medium">Delivery Available!</p>
-                          <p>{deliveryInfo.distance?.toFixed(1)} km away</p>
-                          {deliveryInfo.duration && (
-                            <p className="text-xs mt-1">Est. delivery: {Math.ceil(deliveryInfo.duration)} minutes</p>
+                        <div className="flex-1">
+                          <p className="font-medium text-green-800">Delivery Available!</p>
+                          <div className="flex flex-wrap justify-between items-center mt-2 gap-4">
+                            <div>
+                              <p className="text-sm text-gray-600">Distance from restaurant</p>
+                              <p className="text-xl font-bold text-[#2F5D50]">{distance.toFixed(1)} km</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm text-gray-600">Delivery Fee</p>
+                              <p className="text-xl font-bold text-[#2F5D50]">
+                                {isFreeDelivery ? 'FREE' : `R${deliveryFee.toFixed(2)}`}
+                              </p>
+                            </div>
+                          </div>
+                          {duration && (
+                            <p className="text-xs text-gray-500 mt-2">
+                              ⏱️ Estimated delivery time: {Math.ceil(duration)} minutes
+                            </p>
+                          )}
+                          {!isFreeDelivery && distance > DELIVERY_CONFIG.BASE_DISTANCE_KM && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              * R{DELIVERY_CONFIG.BASE_DELIVERY_FEE} for first {DELIVERY_CONFIG.BASE_DISTANCE_KM}km + 
+                              R{Math.ceil(distance - DELIVERY_CONFIG.BASE_DISTANCE_KM)}km × R{DELIVERY_CONFIG.EXTRA_KM_RATE}
+                            </p>
                           )}
                         </div>
                       </div>
@@ -272,6 +331,7 @@ export default function CheckoutPage() {
                     <div>
                       <h3 className="font-semibold text-green-900 mb-1">Pickup Location</h3>
                       <p className="text-sm text-green-800 whitespace-pre-line">{RESTAURANT_ADDRESS}</p>
+                      <p className="text-xs text-green-700 mt-2">⏱️ Your order will be ready in 15-20 minutes</p>
                     </div>
                   </div>
                 </div>
@@ -286,7 +346,7 @@ export default function CheckoutPage() {
 
             <button
               onClick={handleVodaPayPayment}
-              disabled={isSubmitting || (orderType === 'delivery' && (!addressValidated || !deliveryInfo?.isAvailable))}
+              disabled={isSubmitting || (orderType === 'delivery' && (!addressValidated || !distance))}
               className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition disabled:opacity-50 font-semibold flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
@@ -298,7 +358,6 @@ export default function CheckoutPage() {
             <p className="text-xs text-gray-500 text-center mt-2">Secure payment powered by VodaPay</p>
           </div>
           
-          {/* Order Summary */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow p-6 sticky top-24">
               <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
@@ -318,24 +377,24 @@ export default function CheckoutPage() {
                   <span>R{subtotal.toFixed(2)}</span>
                 </div>
                 
-                {orderType === 'delivery' && (
+                {orderType === 'delivery' && distance !== null && (
                   <div className="flex justify-between text-gray-600">
                     <span>Delivery Fee</span>
                     <span className={isFreeDelivery ? 'text-green-600 font-medium' : ''}>
-                      {isFreeDelivery ? 'FREE' : `R${customerDeliveryFee.toFixed(2)}`}
+                      {isFreeDelivery ? 'FREE' : `R${deliveryFee.toFixed(2)}`}
                     </span>
                   </div>
                 )}
-                
+
                 {!isFreeDelivery && subtotal > 0 && (
                   <div className="mt-2 p-3 bg-blue-50 rounded-lg">
                     <div className="flex justify-between text-sm text-blue-800 mb-1">
-                      <span>Add R{(850 - subtotal).toFixed(2)} more for FREE delivery</span>
+                      <span>Add R{(DELIVERY_CONFIG.FREE_DELIVERY_THRESHOLD - subtotal).toFixed(2)} more for FREE delivery</span>
                     </div>
                     <div className="w-full bg-blue-200 rounded-full h-2">
                       <div 
                         className="bg-green-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${Math.min(100, (subtotal / 850) * 100)}%` }}
+                        style={{ width: `${Math.min(100, (subtotal / DELIVERY_CONFIG.FREE_DELIVERY_THRESHOLD) * 100)}%` }}
                       />
                     </div>
                   </div>
