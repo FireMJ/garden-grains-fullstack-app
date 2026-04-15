@@ -2,8 +2,8 @@
 const nextConfig = {
   images: {
     unoptimized: true,
-    // Add quality 90 to allowed qualities
-    qualities: [25, 50, 75, 90, 100],
+    // Add all quality values being used
+    qualities: [25, 50, 75, 80, 85, 90, 100],
     remotePatterns: [
       {
         protocol: 'https',
