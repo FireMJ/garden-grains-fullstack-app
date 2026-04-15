@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -6,8 +6,10 @@ import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { useDeliveryCalculation } from "@/hooks/useDeliveryCalculation";
 import { RESTAURANT_ADDRESS } from "@/lib/googleMaps";
+import { calculateCustomerDeliveryFee, calculateDriverPayment, getDeliveryBreakdown } from "@/lib/deliveryCalculator";
 import Link from "next/link";
 import { MapPin, Truck, Store, AlertCircle, CreditCard, Loader2 } from "lucide-react";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -17,8 +19,13 @@ export default function CheckoutPage() {
 
   const [orderType, setOrderType] = useState<'delivery' | 'pickup'>('delivery');
   const [address, setAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [postalCode, setPostalCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentError, setPaymentError] = useState('');
+  const [addressValidated, setAddressValidated] = useState(false);
+  const [validatedAddress, setValidatedAddress] = useState<any>(null);
+  const [isValidatingAddress, setIsValidatingAddress] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -32,16 +39,35 @@ export default function CheckoutPage() {
     }
   }, [cartItems, router]);
 
-  const handleAddressSubmit = async () => {
-    if (address) {
-      await calculateFromAddress(address);
-    }
+  const handleAddressSelect = async (selectedAddress: {
+    street: string;
+    city: string;
+    postalCode: string;
+    formattedAddress: string;
+    coordinates: { lat: number; lng: number };
+  }) => {
+    setAddress(selectedAddress.street);
+    setCity(selectedAddress.city);
+    setPostalCode(selectedAddress.postalCode);
+    setAddressValidated(false);
+    
+    setIsValidatingAddress(true);
+    await calculateFromCoordinates(selectedAddress.coordinates.lat, selectedAddress.coordinates.lng, selectedAddress.formattedAddress);
+    setIsValidatingAddress(false);
+    setAddressValidated(true);
+    setValidatedAddress(selectedAddress);
   };
 
   const handleVodaPayPayment = async () => {
-    if (orderType === 'delivery' && (!deliveryInfo || !deliveryInfo.isAvailable)) {
-      setPaymentError('Please calculate delivery availability first');
-      return;
+    if (orderType === 'delivery') {
+      if (!addressValidated || !deliveryInfo?.isAvailable) {
+        setPaymentError('Please validate your delivery address first');
+        return;
+      }
+      if (!deliveryInfo.isAvailable) {
+        setPaymentError('Delivery not available to this address. Please try pickup.');
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -49,19 +75,34 @@ export default function CheckoutPage() {
 
     try {
       const subtotal = totalPrice || 0;
-      const deliveryFee = orderType === 'delivery' && deliveryInfo?.isAvailable ? deliveryInfo.fee : 0;
-      const total = subtotal + deliveryFee;
+      
+      // Customer pays delivery fee (may be R0 if free delivery)
+      const customerDeliveryFee = calculateCustomerDeliveryFee(deliveryInfo?.distance || 0, subtotal);
+      
+      // Driver gets paid based on distance (always)
+      const driverPayment = calculateDriverPayment(deliveryInfo?.distance || 0);
+      
+      const total = subtotal + customerDeliveryFee;
 
       const order = {
         orderId: `ORDER_${Date.now()}`,
         amount: total,
+        subtotal: subtotal,
+        customerDeliveryFee: customerDeliveryFee,
+        driverPayment: driverPayment,
+        distance: deliveryInfo?.distance,
         items: cartItems,
         orderType: orderType,
-        deliveryAddress: orderType === 'delivery' ? { 
-          address: address,
+        deliveryAddress: orderType === 'delivery' && validatedAddress ? {
+          street: address,
+          city: city,
+          postalCode: postalCode,
+          coordinates: validatedAddress.coordinates,
           distance: deliveryInfo?.distance,
-          fee: deliveryInfo?.fee
+          customerFee: customerDeliveryFee,
+          driverPayment: driverPayment,
         } : null,
+        pickupLocation: orderType === 'pickup' ? RESTAURANT_ADDRESS : null,
         customerEmail: user?.email,
         customerName: user?.displayName,
         timestamp: new Date().toISOString(),
@@ -101,27 +142,15 @@ export default function CheckoutPage() {
   };
 
   const subtotal = totalPrice || 0;
-  const deliveryFee = orderType === 'delivery' && deliveryInfo?.isAvailable ? deliveryInfo.fee : 0;
-  const total = subtotal + deliveryFee;
+  const customerDeliveryFee = calculateCustomerDeliveryFee(deliveryInfo?.distance || 0, subtotal);
+  const driverPayment = calculateDriverPayment(deliveryInfo?.distance || 0);
+  const total = subtotal + customerDeliveryFee;
+  const isFreeDelivery = subtotal >= 850;
 
-  if (!user) {
+  if (!user || cartItems.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-        <p className="text-gray-600">Redirecting to login...</p>
-      </div>
-    );
-  }
-
-  if (cartItems.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-12">
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <h1 className="text-2xl font-bold mb-4">Your cart is empty</h1>
-          <Link href="/menu" className="bg-green-600 text-white px-6 py-2 rounded-lg">
-            Browse Menu
-          </Link>
-        </div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
       </div>
     );
   }
@@ -160,7 +189,9 @@ export default function CheckoutPage() {
                 >
                   <Truck className="w-6 h-6 mx-auto mb-2" />
                   <div className="font-semibold">Delivery</div>
-                  <div className="text-sm text-gray-600">From R35</div>
+                  <div className="text-sm text-gray-600">
+                    {isFreeDelivery ? 'FREE delivery!' : 'From R35'}
+                  </div>
                 </button>
               </div>
               
@@ -169,25 +200,33 @@ export default function CheckoutPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Delivery Address
                   </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      placeholder="Enter your address"
-                      className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                    />
-                    <button
-                      onClick={handleAddressSubmit}
-                      disabled={isLoading || !address}
-                      className="px-6 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-                    >
-                      Calculate
-                    </button>
-                  </div>
                   
-                  {isLoading && (
-                    <p className="text-sm text-gray-500 mt-2">Calculating delivery...</p>
+                  <AddressAutocomplete
+                    onAddressSelect={handleAddressSelect}
+                    placeholder="Start typing your address..."
+                    className="mb-3"
+                  />
+                  
+                  {isValidatingAddress && (
+                    <div className="mt-2 p-3 bg-blue-50 rounded-lg flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                      <span className="text-sm text-blue-600">Validating address...</span>
+                    </div>
+                  )}
+                  
+                  {addressValidated && deliveryInfo?.isAvailable && (
+                    <div className="mt-3 p-4 bg-green-50 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                        <div className="text-sm text-green-800">
+                          <p className="font-medium">Delivery Available!</p>
+                          <p>{deliveryInfo.distance?.toFixed(1)} km away</p>
+                          {deliveryInfo.duration && (
+                            <p className="text-xs mt-1">Est. delivery: {Math.ceil(deliveryInfo.duration)} minutes</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   )}
                   
                   {error && (
@@ -196,32 +235,18 @@ export default function CheckoutPage() {
                       <span className="text-sm">{error}</span>
                     </div>
                   )}
-                  
-                  {deliveryInfo && !error && (
-                    <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                      <p className="text-sm">
-                        <strong>Distance:</strong> {deliveryInfo.distance?.toFixed(1)} km
-                      </p>
-                      <p className="text-sm mt-1">
-                        <strong>Delivery Fee:</strong> R{deliveryInfo.fee.toFixed(2)}
-                      </p>
-                      {deliveryInfo.duration && (
-                        <p className="text-sm mt-1">
-                          <strong>Estimated Time:</strong> {Math.ceil(deliveryInfo.duration)} minutes
-                        </p>
-                      )}
-                    </div>
-                  )}
                 </div>
               )}
               
               {orderType === 'pickup' && (
                 <div className="p-4 bg-green-50 rounded-lg">
-                  <h3 className="font-semibold mb-2">Pickup Location</h3>
-                  <p className="text-sm text-gray-600">{RESTAURANT_ADDRESS}</p>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Your order will be ready in 15-20 minutes
-                  </p>
+                  <div className="flex items-start gap-3">
+                    <Store className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h3 className="font-semibold text-green-900 mb-1">Pickup Location</h3>
+                      <p className="text-sm text-green-800 whitespace-pre-line">{RESTAURANT_ADDRESS}</p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -234,26 +259,19 @@ export default function CheckoutPage() {
 
             <button
               onClick={handleVodaPayPayment}
-              disabled={isSubmitting || (orderType === 'delivery' && (!deliveryInfo || !deliveryInfo.isAvailable))}
+              disabled={isSubmitting || (orderType === 'delivery' && (!addressValidated || !deliveryInfo?.isAvailable))}
               className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition disabled:opacity-50 font-semibold flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Processing...
-                </>
+                <><Loader2 className="w-5 h-5 animate-spin" /> Processing...</>
               ) : (
-                <>
-                  <CreditCard className="w-5 h-5" />
-                  Pay R{total.toFixed(2)} with VodaPay
-                </>
+                <><CreditCard className="w-5 h-5" /> Pay R{total.toFixed(2)} with VodaPay</>
               )}
             </button>
-            <p className="text-xs text-gray-500 text-center mt-2">
-              Secure payment powered by VodaPay
-            </p>
+            <p className="text-xs text-gray-500 text-center mt-2">Secure payment powered by VodaPay</p>
           </div>
           
+          {/* Order Summary */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow p-6 sticky top-24">
               <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
@@ -272,21 +290,47 @@ export default function CheckoutPage() {
                   <span>Subtotal</span>
                   <span>R{subtotal.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Delivery Fee</span>
-                  <span>{deliveryFee > 0 ? `R${deliveryFee.toFixed(2)}` : 'FREE'}</span>
-                </div>
+                
+                {orderType === 'delivery' && (
+                  <div className="flex justify-between text-gray-600">
+                    <span>Delivery Fee</span>
+                    <span className={isFreeDelivery ? 'text-green-600 font-medium' : ''}>
+                      {isFreeDelivery ? 'FREE' : `R${customerDeliveryFee.toFixed(2)}`}
+                    </span>
+                  </div>
+                )}
+                
+                {orderType === 'delivery' && !isFreeDelivery && deliveryInfo?.distance && (
+                  <div className="text-xs text-gray-500 text-right">
+                    (R35 base + R{Math.ceil(Math.max(0, deliveryInfo.distance - 5))}km × R2.75)
+                  </div>
+                )}
+                
+                {orderType === 'delivery' && isFreeDelivery && deliveryInfo?.distance && (
+                  <div className="text-xs text-gray-500 text-right">
+                    🎉 Free delivery! (Driver still earns R{driverPayment.toFixed(2)})
+                  </div>
+                )}
+
+                {!isFreeDelivery && subtotal > 0 && (
+                  <div className="mt-2 p-3 bg-blue-50 rounded-lg">
+                    <div className="flex justify-between text-sm text-blue-800 mb-1">
+                      <span>Add R{(850 - subtotal).toFixed(2)} more for FREE delivery</span>
+                    </div>
+                    <div className="w-full bg-blue-200 rounded-full h-2">
+                      <div 
+                        className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${Math.min(100, (subtotal / 850) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+                
                 <div className="flex justify-between text-lg font-bold text-gray-900 border-t pt-3">
                   <span>Total</span>
                   <span>R{total.toFixed(2)}</span>
                 </div>
               </div>
-
-              {orderType === 'delivery' && deliveryInfo?.distance && (
-                <div className="mt-4 pt-3 border-t text-xs text-gray-500">
-                  <p>📍 Delivery distance: {deliveryInfo.distance.toFixed(1)} km</p>
-                </div>
-              )}
             </div>
           </div>
         </div>

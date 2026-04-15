@@ -3,10 +3,13 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { FaCheckCircle } from 'react-icons/fa';
+import { orderService } from '@/services/orderService';
+import { useAuth } from '@/context/AuthContext';
 
 function ReturnContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { user } = useAuth();
   const [countdown, setCountdown] = useState(3);
   const status = searchParams.get('status');
   const transactionId = searchParams.get('transactionId');
@@ -16,19 +19,21 @@ function ReturnContent() {
       if (status === 'SUCCESS') {
         const pendingOrderStr = sessionStorage.getItem('pendingOrder');
         
-        if (pendingOrderStr) {
+        if (pendingOrderStr && user) {
           try {
             const pendingOrder = JSON.parse(pendingOrderStr);
             
-            // Use the orderId from pending order
             const orderId = pendingOrder.orderId;
             
-            // Create order object
             const newOrder = {
               orderId: orderId,
               orderNumber: `GN-${Date.now().toString().slice(-8)}`,
               transactionId: transactionId,
               amount: pendingOrder.amount,
+              subtotal: pendingOrder.subtotal,
+              customerDeliveryFee: pendingOrder.customerDeliveryFee,
+              driverPayment: pendingOrder.driverPayment,
+              distance: pendingOrder.distance,
               items: pendingOrder.items,
               orderType: pendingOrder.orderType,
               deliveryAddress: pendingOrder.deliveryAddress,
@@ -41,7 +46,11 @@ function ReturnContent() {
               customerName: pendingOrder.customerName,
             };
             
-            console.log('Saving order:', newOrder);
+            console.log('Order saved:', {
+              customerPaid: newOrder.customerDeliveryFee,
+              driverEarns: newOrder.driverPayment,
+              distance: newOrder.distance,
+            });
             
             // Save to localStorage
             const existingOrdersStr = localStorage.getItem('orders');
@@ -49,7 +58,6 @@ function ReturnContent() {
             existingOrders.unshift(newOrder);
             localStorage.setItem('orders', JSON.stringify(existingOrders));
             
-            // Also save user-specific orders
             if (pendingOrder.customerEmail) {
               const userOrdersStr = localStorage.getItem(`orders_${pendingOrder.customerEmail}`);
               const userOrders = userOrdersStr ? JSON.parse(userOrdersStr) : [];
@@ -57,13 +65,9 @@ function ReturnContent() {
               localStorage.setItem(`orders_${pendingOrder.customerEmail}`, JSON.stringify(userOrders));
             }
             
-            // Clear session storage
             sessionStorage.removeItem('pendingOrder');
             sessionStorage.removeItem('currentTransactionId');
             
-            console.log('Order saved successfully, redirecting to:', `/order-tracking/${orderId}`);
-            
-            // Redirect to order tracking
             setTimeout(() => {
               router.push(`/order-tracking/${orderId}`);
             }, 2000);
@@ -71,14 +75,12 @@ function ReturnContent() {
           } catch (error) {
             console.error('Error saving order:', error);
           }
-        } else {
-          console.error('No pending order found in sessionStorage');
         }
       }
     };
     
     processOrder();
-  }, [status, router, transactionId]);
+  }, [status, router, user, transactionId]);
 
   if (status === 'SUCCESS') {
     return (
@@ -94,7 +96,7 @@ function ReturnContent() {
               <p className="text-sm text-gray-500 mb-6">Transaction ID: {transactionId}</p>
             )}
             <div className="animate-pulse text-gray-500 mb-4">
-              Redirecting to order tracking in {countdown} seconds...
+              Redirecting to order tracking...
             </div>
             <button
               onClick={() => router.push('/orders')}
