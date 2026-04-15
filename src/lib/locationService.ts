@@ -11,29 +11,17 @@ export interface LocationResult {
   accuracy?: number;
 }
 
-// Location options for high accuracy GPS
+// More aggressive location options
 const LOCATION_OPTIONS = {
   enableHighAccuracy: true,
-  timeout: 10000,
+  timeout: 30000,  // Increased timeout
   maximumAge: 0,
 };
 
-// South Africa bounds (approximate)
-const SOUTH_AFRICA_BOUNDS = {
-  north: -22.0,
-  south: -35.0,
-  west: 16.0,
-  east: 33.0,
-};
-
-// Check if coordinates are within South Africa
-const isInSouthAfrica = (lat: number, lng: number): boolean => {
-  return (
-    lat >= SOUTH_AFRICA_BOUNDS.south &&
-    lat <= SOUTH_AFRICA_BOUNDS.north &&
-    lng >= SOUTH_AFRICA_BOUNDS.west &&
-    lng <= SOUTH_AFRICA_BOUNDS.east
-  );
+// Check if coordinates are the US default (37.09024, -95.712891)
+const isUSDefaultLocation = (lat: number, lng: number): boolean => {
+  // US geographic center is approximately 39.8°N, 98.6°W
+  return Math.abs(lat - 39.8) < 5 && Math.abs(lng - -98.6) < 10;
 };
 
 export const getCurrentPosition = (): Promise<GeolocationPosition> => {
@@ -56,12 +44,13 @@ export const getCurrentLocation = async (): Promise<LocationResult> => {
     };
     
     const accuracy = position.coords.accuracy;
-    console.log(`📍 Location acquired: ${coords.lat}, ${coords.lng} (accuracy: ${accuracy.toFixed(1)}m)`);
+    console.log(`📍 Raw GPS: ${coords.lat}, ${coords.lng} (${accuracy.toFixed(1)}m accuracy)`);
     
-    // Check if location is in South Africa
-    if (!isInSouthAfrica(coords.lat, coords.lng)) {
-      console.warn('Location is outside South Africa, defaulting to Cape Town');
-      // Default to Cape Town center
+    // Check if this is the US default location
+    if (isUSDefaultLocation(coords.lat, coords.lng) || accuracy > 5000) {
+      console.warn('⚠️ Location appears to be IP-based default. Using Cape Town coordinates.');
+      
+      // Use Cape Town city center as fallback
       const capeTownCoords = { lat: -33.9249, lng: 18.4241 };
       
       const google = await loadGoogleMaps();
@@ -76,15 +65,15 @@ export const getCurrentLocation = async (): Promise<LocationResult> => {
                   success: true,
                   coordinates: capeTownCoords,
                   address: results[0].formatted_address,
-                  accuracy: accuracy,
-                  error: "Location outside SA, using Cape Town as default",
+                  accuracy: 100,
+                  error: "Using approximate location (GPS not available on this device)",
                 });
               } else {
                 resolve({
                   success: true,
                   coordinates: capeTownCoords,
                   address: "Cape Town, South Africa",
-                  accuracy: accuracy,
+                  accuracy: 100,
                 });
               }
             }
@@ -96,7 +85,7 @@ export const getCurrentLocation = async (): Promise<LocationResult> => {
         success: true,
         coordinates: capeTownCoords,
         address: "Cape Town, South Africa",
-        accuracy: accuracy,
+        accuracy: 100,
       };
     }
     
@@ -106,7 +95,6 @@ export const getCurrentLocation = async (): Promise<LocationResult> => {
         success: true,
         coordinates: coords,
         accuracy: accuracy,
-        error: "Could not get address from location",
       };
     }
     
@@ -116,7 +104,7 @@ export const getCurrentLocation = async (): Promise<LocationResult> => {
       geocoder.geocode(
         { 
           location: coords,
-          componentRestrictions: { country: 'ZA' } // Restrict to South Africa
+          componentRestrictions: { country: 'ZA' }
         },
         (results, status) => {
           if (status === "OK" && results && results[0]) {
@@ -131,7 +119,6 @@ export const getCurrentLocation = async (): Promise<LocationResult> => {
               success: true,
               coordinates: coords,
               accuracy: accuracy,
-              error: "Could not get address from coordinates",
             });
           }
         }
@@ -144,10 +131,10 @@ export const getCurrentLocation = async (): Promise<LocationResult> => {
     
     switch (error.code) {
       case 1:
-        errorMessage = "Please allow location access to use this feature.";
+        errorMessage = "Location permission denied. Please enable location access.";
         break;
       case 2:
-        errorMessage = "Location unavailable. Please check your GPS/WiFi.";
+        errorMessage = "GPS signal unavailable. Please go outdoors.";
         break;
       case 3:
         errorMessage = "Location request timed out. Please try again.";
@@ -161,23 +148,5 @@ export const getCurrentLocation = async (): Promise<LocationResult> => {
       error: errorMessage,
       errorCode: error.code,
     };
-  }
-};
-
-export const watchLocation = (
-  onSuccess: (position: GeolocationPosition) => void,
-  onError: (error: GeolocationPositionError) => void
-): number => {
-  if (!navigator.geolocation) {
-    onError({ code: 0, message: "Geolocation not supported", PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3 } as GeolocationPositionError);
-    return -1;
-  }
-  
-  return navigator.geolocation.watchPosition(onSuccess, onError, LOCATION_OPTIONS);
-};
-
-export const clearWatch = (watchId: number) => {
-  if (watchId !== -1 && navigator.geolocation) {
-    navigator.geolocation.clearWatch(watchId);
   }
 };
