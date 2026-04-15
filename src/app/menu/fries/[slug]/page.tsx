@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useCart } from "@/context/CartContext";
-import Image from "next/image";
-import Link from "next/link";
-import { FaArrowLeft, FaPlus, FaMinus, FaTruck, FaCocktail } from "react-icons/fa";
-import { fries, friesAddOns, juiceUpsellOptions } from "@/data/friesData";
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import Image from 'next/image';
+import Link from 'next/link';
+import { friesData, friesAddOns, friesUpsellOptions, juiceUpsellOptions } from '@/data/friesData';
+import { useCart } from '@/context/CartContext';
+import { FaArrowLeft, FaPlus, FaMinus, FaShoppingCart, FaTruck, FaCocktail } from 'react-icons/fa';
 
 interface FriesItem {
   id: string;
@@ -16,14 +16,10 @@ interface FriesItem {
   price: number;
   image: string;
   tags?: string[];
+  popular?: boolean;
   addOns?: any[];
+  friesUpsell?: any[];
   juiceUpsell?: any[];
-}
-
-interface AddOnItem {
-  name: string;
-  price: number;
-  quantity: number;
 }
 
 interface UpsellItem {
@@ -33,47 +29,31 @@ interface UpsellItem {
   size?: string;
 }
 
-interface PageProps {
-  params: Promise<{ slug: string }>;
-}
-
-export default function FriesDetailPage({ params }: PageProps) {
+export default function FriesDetailPage() {
+  const params = useParams();
   const router = useRouter();
   const { addToCart } = useCart();
-  const [friesItem, setFriesItem] = useState<FriesItem | null>(null);
-  const [selectedDip, setSelectedDip] = useState<AddOnItem | null>(null);
-  const [selectedAddOns, setSelectedAddOns] = useState<AddOnItem[]>([]);
-  const [specialInstructions, setSpecialInstructions] = useState("");
-  const [quantity, setQuantity] = useState(1);
-  const [slug, setSlug] = useState<string>("");
-  const [mounted, setMounted] = useState(false);
+  const slug = params?.slug as string;
   
-  // Upsell states
+  const [friesItem, setFriesItem] = useState<FriesItem | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const [selectedAddOns, setSelectedAddOns] = useState<{ name: string; price: number; quantity: number }[]>([]);
+  const [specialInstructions, setSpecialInstructions] = useState('');
+  const [selectedFries, setSelectedFries] = useState<UpsellItem | null>(null);
   const [selectedJuice, setSelectedJuice] = useState<UpsellItem | null>(null);
   const [selectedJuiceSize, setSelectedJuiceSize] = useState<string>("250ml");
   const [showUpsells, setShowUpsells] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Unwrap params
-  useEffect(() => {
-    const unwrapParams = async () => {
-      const unwrapped = await params;
-      setSlug(unwrapped.slug);
-    };
-    unwrapParams();
-  }, [params]);
-
-  // Load fries data
   useEffect(() => {
     if (!slug) return;
-    
-    const item = fries?.find((f: any) => f.slug === slug);
-    if (item) {
-      setFriesItem(item);
-    }
+    const item = friesData?.find((f: any) => f.slug === slug);
+    if (item) setFriesItem(item);
   }, [slug]);
 
   const handleAddOnToggle = (addOn: { name: string; price: number }) => {
@@ -92,311 +72,165 @@ export default function FriesDetailPage({ params }: PageProps) {
       setSelectedAddOns(prev => prev.filter(a => a.name !== addOnName));
     } else {
       setSelectedAddOns(prev =>
-        prev.map(a =>
-          a.name === addOnName ? { ...a, quantity: newQuantity } : a
-        )
+        prev.map(a => a.name === addOnName ? { ...a, quantity: newQuantity } : a)
       );
     }
   };
 
   const calculateTotal = () => {
     let total = friesItem?.price || 0;
-    
-    if (selectedDip) {
-      total += selectedDip.price;
-    }
-    
-    if (selectedAddOns.length > 0) {
-      total += selectedAddOns.reduce((sum, addOn) => sum + (addOn.price * addOn.quantity), 0);
-    }
-    
-    if (selectedJuice) {
-      total += selectedJuice.price;
-    }
-    
+    selectedAddOns.forEach(addOn => { total += addOn.price * addOn.quantity; });
+    if (selectedFries) total += selectedFries.price;
+    if (selectedJuice) total += selectedJuice.price;
     return total * quantity;
   };
 
   const handleAddToCart = () => {
-    const cartItem = {
-      id: `${friesItem?.id}-${Date.now()}`,
-      name: friesItem?.name || "",
-      price: friesItem?.price || 0,
-      quantity: quantity,
-      image: friesItem?.image || "",
-      category: "fries",
-      description: friesItem?.description || "",
-      dip: selectedDip,
-      addOns: selectedAddOns,
-      specialInstructions: specialInstructions,
-      juiceUpsell: selectedJuice,
-      juiceSize: selectedJuiceSize
-    };
+    if (!friesItem) return;
     
-    console.log("Adding fries to cart:", cartItem);
-    addToCart(cartItem);
-    router.push("/cart");
-  };
-
-  // Get available juice options for selected size
-  const getJuiceOptionsForSize = () => {
-    const juiceSizeGroup = juiceUpsellOptions.find(g => g.size === selectedJuiceSize);
-    return juiceSizeGroup?.options || [];
+    addToCart({
+      id: `${friesItem.id}-${Date.now()}`,
+      name: friesItem.name,
+      price: friesItem.price,
+      quantity: quantity,
+      image: friesItem.image,
+      addOns: selectedAddOns,
+      friesUpsell: selectedFries,
+      juiceUpsell: selectedJuice,
+      specialInstructions: specialInstructions || undefined,
+    });
+    
+    alert(`Added ${quantity} x ${friesItem.name} to cart`);
+    router.push('/cart');
   };
 
   if (!mounted || !friesItem) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading fries details...</p>
-        </div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
       </div>
     );
   }
 
+  const total = calculateTotal();
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <Link href="/menu/fries" className="inline-flex items-center text-gray-600 hover:text-green-600 transition">
-            <FaArrowLeft className="mr-2" />
-            Back to Fries
-          </Link>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="max-w-4xl mx-auto px-4">
+        <Link href="/menu/fries" className="inline-flex items-center gap-2 text-gray-600 hover:text-green-600 mb-6 transition">
+          <FaArrowLeft /> Back to Fries
+        </Link>
 
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Column - Image */}
-          <div>
-            <div className="relative h-96 rounded-2xl overflow-hidden shadow-lg">
-              <Image
-                src={friesItem.image}
-                alt={friesItem.name}
-                fill
-                className="object-cover"
-              />
-            </div>
-          </div>
-
-          {/* Right Column - Details */}
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{friesItem.name}</h1>
-            <p className="text-gray-600 mb-4">{friesItem.description}</p>
-            <div className="text-2xl font-bold text-green-600 mb-6">R{friesItem.price}</div>
-
-            {/* Tags */}
-            {friesItem.tags && friesItem.tags.length > 0 && (
-              <div className="mb-6">
-                <div className="flex flex-wrap gap-2">
-                  {friesItem.tags.map((tag, idx) => (
-                    <span key={idx} className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Dip Selection */}
-            <div className="mb-6">
-              <h3 className="font-semibold text-gray-900 mb-2">Choose Your Dip</h3>
-              <div className="flex flex-wrap gap-2">
-                {friesAddOns?.map((dip) => (
-                  <button
-                    key={dip.id}
-                    onClick={() => {
-                      if (selectedDip?.name === dip.name) {
-                        setSelectedDip(null);
-                      } else {
-                        setSelectedDip({ name: dip.name, price: dip.price, quantity: 1 });
-                      }
-                    }}
-                    className={`px-4 py-2 rounded-lg border transition ${
-                      selectedDip?.name === dip.name
-                        ? 'border-green-500 bg-green-50 text-green-700'
-                        : 'border-gray-300 hover:border-green-300'
-                    }`}
-                  >
-                    {dip.name} <span className="text-green-600">+R{dip.price}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Add-ons */}
-            {friesAddOns && friesAddOns.length > 0 && (
-              <div className="mb-6">
-                <h3 className="font-semibold text-gray-900 mb-2">Add-ons (Optional)</h3>
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {friesAddOns.map((addOn, index) => {
-                    const selected = selectedAddOns.find(a => a.name === addOn.name);
-                    return (
-                      <div key={`addon-${index}-${addOn.name}`} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div>
-                          <p className="font-medium text-gray-900">{addOn.name}</p>
-                          <p className="text-sm text-green-600">+R{addOn.price}</p>
-                        </div>
-                        {selected ? (
-                          <div className="flex items-center gap-3">
-                            <button
-                              onClick={() => updateAddOnQuantity(addOn.name, selected.quantity - 1)}
-                              className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
-                            >
-                              <FaMinus className="text-sm" />
-                            </button>
-                            <span className="w-8 text-center">{selected.quantity}</span>
-                            <button
-                              onClick={() => updateAddOnQuantity(addOn.name, selected.quantity + 1)}
-                              className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
-                            >
-                              <FaPlus className="text-sm" />
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => handleAddOnToggle(addOn)}
-                            className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
-                          >
-                            Add
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Upsells Section - Juice */}
-            <div className="mb-6">
-              <button
-                onClick={() => setShowUpsells(!showUpsells)}
-                className="flex items-center gap-2 text-green-600 font-medium mb-3 hover:text-green-700"
-              >
-                {showUpsells ? '▼' : '▶'} Add a Drink to Complete Your Meal
-              </button>
-              
-              {showUpsells && (
-                <div className="space-y-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
-                  {/* Juice Selection */}
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                      <FaCocktail className="text-amber-600" />
-                      Add Juice
-                    </h3>
-                    
-                    {/* Juice Size Selector */}
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {juiceUpsellOptions.map((size) => (
-                        <button
-                          key={size.size}
-                          onClick={() => setSelectedJuiceSize(size.size)}
-                          className={`px-3 py-1 rounded-lg text-sm transition ${
-                            selectedJuiceSize === size.size
-                              ? 'bg-green-600 text-white'
-                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                          }`}
-                        >
-                          {size.size}
-                        </button>
-                      ))}
-                    </div>
-                    
-                    {/* Juice Options for Selected Size */}
-                    <div className="flex flex-wrap gap-2">
-                      {getJuiceOptionsForSize().map((juice) => (
-                        <button
-                          key={juice.id}
-                          onClick={() => setSelectedJuice(selectedJuice?.id === juice.id ? null : juice)}
-                          className={`px-3 py-2 rounded-lg border text-sm transition ${
-                            selectedJuice?.id === juice.id
-                              ? 'border-amber-500 bg-amber-100 text-amber-700'
-                              : 'border-gray-300 hover:border-amber-300'
-                          }`}
-                        >
-                          {juice.name} <span className="text-green-600">+R{juice.price}</span>
-                        </button>
-                      ))}
-                    </div>
-                    {selectedJuice && (
-                      <p className="text-xs text-green-600 mt-2">✓ {selectedJuice.name} ({selectedJuiceSize}) added</p>
-                    )}
-                  </div>
-                </div>
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="relative h-64 md:h-full min-h-[300px] bg-gray-100">
+              {!imageError ? (
+                <Image
+                  src={friesItem.image}
+                  alt={friesItem.name}
+                  fill
+                  className="object-cover"
+                  onError={() => setImageError(true)}
+                  unoptimized
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-6xl">🍟</div>
               )}
             </div>
 
-            {/* Special Instructions */}
-            <div className="mb-6">
-              <h3 className="font-semibold text-gray-900 mb-2">Special Instructions</h3>
-              <textarea
-                value={specialInstructions}
-                onChange={(e) => setSpecialInstructions(e.target.value)}
-                placeholder="Any special requests or dietary requirements?"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                rows={2}
-              />
-            </div>
+            <div className="p-6">
+              <h1 className="text-3xl font-bold text-gray-900 mb-3">{friesItem.name}</h1>
+              <p className="text-gray-600 mb-4 leading-relaxed">{friesItem.description}</p>
+              <p className="text-2xl font-bold text-green-600 mb-6">R{friesItem.price}</p>
 
-            {/* Quantity */}
-            <div className="mb-6">
-              <h3 className="font-semibold text-gray-900 mb-2">Quantity</h3>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
-                >
-                  <FaMinus />
-                </button>
-                <span className="text-xl font-medium w-12 text-center">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
-                >
-                  <FaPlus />
-                </button>
-              </div>
-            </div>
+              {/* Add-ons */}
+              {friesAddOns && friesAddOns.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="font-semibold text-gray-900 mb-3">Add-ons</h3>
+                  <div className="space-y-2">
+                    {friesAddOns.map((addOn) => {
+                      const selected = selectedAddOns.find(a => a.name === addOn.name);
+                      return (
+                        <div key={addOn.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                          <label className="flex items-center gap-3 cursor-pointer flex-1">
+                            <input
+                              type="checkbox"
+                              checked={!!selected}
+                              onChange={() => handleAddOnToggle(addOn)}
+                              className="w-4 h-4 text-green-600 rounded"
+                            />
+                            <span>{addOn.name}</span>
+                            <span className="text-green-600 font-medium">+R{addOn.price}</span>
+                          </label>
+                          {selected && (
+                            <div className="flex items-center gap-2">
+                              <button onClick={() => updateAddOnQuantity(addOn.name, selected.quantity - 1)} className="w-7 h-7 bg-gray-200 rounded-full hover:bg-gray-300 flex items-center justify-center"><FaMinus size={12} /></button>
+                              <span className="w-6 text-center">{selected.quantity}</span>
+                              <button onClick={() => updateAddOnQuantity(addOn.name, selected.quantity + 1)} className="w-7 h-7 bg-gray-200 rounded-full hover:bg-gray-300 flex items-center justify-center"><FaPlus size={12} /></button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
-            {/* Total and Add to Cart */}
-            <div className="border-t pt-6">
+              {/* Complete Your Meal */}
               <div className="mb-4">
-                <div className="flex justify-between items-center text-gray-600 mb-2">
-                  <span>Base Price:</span>
-                  <span>R{friesItem.price}</span>
-                </div>
-                {selectedDip && (
-                  <div className="flex justify-between items-center text-gray-600 mb-2">
-                    <span>Dip:</span>
-                    <span>+R{selectedDip.price}</span>
-                  </div>
-                )}
-                {selectedAddOns.length > 0 && (
-                  <div className="flex justify-between items-center text-gray-600 mb-2">
-                    <span>Add-ons:</span>
-                    <span>+R{selectedAddOns.reduce((sum, addOn) => sum + (addOn.price * addOn.quantity), 0)}</span>
-                  </div>
-                )}
-                {selectedJuice && (
-                  <div className="flex justify-between items-center text-gray-600 mb-2">
-                    <span>Juice:</span>
-                    <span>+R{selectedJuice.price}</span>
-                  </div>
-                )}
-                <div className="flex justify-between items-center text-gray-600 pt-2 border-t">
-                  <span className="font-semibold">Subtotal ({quantity} item{quantity > 1 ? 's' : ''}):</span>
-                  <span className="font-semibold">R{calculateTotal().toFixed(2)}</span>
-                </div>
+                <button onClick={() => setShowUpsells(!showUpsells)} className="w-full flex items-center justify-between p-3 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+                  <span className="font-semibold text-gray-800">Complete Your Meal</span>
+                  <span className="text-green-600">{showUpsells ? '▲' : '▼'}</span>
+                </button>
               </div>
-              <button
-                onClick={handleAddToCart}
-                className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-medium"
-              >
-                Add to Cart - R{calculateTotal().toFixed(2)}
-              </button>
+
+              {showUpsells && (
+                <div className="mb-6 p-4 bg-gray-50 rounded-lg space-y-4">
+                  <div>
+                    <h4 className="font-medium text-gray-700 mb-2 flex items-center gap-2"><FaTruck className="text-green-600" /> Add Fries</h4>
+                    <div className="space-y-2">
+                      {friesUpsellOptions.map((fries) => (
+                        <label key={fries.id} className="flex items-center justify-between p-2 bg-white rounded-lg cursor-pointer">
+                          <div className="flex items-center gap-3"><input type="radio" name="fries" checked={selectedFries?.id === fries.id} onChange={() => setSelectedFries(fries)} className="w-4 h-4 text-green-600" /><span>{fries.name}</span></div>
+                          <span className="text-green-600 font-medium">+R{fries.price}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-700 mb-2 flex items-center gap-2"><FaCocktail className="text-green-600" /> Add a Drink</h4>
+                    <div className="mb-2"><select value={selectedJuiceSize} onChange={(e) => setSelectedJuiceSize(e.target.value)} className="p-2 border border-gray-300 rounded-lg text-sm">{juiceUpsellOptions.map((g) => (<option key={g.size} value={g.size}>{g.size}</option>))}</select></div>
+                    <div className="space-y-2">
+                      {juiceUpsellOptions.find(g => g.size === selectedJuiceSize)?.options.map((juice) => (
+                        <label key={juice.id} className="flex items-center justify-between p-2 bg-white rounded-lg cursor-pointer">
+                          <div className="flex items-center gap-3"><input type="radio" name="juice" checked={selectedJuice?.id === juice.id} onChange={() => setSelectedJuice(juice)} className="w-4 h-4 text-green-600" /><span>{juice.name}</span></div>
+                          <span className="text-green-600 font-medium">+R{juice.price}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Special Instructions */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Special Instructions (Optional)</label>
+                <textarea value={specialInstructions} onChange={(e) => setSpecialInstructions(e.target.value)} placeholder="e.g., extra crispy, less salt, etc." rows={2} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" />
+              </div>
+
+              {/* Quantity and Add to Cart */}
+              <div className="border-t pt-4">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="font-semibold text-gray-700">Quantity:</span>
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-8 h-8 bg-gray-200 rounded-full hover:bg-gray-300 flex items-center justify-center"><FaMinus size={12} /></button>
+                    <span className="text-lg font-semibold w-8 text-center">{quantity}</span>
+                    <button onClick={() => setQuantity(quantity + 1)} className="w-8 h-8 bg-gray-200 rounded-full hover:bg-gray-300 flex items-center justify-center"><FaPlus size={12} /></button>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center mb-4"><span className="font-semibold text-gray-700">Total:</span><span className="text-2xl font-bold text-green-600">R{total.toFixed(2)}</span></div>
+                <button onClick={handleAddToCart} className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold flex items-center justify-center gap-2"><FaShoppingCart /> Add to Cart</button>
+              </div>
             </div>
           </div>
         </div>
