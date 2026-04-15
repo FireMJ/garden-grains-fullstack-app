@@ -2,7 +2,7 @@
 const nextConfig = {
   images: {
     unoptimized: true,
-    // Add all quality values being used
+    // Add all quality values being used by your images
     qualities: [25, 50, 75, 80, 85, 90, 100],
     remotePatterns: [
       {
