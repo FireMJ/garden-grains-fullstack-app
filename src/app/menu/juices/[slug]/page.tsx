@@ -4,30 +4,36 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { juices, juiceAddOns, friesUpsellOptions, juiceUpsellOptions } from '@/data/juicesData';
+import { juicesData, juiceAddOns, friesUpsellOptions, juiceUpsellOptions } from '@/data/juicesData';
 import { useCart } from '@/context/CartContext';
 import { FaArrowLeft, FaPlus, FaMinus, FaShoppingCart, FaTruck, FaCocktail } from 'react-icons/fa';
 
-interface JuiceItem {
-  id: string;
-  slug: string;
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-  tags?: string[];
-  popular?: boolean;
-  addOns?: any[];
-  friesUpsell?: any[];
-  juiceUpsell?: any[];
-}
+// Fallback data if imports are missing
+const fallbackJuices = [
+  {
+    id: "juice-1",
+    slug: "orange-juice",
+    name: "Fresh Orange Juice",
+    description: "Freshly squeezed oranges, no added sugar.",
+    price: 55,
+    image: "/images/juices/orange-juice.jpg",
+    popular: true,
+  },
+];
 
-interface UpsellItem {
-  id: string;
-  name: string;
-  price: number;
-  size?: string;
-}
+const fallbackAddOns = [
+  { id: "addon1", name: "Ginger Shot", price: 15 },
+  { id: "addon2", name: "Extra Ice", price: 0 },
+];
+
+const fallbackFriesUpsell = [
+  { id: "fries1", name: "Skinny French Fries", price: 45 },
+];
+
+const fallbackJuiceUpsell = [
+  { size: "250ml", options: [{ id: "juice1", name: "Orange Juice", price: 55 }] },
+  { size: "350ml", options: [{ id: "juice2", name: "Orange Juice", price: 75 }] },
+];
 
 export default function JuiceDetailPage() {
   const params = useParams();
@@ -35,16 +41,21 @@ export default function JuiceDetailPage() {
   const { addToCart } = useCart();
   const slug = params?.slug as string;
   
-  const [juiceItem, setJuiceItem] = useState<JuiceItem | null>(null);
+  const [juiceItem, setJuiceItem] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedAddOns, setSelectedAddOns] = useState<{ name: string; price: number; quantity: number }[]>([]);
   const [specialInstructions, setSpecialInstructions] = useState('');
-  const [selectedFries, setSelectedFries] = useState<UpsellItem | null>(null);
-  const [selectedJuice, setSelectedJuice] = useState<UpsellItem | null>(null);
+  const [selectedFries, setSelectedFries] = useState<any>(null);
+  const [selectedJuice, setSelectedJuice] = useState<any>(null);
   const [selectedJuiceSize, setSelectedJuiceSize] = useState<string>("250ml");
   const [showUpsells, setShowUpsells] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [mounted, setMounted] = useState(false);
+
+  const friesUpsellOptionsList = juicesData?.friesUpsellOptions || fallbackFriesUpsell;
+  const juiceUpsellOptionsList = juicesData?.juiceUpsellOptions || fallbackJuiceUpsell;
+  const addOnsList = juicesData?.juiceAddOns || fallbackAddOns;
+  const juicesList = juicesData?.juicesData || fallbackJuices;
 
   useEffect(() => {
     setMounted(true);
@@ -52,9 +63,9 @@ export default function JuiceDetailPage() {
 
   useEffect(() => {
     if (!slug) return;
-    const item = juices?.find((j: any) => j.slug === slug);
+    const item = juicesList.find((j: any) => j.slug === slug);
     if (item) setJuiceItem(item);
-  }, [slug]);
+  }, [slug, juicesList]);
 
   const handleAddOnToggle = (addOn: { name: string; price: number }) => {
     setSelectedAddOns(prev => {
@@ -94,32 +105,50 @@ export default function JuiceDetailPage() {
     router.push('/cart');
   };
 
-  if (!mounted || !juiceItem) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div></div>
-  );
+  if (!mounted || !juiceItem) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
 
   const total = calculateTotal();
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-4xl mx-auto px-4">
-        <Link href="/menu/juices" className="inline-flex items-center gap-2 text-gray-600 hover:text-green-600 mb-6 transition"><FaArrowLeft /> Back to Juices</Link>
+        <Link href="/menu/juices" className="inline-flex items-center gap-2 text-gray-600 hover:text-green-600 mb-6 transition">
+          <FaArrowLeft /> Back to Juices
+        </Link>
+
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="relative h-64 md:h-full min-h-[300px] bg-gray-100">
-              {!imageError ? (<Image src={juiceItem.image} alt={juiceItem.name} fill className="object-cover" onError={() => setImageError(true)} unoptimized />) : (<div className="w-full h-full flex items-center justify-center text-6xl">🥤</div>)}
+              {!imageError ? (
+                <Image
+                  src={juiceItem.image}
+                  alt={juiceItem.name}
+                  fill
+                  className="object-cover"
+                  onError={() => setImageError(true)}
+                  unoptimized
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-6xl">🥤</div>
+              )}
             </div>
+
             <div className="p-6">
               <h1 className="text-3xl font-bold text-gray-900 mb-3">{juiceItem.name}</h1>
               <p className="text-gray-600 mb-4 leading-relaxed">{juiceItem.description}</p>
               <p className="text-2xl font-bold text-green-600 mb-6">R{juiceItem.price}</p>
 
-              {/* Add-ons */}
-              {juiceAddOns && juiceAddOns.length > 0 && (
+              {addOnsList && addOnsList.length > 0 && (
                 <div className="mb-6">
                   <h3 className="font-semibold text-gray-900 mb-3">Add-ons</h3>
                   <div className="space-y-2">
-                    {juiceAddOns.map((addOn) => {
+                    {addOnsList.map((addOn: any) => {
                       const selected = selectedAddOns.find(a => a.name === addOn.name);
                       return (
                         <div key={addOn.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
@@ -135,17 +164,16 @@ export default function JuiceDetailPage() {
                 </div>
               )}
 
-              {/* Complete Your Meal */}
               <div className="mb-4"><button onClick={() => setShowUpsells(!showUpsells)} className="w-full flex items-center justify-between p-3 bg-gray-100 rounded-lg hover:bg-gray-200 transition"><span className="font-semibold text-gray-800">Complete Your Meal</span><span className="text-green-600">{showUpsells ? '▲' : '▼'}</span></button></div>
 
               {showUpsells && (
                 <div className="mb-6 p-4 bg-gray-50 rounded-lg space-y-4">
                   <div><h4 className="font-medium text-gray-700 mb-2 flex items-center gap-2"><FaTruck className="text-green-600" /> Add Fries</h4>
-                    <div className="space-y-2">{friesUpsellOptions.map((fries) => (<label key={fries.id} className="flex items-center justify-between p-2 bg-white rounded-lg cursor-pointer"><div className="flex items-center gap-3"><input type="radio" name="fries" checked={selectedFries?.id === fries.id} onChange={() => setSelectedFries(fries)} className="w-4 h-4 text-green-600" /><span>{fries.name}</span></div><span className="text-green-600 font-medium">+R{fries.price}</span></label>))}</div>
+                    <div className="space-y-2">{friesUpsellOptionsList.map((fries: any) => (<label key={fries.id} className="flex items-center justify-between p-2 bg-white rounded-lg cursor-pointer"><div className="flex items-center gap-3"><input type="radio" name="fries" checked={selectedFries?.id === fries.id} onChange={() => setSelectedFries(fries)} className="w-4 h-4 text-green-600" /><span>{fries.name}</span></div><span className="text-green-600 font-medium">+R{fries.price}</span></label>))}</div>
                   </div>
                   <div><h4 className="font-medium text-gray-700 mb-2 flex items-center gap-2"><FaCocktail className="text-green-600" /> Add a Drink</h4>
-                    <div className="mb-2"><select value={selectedJuiceSize} onChange={(e) => setSelectedJuiceSize(e.target.value)} className="p-2 border border-gray-300 rounded-lg text-sm">{juiceUpsellOptions.map((g) => (<option key={g.size} value={g.size}>{g.size}</option>))}</select></div>
-                    <div className="space-y-2">{juiceUpsellOptions.find(g => g.size === selectedJuiceSize)?.options.map((juice) => (<label key={juice.id} className="flex items-center justify-between p-2 bg-white rounded-lg cursor-pointer"><div className="flex items-center gap-3"><input type="radio" name="juice" checked={selectedJuice?.id === juice.id} onChange={() => setSelectedJuice(juice)} className="w-4 h-4 text-green-600" /><span>{juice.name}</span></div><span className="text-green-600 font-medium">+R{juice.price}</span></label>))}</div>
+                    <div className="mb-2"><select value={selectedJuiceSize} onChange={(e) => setSelectedJuiceSize(e.target.value)} className="p-2 border border-gray-300 rounded-lg text-sm">{juiceUpsellOptionsList.map((g: any) => (<option key={g.size} value={g.size}>{g.size}</option>))}</select></div>
+                    <div className="space-y-2">{juiceUpsellOptionsList.find((g: any) => g.size === selectedJuiceSize)?.options.map((juice: any) => (<label key={juice.id} className="flex items-center justify-between p-2 bg-white rounded-lg cursor-pointer"><div className="flex items-center gap-3"><input type="radio" name="juice" checked={selectedJuice?.id === juice.id} onChange={() => setSelectedJuice(juice)} className="w-4 h-4 text-green-600" /><span>{juice.name}</span></div><span className="text-green-600 font-medium">+R{juice.price}</span></label>))}</div>
                   </div>
                 </div>
               )}

@@ -8,26 +8,42 @@ import { friesData, friesAddOns, friesUpsellOptions, juiceUpsellOptions } from '
 import { useCart } from '@/context/CartContext';
 import { FaArrowLeft, FaPlus, FaMinus, FaShoppingCart, FaTruck, FaCocktail } from 'react-icons/fa';
 
-interface FriesItem {
-  id: string;
-  slug: string;
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-  tags?: string[];
-  popular?: boolean;
-  addOns?: any[];
-  friesUpsell?: any[];
-  juiceUpsell?: any[];
-}
+// Fallback data if imports are missing
+const fallbackFries = [
+  {
+    id: "fries-1",
+    slug: "skinny-fries",
+    name: "Skinny French Fries",
+    description: "Crispy, golden skinny fries seasoned with sea salt.",
+    price: 45,
+    image: "/images/fries/skinny-fries.jpg",
+    popular: true,
+  },
+  {
+    id: "fries-2",
+    slug: "sweet-potato-fries",
+    name: "Sweet Potato Fries",
+    description: "Crispy sweet potato fries with a hint of paprika.",
+    price: 59,
+    image: "/images/fries/sweet-potato-fries.jpg",
+    popular: true,
+  },
+];
 
-interface UpsellItem {
-  id: string;
-  name: string;
-  price: number;
-  size?: string;
-}
+const fallbackAddOns = [
+  { id: "addon1", name: "Extra Seasoning", price: 5 },
+  { id: "addon2", name: "Cheese Sauce", price: 15 },
+  { id: "addon3", name: "Bacon Bits", price: 20 },
+];
+
+const fallbackFriesUpsell = [
+  { id: "fries1", name: "Double Portion", price: 35 },
+];
+
+const fallbackJuiceUpsell = [
+  { size: "250ml", options: [{ id: "juice1", name: "Orange Juice", price: 55 }] },
+  { size: "350ml", options: [{ id: "juice2", name: "Orange Juice", price: 75 }] },
+];
 
 export default function FriesDetailPage() {
   const params = useParams();
@@ -35,16 +51,21 @@ export default function FriesDetailPage() {
   const { addToCart } = useCart();
   const slug = params?.slug as string;
   
-  const [friesItem, setFriesItem] = useState<FriesItem | null>(null);
+  const [friesItem, setFriesItem] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedAddOns, setSelectedAddOns] = useState<{ name: string; price: number; quantity: number }[]>([]);
   const [specialInstructions, setSpecialInstructions] = useState('');
-  const [selectedFries, setSelectedFries] = useState<UpsellItem | null>(null);
-  const [selectedJuice, setSelectedJuice] = useState<UpsellItem | null>(null);
+  const [selectedFries, setSelectedFries] = useState<any>(null);
+  const [selectedJuice, setSelectedJuice] = useState<any>(null);
   const [selectedJuiceSize, setSelectedJuiceSize] = useState<string>("250ml");
   const [showUpsells, setShowUpsells] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [mounted, setMounted] = useState(false);
+
+  const friesUpsellOptions = friesData?.friesUpsellOptions || fallbackFriesUpsell;
+  const juiceUpsellOptions = friesData?.juiceUpsellOptions || fallbackJuiceUpsell;
+  const addOnsList = friesData?.friesAddOns || fallbackAddOns;
+  const friesList = friesData?.friesData || fallbackFries;
 
   useEffect(() => {
     setMounted(true);
@@ -52,9 +73,9 @@ export default function FriesDetailPage() {
 
   useEffect(() => {
     if (!slug) return;
-    const item = friesData?.find((f: any) => f.slug === slug);
+    const item = friesList.find((f: any) => f.slug === slug);
     if (item) setFriesItem(item);
-  }, [slug]);
+  }, [slug, friesList]);
 
   const handleAddOnToggle = (addOn: { name: string; price: number }) => {
     setSelectedAddOns(prev => {
@@ -144,11 +165,11 @@ export default function FriesDetailPage() {
               <p className="text-2xl font-bold text-green-600 mb-6">R{friesItem.price}</p>
 
               {/* Add-ons */}
-              {friesAddOns && friesAddOns.length > 0 && (
+              {addOnsList && addOnsList.length > 0 && (
                 <div className="mb-6">
                   <h3 className="font-semibold text-gray-900 mb-3">Add-ons</h3>
                   <div className="space-y-2">
-                    {friesAddOns.map((addOn) => {
+                    {addOnsList.map((addOn: any) => {
                       const selected = selectedAddOns.find(a => a.name === addOn.name);
                       return (
                         <div key={addOn.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
@@ -189,7 +210,7 @@ export default function FriesDetailPage() {
                   <div>
                     <h4 className="font-medium text-gray-700 mb-2 flex items-center gap-2"><FaTruck className="text-green-600" /> Add Fries</h4>
                     <div className="space-y-2">
-                      {friesUpsellOptions.map((fries) => (
+                      {friesUpsellOptions.map((fries: any) => (
                         <label key={fries.id} className="flex items-center justify-between p-2 bg-white rounded-lg cursor-pointer">
                           <div className="flex items-center gap-3"><input type="radio" name="fries" checked={selectedFries?.id === fries.id} onChange={() => setSelectedFries(fries)} className="w-4 h-4 text-green-600" /><span>{fries.name}</span></div>
                           <span className="text-green-600 font-medium">+R{fries.price}</span>
@@ -199,9 +220,9 @@ export default function FriesDetailPage() {
                   </div>
                   <div>
                     <h4 className="font-medium text-gray-700 mb-2 flex items-center gap-2"><FaCocktail className="text-green-600" /> Add a Drink</h4>
-                    <div className="mb-2"><select value={selectedJuiceSize} onChange={(e) => setSelectedJuiceSize(e.target.value)} className="p-2 border border-gray-300 rounded-lg text-sm">{juiceUpsellOptions.map((g) => (<option key={g.size} value={g.size}>{g.size}</option>))}</select></div>
+                    <div className="mb-2"><select value={selectedJuiceSize} onChange={(e) => setSelectedJuiceSize(e.target.value)} className="p-2 border border-gray-300 rounded-lg text-sm">{juiceUpsellOptions.map((g: any) => (<option key={g.size} value={g.size}>{g.size}</option>))}</select></div>
                     <div className="space-y-2">
-                      {juiceUpsellOptions.find(g => g.size === selectedJuiceSize)?.options.map((juice) => (
+                      {juiceUpsellOptions.find((g: any) => g.size === selectedJuiceSize)?.options.map((juice: any) => (
                         <label key={juice.id} className="flex items-center justify-between p-2 bg-white rounded-lg cursor-pointer">
                           <div className="flex items-center gap-3"><input type="radio" name="juice" checked={selectedJuice?.id === juice.id} onChange={() => setSelectedJuice(juice)} className="w-4 h-4 text-green-600" /><span>{juice.name}</span></div>
                           <span className="text-green-600 font-medium">+R{juice.price}</span>
