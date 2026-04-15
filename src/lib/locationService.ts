@@ -13,12 +13,29 @@ export interface LocationResult {
 
 // Location options for high accuracy GPS
 const LOCATION_OPTIONS = {
-  enableHighAccuracy: true,  // Use GPS for best accuracy
-  timeout: 10000,            // 10 seconds timeout
-  maximumAge: 0,             // Don't use cached position
+  enableHighAccuracy: true,
+  timeout: 10000,
+  maximumAge: 0,
 };
 
-// Get current position with Promise API
+// South Africa bounds (approximate)
+const SOUTH_AFRICA_BOUNDS = {
+  north: -22.0,
+  south: -35.0,
+  west: 16.0,
+  east: 33.0,
+};
+
+// Check if coordinates are within South Africa
+const isInSouthAfrica = (lat: number, lng: number): boolean => {
+  return (
+    lat >= SOUTH_AFRICA_BOUNDS.south &&
+    lat <= SOUTH_AFRICA_BOUNDS.north &&
+    lng >= SOUTH_AFRICA_BOUNDS.west &&
+    lng <= SOUTH_AFRICA_BOUNDS.east
+  );
+};
+
 export const getCurrentPosition = (): Promise<GeolocationPosition> => {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
@@ -30,10 +47,8 @@ export const getCurrentPosition = (): Promise<GeolocationPosition> => {
   });
 };
 
-// Get full location with address using reverse geocoding
 export const getCurrentLocation = async (): Promise<LocationResult> => {
   try {
-    // Step 1: Get GPS coordinates with high accuracy
     const position = await getCurrentPosition();
     const coords = {
       lat: position.coords.latitude,
@@ -41,9 +56,50 @@ export const getCurrentLocation = async (): Promise<LocationResult> => {
     };
     
     const accuracy = position.coords.accuracy;
-    console.log(`📍 Location acquired with accuracy: ${accuracy.toFixed(1)} meters`);
+    console.log(`📍 Location acquired: ${coords.lat}, ${coords.lng} (accuracy: ${accuracy.toFixed(1)}m)`);
     
-    // Step 2: Reverse geocode to get address
+    // Check if location is in South Africa
+    if (!isInSouthAfrica(coords.lat, coords.lng)) {
+      console.warn('Location is outside South Africa, defaulting to Cape Town');
+      // Default to Cape Town center
+      const capeTownCoords = { lat: -33.9249, lng: 18.4241 };
+      
+      const google = await loadGoogleMaps();
+      if (google) {
+        const geocoder = new google.maps.Geocoder();
+        return new Promise((resolve) => {
+          geocoder.geocode(
+            { location: capeTownCoords },
+            (results, status) => {
+              if (status === "OK" && results && results[0]) {
+                resolve({
+                  success: true,
+                  coordinates: capeTownCoords,
+                  address: results[0].formatted_address,
+                  accuracy: accuracy,
+                  error: "Location outside SA, using Cape Town as default",
+                });
+              } else {
+                resolve({
+                  success: true,
+                  coordinates: capeTownCoords,
+                  address: "Cape Town, South Africa",
+                  accuracy: accuracy,
+                });
+              }
+            }
+          );
+        });
+      }
+      
+      return {
+        success: true,
+        coordinates: capeTownCoords,
+        address: "Cape Town, South Africa",
+        accuracy: accuracy,
+      };
+    }
+    
     const google = await loadGoogleMaps();
     if (!google) {
       return {
@@ -58,7 +114,10 @@ export const getCurrentLocation = async (): Promise<LocationResult> => {
     
     return new Promise((resolve) => {
       geocoder.geocode(
-        { location: coords },
+        { 
+          location: coords,
+          componentRestrictions: { country: 'ZA' } // Restrict to South Africa
+        },
         (results, status) => {
           if (status === "OK" && results && results[0]) {
             resolve({
@@ -81,21 +140,20 @@ export const getCurrentLocation = async (): Promise<LocationResult> => {
   } catch (error: any) {
     console.error("Location error:", error);
     
-    // Handle specific error types for better user feedback
     let errorMessage = "Unable to get your location";
     
     switch (error.code) {
-      case 1: // PERMISSION_DENIED
-        errorMessage = "Please allow location access to use this feature. Check your browser settings.";
+      case 1:
+        errorMessage = "Please allow location access to use this feature.";
         break;
-      case 2: // POSITION_UNAVAILABLE
-        errorMessage = "Location information is unavailable. Please check your GPS/WiFi connection.";
+      case 2:
+        errorMessage = "Location unavailable. Please check your GPS/WiFi.";
         break;
-      case 3: // TIMEOUT
-        errorMessage = "Location request timed out. Please try again in an open area.";
+      case 3:
+        errorMessage = "Location request timed out. Please try again.";
         break;
       default:
-        errorMessage = error.message || "Failed to get location. Please try typing your address.";
+        errorMessage = error.message || "Failed to get location.";
     }
     
     return {
@@ -106,7 +164,6 @@ export const getCurrentLocation = async (): Promise<LocationResult> => {
   }
 };
 
-// Watch position for real-time tracking (for delivery driver feature)
 export const watchLocation = (
   onSuccess: (position: GeolocationPosition) => void,
   onError: (error: GeolocationPositionError) => void
@@ -119,7 +176,6 @@ export const watchLocation = (
   return navigator.geolocation.watchPosition(onSuccess, onError, LOCATION_OPTIONS);
 };
 
-// Stop watching position
 export const clearWatch = (watchId: number) => {
   if (watchId !== -1 && navigator.geolocation) {
     navigator.geolocation.clearWatch(watchId);

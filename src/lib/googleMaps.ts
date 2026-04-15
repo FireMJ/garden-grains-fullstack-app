@@ -16,6 +16,14 @@ export const DELIVERY_CONFIG = {
 
 let googleMapsPromise: Promise<typeof google> | null = null;
 
+// South Africa bounds for bias
+const SOUTH_AFRICA_BOUNDS = {
+  north: -22.0,
+  south: -35.0,
+  west: 16.0,
+  east: 33.0,
+};
+
 export const loadGoogleMaps = async () => {
   if (typeof window === 'undefined') return null;
   
@@ -72,7 +80,6 @@ export const loadGoogleMaps = async () => {
   }
 };
 
-// Get driving distance using Distance Matrix API
 export const getDrivingDistance = async (
   origin: google.maps.LatLngLiteral,
   destination: google.maps.LatLngLiteral
@@ -90,6 +97,7 @@ export const getDrivingDistance = async (
           destinations: [destination],
           travelMode: google.maps.TravelMode.DRIVING,
           unitSystem: google.maps.UnitSystem.METRIC,
+          region: 'ZA', // Bias to South Africa
         },
         (response, status) => {
           if (status === 'OK' && response && response.rows[0]?.elements[0]) {
@@ -116,7 +124,6 @@ export const getDrivingDistance = async (
   }
 };
 
-// Get driving distance from user coordinates to restaurant
 export const getDrivingDistanceFromCoords = async (
   userLat: number,
   userLng: number
@@ -132,26 +139,21 @@ export const getDrivingDistanceFromCoords = async (
   }
 };
 
-// Calculate delivery fee based on distance
 export const calculateDeliveryFee = (distanceKm: number, subtotal: number = 0): number => {
-  // Free delivery for orders over threshold
   if (subtotal >= DELIVERY_CONFIG.FREE_DELIVERY_THRESHOLD) {
     return 0;
   }
   
-  // Base fee for first 5km
   if (distanceKm <= DELIVERY_CONFIG.BASE_DISTANCE_KM) {
     return DELIVERY_CONFIG.BASE_DELIVERY_FEE;
   }
   
-  // Calculate extra kilometers beyond base
   const extraKm = Math.ceil(distanceKm - DELIVERY_CONFIG.BASE_DISTANCE_KM);
   const extraFee = extraKm * DELIVERY_CONFIG.EXTRA_KM_RATE;
   
   return DELIVERY_CONFIG.BASE_DELIVERY_FEE + extraFee;
 };
 
-// Check if delivery is available
 export const isDeliveryAvailable = async (
   userLat: number,
   userLng: number,
@@ -189,7 +191,6 @@ export const isDeliveryAvailable = async (
   }
 };
 
-// Geocode address to coordinates
 export const geocodeAddress = async (address: string): Promise<{ lat: number; lng: number } | null> => {
   try {
     const google = await loadGoogleMaps();
@@ -197,7 +198,6 @@ export const geocodeAddress = async (address: string): Promise<{ lat: number; ln
     
     const geocoder = new google.maps.Geocoder();
     
-    // Add South Africa to the address to bias results
     const fullAddress = address.toLowerCase().includes('south africa') || address.toLowerCase().includes('za') 
       ? address 
       : `${address}, South Africa`;
@@ -206,7 +206,8 @@ export const geocodeAddress = async (address: string): Promise<{ lat: number; ln
       geocoder.geocode(
         { 
           address: fullAddress,
-          componentRestrictions: { country: 'ZA' } // Restrict to South Africa
+          componentRestrictions: { country: 'ZA' },
+          region: 'ZA',
         }, 
         (results, status) => {
           if (status === 'OK' && results && results[0]) {
@@ -228,7 +229,6 @@ export const geocodeAddress = async (address: string): Promise<{ lat: number; ln
   }
 };
 
-// Get address suggestions for autocomplete (restricted to South Africa)
 export const getAddressSuggestions = async (input: string): Promise<Array<{ description: string; placeId: string }>> => {
   try {
     const google = await loadGoogleMaps();
@@ -240,8 +240,9 @@ export const getAddressSuggestions = async (input: string): Promise<Array<{ desc
       autocompleteService.getPlacePredictions(
         { 
           input, 
-          componentRestrictions: { country: 'za' }, // Restrict to South Africa
-          types: ['address']
+          componentRestrictions: { country: 'za' },
+          types: ['address'],
+          region: 'za',
         },
         (predictions, status) => {
           if (status === 'OK' && predictions) {
