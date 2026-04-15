@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    unoptimized: true,  // This bypasses Next.js image optimization
+    unoptimized: true,  // This is the key fix
     remotePatterns: [
       {
         protocol: 'https',
