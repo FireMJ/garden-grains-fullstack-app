@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
@@ -8,13 +8,13 @@ import { useDeliveryCalculation } from "@/hooks/useDeliveryCalculation";
 import { RESTAURANT_ADDRESS } from "@/lib/googleMaps";
 import { calculateCustomerDeliveryFee, calculateDriverPayment, getDeliveryBreakdown } from "@/lib/deliveryCalculator";
 import Link from "next/link";
-import { MapPin, Truck, Store, AlertCircle, CreditCard, Loader2 } from "lucide-react";
+import { MapPin, Truck, Store, AlertCircle, CreditCard, Loader2, CheckCircle } from "lucide-react";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { cartItems, totalPrice, clearCart } = useCart();
+  const { cartItems, totalPrice } = useCart();
   const { deliveryInfo, calculateFromAddress, calculateFromCoordinates, isLoading, error } = useDeliveryCalculation();
 
   const [orderType, setOrderType] = useState<'delivery' | 'pickup'>('delivery');
@@ -26,20 +26,25 @@ export default function CheckoutPage() {
   const [addressValidated, setAddressValidated] = useState(false);
   const [validatedAddress, setValidatedAddress] = useState<any>(null);
   const [isValidatingAddress, setIsValidatingAddress] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (!user) {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!user && mounted) {
       router.push('/login');
     }
-  }, [user, router]);
+  }, [user, router, mounted]);
 
   useEffect(() => {
-    if (cartItems.length === 0) {
+    if (cartItems.length === 0 && mounted) {
       router.push('/menu');
     }
-  }, [cartItems, router]);
+  }, [cartItems, router, mounted]);
 
-  const handleAddressSelect = async (selectedAddress: {
+  const handleAddressSelect = useCallback(async (selectedAddress: {
     street: string;
     city: string;
     postalCode: string;
@@ -52,11 +57,19 @@ export default function CheckoutPage() {
     setAddressValidated(false);
     
     setIsValidatingAddress(true);
-    await calculateFromCoordinates(selectedAddress.coordinates.lat, selectedAddress.coordinates.lng, selectedAddress.formattedAddress);
-    setIsValidatingAddress(false);
-    setAddressValidated(true);
-    setValidatedAddress(selectedAddress);
-  };
+    setPaymentError('');
+    
+    try {
+      await calculateFromCoordinates(selectedAddress.coordinates.lat, selectedAddress.coordinates.lng, selectedAddress.formattedAddress);
+      setAddressValidated(true);
+      setValidatedAddress(selectedAddress);
+    } catch (err) {
+      console.error('Address validation error:', err);
+      setPaymentError('Failed to validate address. Please try again.');
+    } finally {
+      setIsValidatingAddress(false);
+    }
+  }, [calculateFromCoordinates]);
 
   const handleVodaPayPayment = async () => {
     if (orderType === 'delivery') {
@@ -75,13 +88,7 @@ export default function CheckoutPage() {
 
     try {
       const subtotal = totalPrice || 0;
-      
-      // Customer pays delivery fee (may be R0 if free delivery)
       const customerDeliveryFee = calculateCustomerDeliveryFee(deliveryInfo?.distance || 0, subtotal);
-      
-      // Driver gets paid based on distance (always)
-      const driverPayment = calculateDriverPayment(deliveryInfo?.distance || 0);
-      
       const total = subtotal + customerDeliveryFee;
 
       const order = {
@@ -89,7 +96,7 @@ export default function CheckoutPage() {
         amount: total,
         subtotal: subtotal,
         customerDeliveryFee: customerDeliveryFee,
-        driverPayment: driverPayment,
+        driverPayment: calculateDriverPayment(deliveryInfo?.distance || 0),
         distance: deliveryInfo?.distance,
         items: cartItems,
         orderType: orderType,
@@ -100,7 +107,6 @@ export default function CheckoutPage() {
           coordinates: validatedAddress.coordinates,
           distance: deliveryInfo?.distance,
           customerFee: customerDeliveryFee,
-          driverPayment: driverPayment,
         } : null,
         pickupLocation: orderType === 'pickup' ? RESTAURANT_ADDRESS : null,
         customerEmail: user?.email,
@@ -143,14 +149,35 @@ export default function CheckoutPage() {
 
   const subtotal = totalPrice || 0;
   const customerDeliveryFee = calculateCustomerDeliveryFee(deliveryInfo?.distance || 0, subtotal);
-  const driverPayment = calculateDriverPayment(deliveryInfo?.distance || 0);
   const total = subtotal + customerDeliveryFee;
   const isFreeDelivery = subtotal >= 850;
 
-  if (!user || cartItems.length === 0) {
+  if (!mounted) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+        <p className="text-gray-600">Redirecting to login...</p>
+      </div>
+    );
+  }
+
+  if (cartItems.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <h1 className="text-2xl font-bold mb-4">Your cart is empty</h1>
+          <Link href="/menu" className="bg-green-600 text-white px-6 py-2 rounded-lg">
+            Browse Menu
+          </Link>
+        </div>
       </div>
     );
   }
@@ -203,7 +230,7 @@ export default function CheckoutPage() {
                   
                   <AddressAutocomplete
                     onAddressSelect={handleAddressSelect}
-                    placeholder="Start typing your address..."
+                    placeholder="Start typing your Cape Town address..."
                     className="mb-3"
                   />
                   
@@ -300,18 +327,6 @@ export default function CheckoutPage() {
                   </div>
                 )}
                 
-                {orderType === 'delivery' && !isFreeDelivery && deliveryInfo?.distance && (
-                  <div className="text-xs text-gray-500 text-right">
-                    (R35 base + R{Math.ceil(Math.max(0, deliveryInfo.distance - 5))}km × R2.75)
-                  </div>
-                )}
-                
-                {orderType === 'delivery' && isFreeDelivery && deliveryInfo?.distance && (
-                  <div className="text-xs text-gray-500 text-right">
-                    🎉 Free delivery! (Driver still earns R{driverPayment.toFixed(2)})
-                  </div>
-                )}
-
                 {!isFreeDelivery && subtotal > 0 && (
                   <div className="mt-2 p-3 bg-blue-50 rounded-lg">
                     <div className="flex justify-between text-sm text-blue-800 mb-1">
