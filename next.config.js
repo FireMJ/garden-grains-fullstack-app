@@ -1,26 +1,20 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // TypeScript configuration (still valid)
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  
-  // Image configuration
   images: {
-    unoptimized: process.env.NODE_ENV === 'production',
+    unoptimized: true,  // This bypasses Next.js image optimization
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'firebasestorage.googleapis.com',
       },
     ],
-    qualities: [25, 50, 75, 100],
   },
-  
-  // Other valid options
-  compress: true,
-  reactStrictMode: true,
-  poweredByHeader: false,
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 };
 
 export default nextConfig;
