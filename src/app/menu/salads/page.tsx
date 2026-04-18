@@ -1,139 +1,45 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import Image from "next/image";
-import { salads, saladDressings } from "@/data/saladsData";
-import { FaArrowLeft } from "react-icons/fa";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { salads } from '@/data/saladsData';
+import { loadPopularItems, isItemPopular } from '@/services/popularItemsService';
+import { FaChevronRight, FaFire, FaLeaf } from 'react-icons/fa';
 
-export default function SaladsListPage() {
-  const router = useRouter();
-  const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
+export default function SaladsPage() {
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+  const [popularItems, setPopularItems] = useState<Record<string, boolean>>({});
+  const [mounted, setMounted] = useState(false);
 
-  const handleImageError = (saladId: string) => {
-    setImgErrors(prev => ({ ...prev, [saladId]: true }));
-  };
+  useEffect(() => {
+    setMounted(true);
+    loadPopularItems();
+    
+    const popularStatus: Record<string, boolean> = {};
+    salads.forEach(salad => {
+      popularStatus[salad.id] = isItemPopular(salad.id, 'salads');
+    });
+    setPopularItems(popularStatus);
+  }, []);
+
+  if (!mounted) return (<div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div></div>);
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-7xl mx-auto px-4">
-        {/* Back to Menu Button */}
-        <div className="mb-6">
-          <Link
-            href="/menu"
-            className="inline-flex items-center gap-2 text-gray-600 hover:text-green-600 transition group"
-          >
-            <FaArrowLeft className="group-hover:-translate-x-1 transition-transform" />
-            <span>Back to Menu</span>
-          </Link>
-        </div>
-
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-[#2F5D50] mb-4">Fresh Salads</h1>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Crisp, fresh, and nutritious salads made with locally sourced ingredients. 
-            Perfect for a healthy and satisfying meal.
-          </p>
-        </div>
-
-        {/* Salads Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="max-w-6xl mx-auto px-4">
+        <Link href="/menu" className="inline-flex items-center gap-2 text-gray-600 hover:text-green-600 mb-6 transition">← Back to Menu</Link>
+        <div className="text-center mb-8"><h1 className="text-4xl font-bold text-gray-900 mb-2">Salads</h1><p className="text-gray-600 max-w-2xl mx-auto">Fresh, crisp, and healthy salads made daily</p></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {salads.map((salad) => (
-            <div
-              key={salad.id}
-              className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 cursor-pointer"
-              onClick={() => router.push(`/menu/salads/${salad.slug}`)}
-            >
-              {/* Salad Image */}
-              <div className="relative h-48 w-full bg-gradient-to-br from-green-100 to-emerald-100">
-                {!imgErrors[salad.id] ? (
-                  <Image
-                    src={salad.image}
-                    alt={salad.name}
-                    fill
-                    className="object-cover"
-                    onError={() => handleImageError(salad.id)}
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-4xl">
-                    🥗
-                  </div>
-                )}
-                
-                {/* Tags */}
-                <div className="absolute top-3 left-3 flex gap-2">
-                  {salad.tags?.slice(0, 2).map((tag, idx) => (
-                    <span key={idx} className="bg-black/60 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
+            <Link key={salad.id} href={`/menu/salads/${salad.slug}`} className="bg-white rounded-xl shadow hover:shadow-lg transition-all duration-300 overflow-hidden group">
+              <div className="relative h-48 bg-gray-100 overflow-hidden">
+                <Image src={salad.image} alt={salad.name} fill className="object-cover group-hover:scale-105 transition duration-500" unoptimized />
+                {popularItems[salad.id] && (<div className="absolute top-3 right-3 bg-orange-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 z-10"><FaFire className="w-3 h-3" /> Popular</div>)}
               </div>
-
-              {/* Salad Info */}
-              <div className="p-5">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{salad.name}</h3>
-                <p className="text-gray-600 text-sm mb-3 line-clamp-2">{salad.description}</p>
-                
-                {/* Dressings Preview */}
-                <div className="mb-3">
-                  <div className="flex items-center text-sm text-gray-500">
-                    <span className="font-medium mr-2">Dressings:</span>
-                    <span>{salad.dressings.slice(0, 3).map(d => d.name).join(', ')}</span>
-                    {salad.dressings.length > 3 && <span className="ml-1">+{salad.dressings.length - 3}</span>}
-                  </div>
-                </div>
-
-                {/* Price and Action */}
-                <div className="flex items-center justify-between mt-4 pt-3 border-t">
-                  <div>
-                    <span className="text-2xl font-bold text-green-600">R{salad.price}</span>
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      router.push(`/menu/salads/${salad.slug}`);
-                    }}
-                    className="bg-[#2F5D50] text-white px-4 py-2 rounded-lg hover:bg-[#244a3f] transition text-sm font-medium"
-                  >
-                    Customize
-                  </button>
-                </div>
-              </div>
-            </div>
+              <div className="p-5"><h3 className="font-bold text-gray-900 text-lg mb-1 line-clamp-1">{salad.name}</h3><p className="text-gray-500 text-sm mb-3 line-clamp-2">{salad.description}</p><div className="flex justify-between items-center mt-3"><div><span className="text-2xl font-bold text-green-600">R{salad.price}</span></div><div className="flex items-center gap-1 text-green-600 group-hover:gap-2 transition-all duration-300"><span className="text-sm font-medium">View Details</span><FaChevronRight className="w-4 h-4 group-hover:translate-x-1 transition" /></div></div></div>
+            </Link>
           ))}
-        </div>
-
-        {/* Dressing Options Info */}
-        <div className="mt-12 p-6 bg-green-50 rounded-xl text-center">
-          <h3 className="font-bold text-[#2F5D50] mb-2">Choose Your Dressing</h3>
-          <p className="text-gray-600 text-sm mb-3">
-            All our salads come with your choice of dressing:
-          </p>
-          <div className="flex flex-wrap justify-center gap-2">
-            {saladDressings.slice(0, 5).map((dressing) => (
-              <span key={dressing.id} className="text-xs bg-white px-2 py-1 rounded-full shadow-sm">
-                {dressing.name}
-              </span>
-            ))}
-            <span className="text-xs bg-white px-2 py-1 rounded-full shadow-sm">+{saladDressings.length - 5} more</span>
-          </div>
-        </div>
-
-        {/* Add-ons Info */}
-        <div className="mt-4 p-6 bg-amber-50 rounded-xl text-center">
-          <h3 className="font-bold text-amber-800 mb-2">Customize Your Salad</h3>
-          <p className="text-amber-700 text-sm">
-            Add extra protein, avocado, or cheese to make your salad even more satisfying!
-          </p>
-          <div className="flex flex-wrap justify-center gap-2 mt-3">
-            <span className="text-xs bg-white px-2 py-1 rounded-full shadow-sm">+ Extra Chicken (R40)</span>
-            <span className="text-xs bg-white px-2 py-1 rounded-full shadow-sm">+ Extra Beef (R45)</span>
-            <span className="text-xs bg-white px-2 py-1 rounded-full shadow-sm">+ Avocado (R20)</span>
-            <span className="text-xs bg-white px-2 py-1 rounded-full shadow-sm">+ Feta Cheese (R25)</span>
-          </div>
         </div>
       </div>
     </div>
