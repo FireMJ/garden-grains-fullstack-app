@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { loadGoogleMaps, getAddressSuggestions, geocodeAddress } from '@/lib/googleMaps';
-import { getCurrentLocation } from '@/lib/locationService';
+import { getCurrentLocation, getCapeTownLocation } from '@/lib/locationService';
 import { FaMapMarkerAlt, FaSpinner, FaCrosshairs, FaSearch, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
 
 interface AddressAutocompleteProps {
@@ -20,7 +20,7 @@ interface AddressAutocompleteProps {
 
 export default function AddressAutocomplete({ 
   onAddressSelect, 
-  placeholder = "Enter your address in Cape Town", 
+  placeholder = "Enter your Cape Town address", 
   className = "",
   initialValue = ""
 }: AddressAutocompleteProps) {
@@ -36,7 +36,12 @@ export default function AddressAutocomplete({
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    loadGoogleMaps();
+    console.log('📍 AddressAutocomplete mounted');
+    loadGoogleMaps().then(() => {
+      console.log('✅ Google Maps API ready');
+    }).catch(err => {
+      console.error('❌ Google Maps API failed:', err);
+    });
   }, []);
 
   useEffect(() => {
@@ -55,10 +60,18 @@ export default function AddressAutocomplete({
     debounceTimerRef.current = setTimeout(async () => {
       if (inputValue.length >= 3) {
         setIsLoading(true);
-        const results = await getAddressSuggestions(inputValue);
-        setSuggestions(results);
-        setIsLoading(false);
-        setShowSuggestions(true);
+        console.log(`🔍 Fetching suggestions for: "${inputValue}"`);
+        try {
+          const results = await getAddressSuggestions(inputValue);
+          console.log(`📋 Got ${results.length} suggestions`);
+          setSuggestions(results);
+          setShowSuggestions(results.length > 0);
+        } catch (error) {
+          console.error('❌ Error fetching suggestions:', error);
+          setSuggestions([]);
+        } finally {
+          setIsLoading(false);
+        }
       } else {
         setSuggestions([]);
         setShowSuggestions(false);
@@ -69,6 +82,7 @@ export default function AddressAutocomplete({
   }, [inputValue]);
 
   const handleGetCurrentLocation = async () => {
+    console.log('📍 Getting current location...');
     setIsGettingLocation(true);
     setLocationError(null);
     setLocationStatus('acquiring');
@@ -76,6 +90,7 @@ export default function AddressAutocomplete({
     setInputValue("Acquiring GPS signal...");
 
     const result = await getCurrentLocation();
+    console.log('📍 Location result:', result);
     
     if (result.success && result.coordinates) {
       setLocationStatus('success');
@@ -108,19 +123,28 @@ export default function AddressAutocomplete({
       
       setTimeout(() => setLocationStatus('idle'), 3000);
     } else {
-      setLocationStatus('error');
-      setLocationError(result.error || "Could not get your location. Please try entering your address manually.");
-      setInputValue("");
+      const capeTown = getCapeTownLocation();
+      setLocationStatus('success');
+      setInputValue(capeTown.address || "Cape Town, South Africa");
+      onAddressSelect({
+        street: "Cape Town City Centre",
+        city: "Cape Town",
+        postalCode: "8000",
+        formattedAddress: capeTown.address || "Cape Town, South Africa",
+        coordinates: capeTown.coordinates,
+      });
+      setLocationError(result.error || "Using Cape Town as default location");
       setTimeout(() => {
         setLocationStatus('idle');
         setLocationError(null);
-      }, 5000);
+      }, 3000);
     }
     
     setIsGettingLocation(false);
   };
 
   const handleSelectSuggestion = async (suggestion: { description: string; placeId: string }) => {
+    console.log(`📍 Selected: ${suggestion.description}`);
     setInputValue(suggestion.description);
     setShowSuggestions(false);
     setIsLoading(true);
@@ -128,26 +152,40 @@ export default function AddressAutocomplete({
     try {
       const coords = await geocodeAddress(suggestion.description);
       if (coords) {
+        console.log(`📍 Geocoded:`, coords);
+        const parts = suggestion.description.split(',');
+        const street = parts[0]?.trim() || '';
+        const city = parts[1]?.trim() || '';
+        const postalCode = parts[2]?.trim() || '';
+        
         onAddressSelect({
-          street: suggestion.description.split(',')[0],
-          city: '',
-          postalCode: '',
+          street: street,
+          city: city,
+          postalCode: postalCode,
           formattedAddress: suggestion.description,
           coordinates: coords,
         });
+      } else {
+        console.error('❌ Could not geocode address');
       }
     } catch (error) {
-      console.error('Error getting place details:', error);
+      console.error('❌ Error:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
   const getLocationButtonContent = () => {
-    if (locationStatus === 'acquiring') return (<><FaSpinner className="w-4 h-4 animate-spin" /><span className="hidden sm:inline text-sm">Acquiring GPS...</span></>);
-    if (locationStatus === 'success') return (<><FaCheckCircle className="w-4 h-4 text-green-600" /><span className="hidden sm:inline text-sm">GPS Located!</span></>);
-    if (locationStatus === 'error') return (<><FaExclamationTriangle className="w-4 h-4 text-red-600" /><span className="hidden sm:inline text-sm">Retry</span></>);
-    return (<><FaCrosshairs className="w-4 h-4" /><span className="hidden sm:inline text-sm">My Location</span></>);
+    if (locationStatus === 'acquiring') {
+      return <><FaSpinner className="w-4 h-4 animate-spin" /><span className="hidden sm:inline text-sm">Acquiring GPS...</span></>;
+    }
+    if (locationStatus === 'success') {
+      return <><FaCheckCircle className="w-4 h-4 text-green-600" /><span className="hidden sm:inline text-sm">Location Set</span></>;
+    }
+    if (locationStatus === 'error') {
+      return <><FaExclamationTriangle className="w-4 h-4 text-red-600" /><span className="hidden sm:inline text-sm">Retry</span></>;
+    }
+    return <><FaCrosshairs className="w-4 h-4" /><span className="hidden sm:inline text-sm">My Location</span></>;
   };
 
   return (
@@ -163,39 +201,45 @@ export default function AddressAutocomplete({
               setLocationError(null);
               setLocationStatus('idle');
             }}
-            onFocus={() => inputValue.length >= 3 && setShowSuggestions(true)}
+            onFocus={() => {
+              if (inputValue.length >= 3 && suggestions.length > 0) {
+                setShowSuggestions(true);
+              }
+            }}
             placeholder={placeholder}
             className={`w-full pl-10 pr-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${className}`}
           />
-          {(isLoading || isGettingLocation) && (<FaSpinner className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 animate-spin" />)}
+          {(isLoading || isGettingLocation) && (
+            <FaSpinner className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 animate-spin" />
+          )}
         </div>
         
         <button
           onClick={handleGetCurrentLocation}
           disabled={isGettingLocation}
           className={`px-4 py-3 rounded-lg transition flex items-center gap-2 disabled:opacity-50 whitespace-nowrap ${
-            locationStatus === 'success' ? 'bg-green-100 text-green-700 hover:bg-green-200' : 
-            locationStatus === 'error' ? 'bg-red-100 text-red-700 hover:bg-red-200' :
-            'bg-gray-100 hover:bg-gray-200 text-gray-700'
+            locationStatus === 'success' 
+              ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+              : locationStatus === 'error'
+              ? 'bg-red-100 text-red-700 hover:bg-red-200'
+              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
           }`}
-          title="Use my current GPS location"
+          title="Use my current location"
         >
           {getLocationButtonContent()}
         </button>
       </div>
       
       {locationError && (
-        <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-700 text-sm font-medium">Location Error</p>
-          <p className="text-red-600 text-xs mt-1">{locationError}</p>
-          <p className="text-red-500 text-xs mt-2">💡 Tip: Enable GPS and ensure you're in an open area, or type your address manually</p>
+        <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="text-yellow-700 text-xs">{locationError}</p>
         </div>
       )}
       
       {locationStatus === 'success' && !locationError && locationAccuracy && (
         <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg text-green-700 text-xs flex items-center gap-2">
           <FaCheckCircle className="w-3 h-3" />
-          <span>GPS acquired! Accuracy: {locationAccuracy.toFixed(0)} meters</span>
+          <span>Location acquired! Accuracy: {locationAccuracy.toFixed(0)} meters</span>
         </div>
       )}
       
@@ -215,7 +259,7 @@ export default function AddressAutocomplete({
       )}
       
       <p className="text-xs text-gray-400 mt-1">
-        📍 Use "My Location" for GPS-accurate positioning, or type your address
+        💡 Type your Cape Town address or click "My Location" for GPS
       </p>
     </div>
   );
