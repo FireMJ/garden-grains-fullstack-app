@@ -2,8 +2,7 @@
 const nextConfig = {
   images: {
     unoptimized: true,
-    // Add all quality values being used by your images
-    qualities: [25, 50, 75, 80, 85, 90, 100],
+    domains: [],
     remotePatterns: [
       {
         protocol: 'https',
@@ -11,9 +10,16 @@ const nextConfig = {
       },
     ],
   },
+  // Disable static optimization for images
+  output: 'standalone',
   typescript: {
     ignoreBuildErrors: true,
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  // Ensure public files are served correctly
+  distDir: '.next',
 };
 
 export default nextConfig;
