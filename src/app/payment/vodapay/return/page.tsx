@@ -1,128 +1,97 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { FaCheckCircle } from 'react-icons/fa';
-import { orderService } from '@/services/orderService';
-import { useAuth } from '@/context/AuthContext';
+import { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { CheckCircle, Loader2, XCircle } from 'lucide-react';
 
 function ReturnContent() {
-  const searchParams = useSearchParams();
   const router = useRouter();
-  const { user } = useAuth();
-  const [countdown, setCountdown] = useState(3);
-  const status = searchParams.get('status');
-  const transactionId = searchParams.get('transactionId');
+  const searchParams = useSearchParams();
+  const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
-    const processOrder = async () => {
-      if (status === 'SUCCESS') {
-        const pendingOrderStr = sessionStorage.getItem('pendingOrder');
-        
-        if (pendingOrderStr && user) {
-          try {
-            const pendingOrder = JSON.parse(pendingOrderStr);
-            
-            const orderId = pendingOrder.orderId;
-            
-            const newOrder = {
-              orderId: orderId,
-              orderNumber: `GN-${Date.now().toString().slice(-8)}`,
-              transactionId: transactionId,
-              amount: pendingOrder.amount,
-              subtotal: pendingOrder.subtotal,
-              customerDeliveryFee: pendingOrder.customerDeliveryFee,
-              driverPayment: pendingOrder.driverPayment,
-              distance: pendingOrder.distance,
-              items: pendingOrder.items,
-              orderType: pendingOrder.orderType,
-              deliveryAddress: pendingOrder.deliveryAddress,
-              pickupLocation: pendingOrder.pickupLocation,
-              paymentStatus: 'paid',
-              status: 'paid',
-              paymentDate: new Date().toISOString(),
-              timestamp: pendingOrder.timestamp || new Date().toISOString(),
-              customerEmail: pendingOrder.customerEmail,
-              customerName: pendingOrder.customerName,
-            };
-            
-            console.log('Order saved:', {
-              customerPaid: newOrder.customerDeliveryFee,
-              driverEarns: newOrder.driverPayment,
-              distance: newOrder.distance,
-            });
-            
-            // Save to localStorage
-            const existingOrdersStr = localStorage.getItem('orders');
-            const existingOrders = existingOrdersStr ? JSON.parse(existingOrdersStr) : [];
-            existingOrders.unshift(newOrder);
-            localStorage.setItem('orders', JSON.stringify(existingOrders));
-            
-            if (pendingOrder.customerEmail) {
-              const userOrdersStr = localStorage.getItem(`orders_${pendingOrder.customerEmail}`);
-              const userOrders = userOrdersStr ? JSON.parse(userOrdersStr) : [];
-              userOrders.unshift(newOrder);
-              localStorage.setItem(`orders_${pendingOrder.customerEmail}`, JSON.stringify(userOrders));
-            }
-            
-            sessionStorage.removeItem('pendingOrder');
-            sessionStorage.removeItem('currentTransactionId');
-            
-            setTimeout(() => {
-              router.push(`/order-tracking/${orderId}`);
-            }, 2000);
-            
-          } catch (error) {
-            console.error('Error saving order:', error);
-          }
-        }
-      }
-    };
+    const paymentStatus = searchParams.get('status');
+    const transactionId = searchParams.get('transactionId');
     
-    processOrder();
-  }, [status, router, user, transactionId]);
-
-  if (status === 'SUCCESS') {
-    return (
-      <div className="min-h-screen bg-gray-50 py-12">
-        <div className="max-w-2xl mx-auto px-4">
-          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <FaCheckCircle className="w-10 h-10 text-green-600" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Payment Successful!</h1>
-            <p className="text-gray-600 mb-4">Your order has been placed successfully.</p>
-            {transactionId && (
-              <p className="text-sm text-gray-500 mb-6">Transaction ID: {transactionId}</p>
-            )}
-            <div className="animate-pulse text-gray-500 mb-4">
-              Redirecting to order tracking...
-            </div>
-            <button
-              onClick={() => router.push('/orders')}
-              className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition"
-            >
-              View Orders
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+    console.log('Payment return status:', paymentStatus, 'Transaction:', transactionId);
+    
+    if (paymentStatus === 'SUCCESS') {
+      setStatus('success');
+      setMessage('Payment successful! Redirecting to order confirmation...');
+      
+      // Get pending order from sessionStorage
+      const pendingOrder = sessionStorage.getItem('pendingOrder');
+      console.log('Pending order:', pendingOrder);
+      
+      if (pendingOrder) {
+        const order = JSON.parse(pendingOrder);
+        
+        // Save order to localStorage
+        const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+        const newOrder = {
+          ...order,
+          id: `ORD-${Date.now()}`,
+          payment: {
+            transactionId: transactionId,
+            status: 'completed',
+            timestamp: new Date().toISOString()
+          }
+        };
+        existingOrders.push(newOrder);
+        localStorage.setItem('orders', JSON.stringify(existingOrders));
+        
+        // Clear cart
+        localStorage.removeItem('cart');
+        sessionStorage.removeItem('pendingOrder');
+        
+        console.log('Order saved successfully:', newOrder.id);
+      }
+      
+      // Redirect to order confirmation after 2 seconds
+      setTimeout(() => {
+        router.push('/order-confirmation');
+      }, 2000);
+    } else {
+      setStatus('error');
+      const errorMessage = searchParams.get('message') || 'Payment failed';
+      setMessage(`Payment ${paymentStatus || 'failed'}: ${errorMessage}`);
+      
+      // Redirect back to checkout after 3 seconds
+      setTimeout(() => {
+        router.push('/checkout');
+      }, 3000);
+    }
+  }, [router, searchParams]);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-2xl mx-auto px-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-          <h1 className="text-3xl font-bold text-red-600 mb-2">Payment Failed</h1>
-          <p className="text-gray-600 mb-6">Your payment could not be processed.</p>
-          <button
-            onClick={() => router.push('/checkout')}
-            className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition"
-          >
-            Try Again
-          </button>
-        </div>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md text-center">
+        {status === 'processing' && (
+          <>
+            <Loader2 size={64} className="text-[#2F5D50] animate-spin mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Processing Payment</h2>
+            <p className="text-gray-600">Please wait...</p>
+          </>
+        )}
+        
+        {status === 'success' && (
+          <>
+            <CheckCircle size={64} className="text-green-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Successful!</h2>
+            <p className="text-gray-600 mb-4">{message}</p>
+            <div className="animate-pulse text-sm text-gray-500">Redirecting to order confirmation...</div>
+          </>
+        )}
+        
+        {status === 'error' && (
+          <>
+            <XCircle size={64} className="text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Failed</h2>
+            <p className="text-gray-600 mb-4">{message}</p>
+            <p className="text-sm text-gray-500">Redirecting back to checkout...</p>
+          </>
+        )}
       </div>
     </div>
   );
@@ -130,7 +99,11 @@ function ReturnContent() {
 
 export default function VodaPayReturnPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2F5D50]"></div>
+      </div>
+    }>
       <ReturnContent />
     </Suspense>
   );

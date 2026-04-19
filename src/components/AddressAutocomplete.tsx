@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { FaMapMarkerAlt, FaSpinner, FaCrosshairs, FaSearch, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
+import { loadGoogleMaps, getAddressSuggestions, getPlaceDetails, isWithinDeliveryRadius, RESTAURANT_COORDS } from '@/lib/googleMaps';
+import { FaMapMarkerAlt, FaSpinner, FaCrosshairs, FaExclamationTriangle } from 'react-icons/fa';
 
 interface AddressAutocompleteProps {
   onAddressSelect: (address: {
@@ -16,330 +17,192 @@ interface AddressAutocompleteProps {
   initialValue?: string;
 }
 
-export default function AddressAutocomplete({ 
-  onAddressSelect, 
-  placeholder = "Enter your Cape Town address", 
+export default function AddressAutocomplete({
+  onAddressSelect,
+  placeholder = "Enter your Cape Town address",
   className = "",
-  initialValue = ""
+  initialValue = "",
 }: AddressAutocompleteProps) {
   const [inputValue, setInputValue] = useState(initialValue);
   const [suggestions, setSuggestions] = useState<Array<{ description: string; placeId: string }>>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [isGettingLocation, setIsGettingLocation] = useState(false);
-  const [locationError, setLocationError] = useState<string | null>(null);
-  const [locationStatus, setLocationStatus] = useState<'idle' | 'acquiring' | 'success' | 'error'>('idle');
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isReady, setIsReady] = useState(false);
+  
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    console.log('📍 AddressAutocomplete mounted');
+    loadGoogleMaps().then(() => setIsReady(true)).catch(() => setError('Failed to load maps'));
   }, []);
 
-  // Fetch address suggestions using server-side proxy
-  useEffect(() => {
-    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-    
-    // Cancel previous request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    
-    debounceTimerRef.current = setTimeout(async () => {
-      if (inputValue.length >= 3) {
-        setIsLoading(true);
-        console.log(`🔍 Fetching suggestions for: "${inputValue}"`);
-        
-        // Create new abort controller for this request
-        abortControllerRef.current = new AbortController();
-        
-        try {
-          const response = await fetch(`/api/places/autocomplete?input=${encodeURIComponent(inputValue)}`, {
-            signal: abortControllerRef.current.signal,
-          });
-          const data = await response.json();
-          
-          console.log('📋 API Response:', data.status);
-          
-          if (data.status === 'OK' && data.predictions && data.predictions.length > 0) {
-            setSuggestions(data.predictions.map((p: any) => ({
-              description: p.description,
-              placeId: p.place_id,
-            })));
-            setShowSuggestions(true);
-          } else {
-            setSuggestions([]);
-          }
-        } catch (error: any) {
-          if (error.name !== 'AbortError') {
-            console.error('❌ Error fetching suggestions:', error);
-          }
-          setSuggestions([]);
-        } finally {
-          setIsLoading(false);
-        }
-      } else {
-        setSuggestions([]);
-        setShowSuggestions(false);
-      }
-    }, 500);
-    
-    return () => {
-      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, [inputValue]); // Only depend on inputValue, not API_KEY
-
-  const handleGetCurrentLocation = () => {
-    setIsGettingLocation(true);
-    setLocationError(null);
-    setLocationStatus('acquiring');
-    setInputValue("Getting your location...");
-
-    if (!navigator.geolocation) {
-      setLocationError("Geolocation is not supported by your browser");
-      setIsGettingLocation(false);
-      setInputValue("");
+  const searchAddresses = async (query: string) => {
+    if (!query.trim() || !isReady) {
+      setSuggestions([]);
       return;
     }
 
-    const timeoutId = setTimeout(() => {
-      if (isGettingLocation) {
-        console.log('GPS timeout, falling back to Cape Town');
-        const capeTownCoords = { lat: -33.9249, lng: 18.4241 };
-        const capeTownAddress = "Cape Town City Centre, Cape Town, South Africa";
-        setInputValue(capeTownAddress);
-        onAddressSelect({
-          street: "Cape Town City Centre",
-          city: "Cape Town",
-          postalCode: "8000",
-          formattedAddress: capeTownAddress,
-          coordinates: capeTownCoords,
-        });
-        setLocationStatus('success');
-        setIsGettingLocation(false);
-        setTimeout(() => setLocationStatus('idle'), 3000);
-      }
-    }, 8000);
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        clearTimeout(timeoutId);
-        const { latitude, longitude } = position.coords;
-        
-        try {
-          const response = await fetch(`/api/places/geocode?lat=${latitude}&lng=${longitude}`);
-          const data = await response.json();
-          
-          if (data.status === 'OK' && data.results && data.results[0]) {
-            const address = data.results[0];
-            const formattedAddress = address.formatted_address;
-            setInputValue(formattedAddress);
-            
-            let street = '';
-            let city = '';
-            let postalCode = '';
-            
-            address.address_components?.forEach((component: any) => {
-              if (component.types.includes('street_number')) {
-                street = component.long_name + ' ' + street;
-              }
-              if (component.types.includes('route')) {
-                street = street + component.long_name;
-              }
-              if (component.types.includes('locality')) {
-                city = component.long_name;
-              }
-              if (component.types.includes('postal_code')) {
-                postalCode = component.long_name;
-              }
-            });
-            
-            onAddressSelect({
-              street: street.trim() || formattedAddress.split(',')[0],
-              city: city,
-              postalCode: postalCode,
-              formattedAddress: formattedAddress,
-              coordinates: { lat: latitude, lng: longitude },
-            });
-            setLocationStatus('success');
-          } else {
-            throw new Error('Geocoding failed');
-          }
-        } catch (error) {
-          console.error('Error reverse geocoding:', error);
-          onAddressSelect({
-            street: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
-            city: '',
-            postalCode: '',
-            formattedAddress: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
-            coordinates: { lat: latitude, lng: longitude },
-          });
-        } finally {
-          setIsGettingLocation(false);
-          setTimeout(() => setLocationStatus('idle'), 3000);
-        }
-      },
-      (error) => {
-        clearTimeout(timeoutId);
-        console.error('Geolocation error:', error);
-        const capeTownCoords = { lat: -33.9249, lng: 18.4241 };
-        const capeTownAddress = "Cape Town City Centre, Cape Town, South Africa";
-        setInputValue(capeTownAddress);
-        onAddressSelect({
-          street: "Cape Town City Centre",
-          city: "Cape Town",
-          postalCode: "8000",
-          formattedAddress: capeTownAddress,
-          coordinates: capeTownCoords,
-        });
-        setLocationStatus('success');
-        setIsGettingLocation(false);
-        setTimeout(() => setLocationStatus('idle'), 3000);
-      },
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
-    );
-  };
-
-  const handleSelectSuggestion = async (suggestion: { description: string; placeId: string }) => {
-    setInputValue(suggestion.description);
-    setShowSuggestions(false);
     setIsLoading(true);
-
     try {
-      const response = await fetch(`/api/places/geocode?placeId=${suggestion.placeId}`);
-      const data = await response.json();
-      
-      if (data.status === 'OK' && data.results && data.results[0]) {
-        const location = data.results[0].geometry.location;
-        const address = data.results[0];
-        
-        let street = '';
-        let city = '';
-        let postalCode = '';
-        
-        address.address_components?.forEach((component: any) => {
-          if (component.types.includes('street_number')) {
-            street = component.long_name + ' ' + street;
-          }
-          if (component.types.includes('route')) {
-            street = street + component.long_name;
-          }
-          if (component.types.includes('locality')) {
-            city = component.long_name;
-          }
-          if (component.types.includes('postal_code')) {
-            postalCode = component.long_name;
-          }
-        });
-        
-        onAddressSelect({
-          street: street.trim() || suggestion.description.split(',')[0],
-          city: city,
-          postalCode: postalCode,
-          formattedAddress: suggestion.description,
-          coordinates: {
-            lat: location.lat,
-            lng: location.lng,
-          },
-        });
-      }
-    } catch (error) {
-      console.error('Error getting place details:', error);
+      const results = await getAddressSuggestions(query);
+      setSuggestions(results);
+      setError(null);
+    } catch (err) {
+      setError('Failed to search addresses');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const getLocationButtonContent = () => {
-    if (locationStatus === 'acquiring') {
-      return <><FaSpinner className="w-4 h-4 animate-spin" /><span className="hidden sm:inline text-sm">Getting location...</span></>;
+  const handleInputChange = (value: string) => {
+    setInputValue(value);
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => searchAddresses(value), 300);
+  };
+
+  const handleSelectSuggestion = async (placeId: string, description: string) => {
+    setIsLoading(true);
+    try {
+      const details = await getPlaceDetails(placeId);
+      if (!details) throw new Error('No details');
+      
+      const { lat, lng } = details.location;
+      
+      // Check if within 50km delivery radius
+      if (!isWithinDeliveryRadius(lat, lng)) {
+        const distance = Math.sqrt(Math.pow(lat - RESTAURANT_COORDS.lat, 2) + Math.pow(lng - RESTAURANT_COORDS.lng, 2)) * 111;
+        setError(`"${description.split(',')[0]}" is approximately ${distance.toFixed(0)}km from our restaurant. Maximum delivery distance is 50km.`);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Extract address components
+      let street = "", city = "", postalCode = "";
+      if (details.addressComponents) {
+        for (const comp of details.addressComponents) {
+          if (comp.types.includes("route") || comp.types.includes("street_address")) street = comp.longText;
+          if (comp.types.includes("locality")) city = comp.longText;
+          if (comp.types.includes("postal_code")) postalCode = comp.longText;
+        }
+      }
+      
+      const parts = description.split(',');
+      const selected = {
+        street: street || parts[0] || "",
+        city: city || (parts[1]?.trim() || "Cape Town"),
+        postalCode: postalCode || "",
+        formattedAddress: details.formattedAddress || description,
+        coordinates: { lat, lng },
+      };
+      
+      setInputValue(selected.formattedAddress);
+      setSuggestions([]);
+      onAddressSelect(selected);
+    } catch (err) {
+      setError('Failed to get address details');
+    } finally {
+      setIsLoading(false);
     }
-    if (locationStatus === 'success') {
-      return <><FaCheckCircle className="w-4 h-4 text-green-600" /><span className="hidden sm:inline text-sm">Location Set</span></>;
+  };
+
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setError("Geolocation not supported");
+      return;
     }
-    if (locationStatus === 'error') {
-      return <><FaExclamationTriangle className="w-4 h-4 text-red-600" /><span className="hidden sm:inline text-sm">Use Cape Town</span></>;
-    }
-    return <><FaCrosshairs className="w-4 h-4" /><span className="hidden sm:inline text-sm">My Location</span></>;
+    
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        
+        // Check if within 50km delivery radius
+        if (!isWithinDeliveryRadius(latitude, longitude)) {
+          const distance = Math.sqrt(Math.pow(latitude - RESTAURANT_COORDS.lat, 2) + Math.pow(longitude - RESTAURANT_COORDS.lng, 2)) * 111;
+          setError(`Your location is approximately ${distance.toFixed(0)}km from our restaurant. Maximum delivery distance is 50km.`);
+          setIsLocating(false);
+          return;
+        }
+        
+        const google = await loadGoogleMaps();
+        if (google) {
+          const geocoder = new google.maps.Geocoder();
+          geocoder.geocode({ location: { lat: latitude, lng: longitude } }, (results, status) => {
+            if (status === 'OK' && results?.[0]) {
+              let street = "", city = "", postalCode = "";
+              for (const comp of results[0].address_components) {
+                if (comp.types.includes("route") || comp.types.includes("street_address")) street = comp.long_name;
+                if (comp.types.includes("locality")) city = comp.long_name;
+                if (comp.types.includes("postal_code")) postalCode = comp.long_name;
+              }
+              
+              onAddressSelect({
+                street: street || "Current Location",
+                city: city || "Cape Town",
+                postalCode: postalCode || "",
+                formattedAddress: results[0].formatted_address,
+                coordinates: { lat: latitude, lng: longitude },
+              });
+              setInputValue(results[0].formatted_address);
+            }
+            setIsLocating(false);
+          });
+        }
+      },
+      () => setError("Could not get your location"),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
 
   return (
-    <div ref={wrapperRef} className="relative">
-      <div className="relative flex gap-2">
-        <div className="relative flex-1">
-          <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            value={inputValue}
-            onChange={(e) => {
-              setInputValue(e.target.value);
-              setLocationError(null);
-              setLocationStatus('idle');
-            }}
-            onFocus={() => {
-              if (inputValue.length >= 3 && suggestions.length > 0) {
-                setShowSuggestions(true);
-              }
-            }}
-            placeholder={placeholder}
-            className={`w-full pl-10 pr-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${className}`}
-          />
-          {isLoading && (
-            <FaSpinner className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 animate-spin" />
-          )}
-        </div>
+    <div className={`relative ${className}`}>
+      <div className="relative">
+        <input
+          type="text"
+          value={inputValue}
+          onChange={(e) => handleInputChange(e.target.value)}
+          placeholder={placeholder}
+          className="w-full px-4 py-3 pr-24 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2F5D50] focus:border-transparent"
+          disabled={!isReady}
+        />
         
-        <button
-          onClick={handleGetCurrentLocation}
-          disabled={isGettingLocation}
-          className={`px-4 py-3 rounded-lg transition flex items-center gap-2 disabled:opacity-50 whitespace-nowrap ${
-            locationStatus === 'success' 
-              ? 'bg-green-100 text-green-700 hover:bg-green-200' 
-              : locationStatus === 'error'
-              ? 'bg-red-100 text-red-700 hover:bg-red-200'
-              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-          }`}
-          title="Use my current location"
-        >
-          {getLocationButtonContent()}
-        </button>
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
+          <button
+            onClick={getCurrentLocation}
+            disabled={isLocating || !isReady}
+            className="p-2 text-gray-500 hover:text-[#2F5D50] disabled:opacity-50"
+            title="Use my location"
+          >
+            {isLocating ? <FaSpinner className="animate-spin" /> : <FaCrosshairs />}
+          </button>
+          {isLoading && <FaSpinner className="animate-spin text-gray-400" size={20} />}
+        </div>
       </div>
       
-      {locationError && (
-        <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <p className="text-yellow-700 text-xs">{locationError}</p>
+      {error && (
+        <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
+          <FaExclamationTriangle className="text-red-500" />
+          <span>{error}</span>
         </div>
       )}
       
-      {locationStatus === 'success' && !locationError && (
-        <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg text-green-700 text-xs flex items-center gap-2">
-          <FaCheckCircle className="w-3 h-3" />
-          <span>Location acquired!</span>
-        </div>
-      )}
-      
-      {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-          {suggestions.map((suggestion) => (
-            <button
-              key={suggestion.placeId}
-              onClick={() => handleSelectSuggestion(suggestion)}
-              className="w-full text-left px-4 py-2 hover:bg-gray-50 transition text-sm border-b last:border-b-0 flex items-start gap-2"
+      {suggestions.length > 0 && (
+        <ul className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-auto">
+          {suggestions.map((s) => (
+            <li
+              key={s.placeId}
+              onClick={() => handleSelectSuggestion(s.placeId, s.description)}
+              className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0 flex gap-3"
             >
-              <FaMapMarkerAlt className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-              <span className="text-gray-700">{suggestion.description}</span>
-            </button>
+              <FaMapMarkerAlt className="text-gray-400 mt-1 flex-shrink-0" />
+              <div>
+                <div className="font-medium">{s.description.split(',')[0]}</div>
+                <div className="text-sm text-gray-500">{s.description.split(',').slice(1).join(',').trim()}</div>
+              </div>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
-      
-      <p className="text-xs text-gray-400 mt-1">
-        📍 Type your Cape Town address or click "My Location" (defaults to Cape Town)
-      </p>
     </div>
   );
 }

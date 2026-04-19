@@ -1,207 +1,219 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { Eye, EyeOff, Mail, Lock, User, AlertCircle } from 'lucide-react';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
-export default function SignupPage() {
+function SignupContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    password: "",
-    confirmPassword: ""
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+
+  const redirect = searchParams.get('redirect') || '/';
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    setError('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
+    setError('');
+    
+    if (!formData.name.trim()) {
+      setError('Please enter your name');
       return;
     }
-
+    
+    if (!formData.email.trim()) {
+      setError('Please enter your email');
+      return;
+    }
+    
+    if (!formData.password) {
+      setError('Please enter a password');
+      return;
+    }
+    
     if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters");
+      setError('Password must be at least 6 characters');
       return;
     }
-
-    setIsLoading(true);
-
+    
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    
+    setLoading(true);
+    
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       
-      localStorage.setItem("user", JSON.stringify({
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone
-      }));
-
-      alert("Account created successfully!");
-      window.location.href = "/dashboard";
-    } catch (err) {
-      setError("Failed to create account. Please try again.");
+      // Update profile with display name
+      await updateProfile(userCredential.user, {
+        displayName: formData.name
+      });
+      
+      router.push(redirect);
+    } catch (err: any) {
+      console.error('Signup error:', err);
+      
+      switch (err.code) {
+        case 'auth/email-already-in-use':
+          setError('Email already registered. Please login instead.');
+          break;
+        case 'auth/invalid-email':
+          setError('Invalid email address');
+          break;
+        case 'auth/weak-password':
+          setError('Password is too weak');
+          break;
+        default:
+          setError('Failed to create account. Please try again.');
+      }
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-md mx-auto px-4">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center py-12 px-4">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Your Account</h1>
-          <p className="text-gray-600">Join Garden & Grains today</p>
+          <h1 className="text-3xl font-bold text-gray-900">Create Account</h1>
+          <p className="text-gray-500 mt-2">Join Garden Grains for a delicious experience</p>
         </div>
-
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-600 text-sm">{error}</p>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-gray-700 text-sm font-medium mb-2">
-                Full Name *
-              </label>
+        
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2">
+            <AlertCircle size={18} className="text-red-500 mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Full Name
+            </label>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2F5D50] focus:border-transparent"
                 placeholder="John Doe"
-                required
+                disabled={loading}
               />
             </div>
-
-            <div>
-              <label className="block text-gray-700 text-sm font-medium mb-2">
-                Email Address *
-              </label>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email Address
+            </label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2F5D50] focus:border-transparent"
                 placeholder="you@example.com"
-                required
+                disabled={loading}
               />
             </div>
-
-            <div>
-              <label className="block text-gray-700 text-sm font-medium mb-2">
-                Phone Number *
-              </label>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Password
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                placeholder="+27 12 345 6789"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-gray-700 text-sm font-medium mb-2">
-                Password *
-              </label>
-              <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2F5D50] focus:border-transparent"
                 placeholder="••••••••"
-                required
+                disabled={loading}
               />
-              <p className="text-xs text-gray-500 mt-1">At least 6 characters</p>
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
-
-            <div>
-              <label className="block text-gray-700 text-sm font-medium mb-2">
-                Confirm Password *
-              </label>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Confirm Password
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2F5D50] focus:border-transparent"
                 placeholder="••••••••"
-                required
+                disabled={loading}
               />
             </div>
-
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="terms"
-                className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                required
-              />
-              <label htmlFor="terms" className="ml-2 block text-sm text-gray-700">
-                I agree to the{" "}
-                <a href="/terms" className="text-green-600 hover:underline">
-                  Terms of Service
-                </a>{" "}
-                and{" "}
-                <a href="/privacy" className="text-green-600 hover:underline">
-                  Privacy Policy
-                </a>
-              </label>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? "Creating Account..." : "Create Account"}
-            </button>
-          </form>
-
-          <div className="mt-6 pt-6 border-t border-gray-200 text-center">
-            <p className="text-gray-600">
-              Already have an account?{" "}
-              <a href="/login" className="text-green-600 hover:underline font-medium">
-                Sign in here
-              </a>
-            </p>
           </div>
-        </div>
-
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-green-50 p-4 rounded-lg text-center">
-            <div className="text-2xl mb-2">🎁</div>
-            <h3 className="font-bold text-gray-900 mb-1">20% OFF First Order</h3>
-            <p className="text-gray-600 text-sm">Instant discount</p>
-          </div>
-          <div className="bg-green-50 p-4 rounded-lg text-center">
-            <div className="text-2xl mb-2">⭐</div>
-            <h3 className="font-bold text-gray-900 mb-1">Loyalty Rewards</h3>
-            <p className="text-gray-600 text-sm">Earn points</p>
-          </div>
-          <div className="bg-green-50 p-4 rounded-lg text-center">
-            <div className="text-2xl mb-2">🚚</div>
-            <h3 className="font-bold text-gray-900 mb-1">Free Delivery</h3>
-            <p className="text-gray-600 text-sm">Over R200</p>
-          </div>
+          
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-[#2F5D50] text-white py-3 rounded-xl font-semibold hover:bg-[#23483E] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Creating account...' : 'Sign Up'}
+          </button>
+        </form>
+        
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-600">
+            Already have an account?{' '}
+            <Link href={`/login?redirect=${encodeURIComponent(redirect)}`} className="text-[#2F5D50] hover:underline font-medium">
+              Login
+            </Link>
+          </p>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2F5D50]"></div>
+      </div>
+    }>
+      <SignupContent />
+    </Suspense>
   );
 }

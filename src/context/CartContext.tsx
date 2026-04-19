@@ -1,21 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-
-const FREE_DELIVERY_THRESHOLD = 850;
-const STANDARD_DELIVERY_FEE = 35;
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export interface AddOn {
-  id?: string;
+  id: string;
   name: string;
   price: number;
-  quantity?: number;
-}
-
-export interface UpsellItem {
-  name: string;
-  price: number;
-  size?: string;
+  quantity: number;
 }
 
 export interface CartItem {
@@ -23,219 +14,171 @@ export interface CartItem {
   name: string;
   price: number;
   quantity: number;
-  image: string;
-  category: string;
-  description?: string;
+  image?: string;
+  category?: string;
   specialInstructions?: string;
   addOns?: AddOn[];
-  base?: string;
-  dressing?: string;
-  size?: string;
-  baseExtra?: number;
-  fries?: { name: string; price: number; size?: string };
-  juice?: { name: string; price: number; size?: string };
-  friesUpsell?: UpsellItem;
-  juiceUpsell?: UpsellItem;
 }
 
 interface CartContextType {
   cartItems: CartItem[];
-  totalItems: number;
-  totalPrice: number;
-  isFreeDelivery: boolean;
-  deliveryFee: number;
-  amountNeededForFreeDelivery: number;
-  finalTotal: number;
-  deliveryProgress: number;
-  addToCart: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => void;
-  updateQuantity: (id: string, quantity: number) => void;
+  addToCart: (item: CartItem) => void;
   removeFromCart: (id: string) => void;
+  updateQuantity: (id: string, quantity: number) => void;
+  updateAddOnQuantity: (itemId: string, addOnId: string, quantity: number) => void;
+  removeAddOn: (itemId: string, addOnId: string) => void;
+  updateItemDetails: (itemId: string, updates: Partial<CartItem>) => void;
   clearCart: () => void;
-  updateItemDetails: (id: string, updates: Partial<CartItem>) => void;
-  updateAddOnQuantity: (itemId: string, addOnIndex: number, newQuantity: number) => void;
-  removeAddOn: (itemId: string, addOnIndex: number) => void;
-  clearAddOns: (itemId: string) => void;
-  getItemTotal: (item: CartItem) => number;
+  totalPrice: number;
+  itemCount: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-export function useCart() {
+export const useCart = () => {
   const context = useContext(CartContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useCart must be used within a CartProvider');
   }
   return context;
-}
+};
 
-export function CartProvider({ children }: { children: ReactNode }) {
+export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [isClient, setIsClient] = useState(false);
+  const [totalPrice, setTotalPrice] = useState(0);
+  const [itemCount, setItemCount] = useState(0);
+  const [mounted, setMounted] = useState(false);
 
+  // Load cart from localStorage on mount
   useEffect(() => {
-    setIsClient(true);
-    const savedCart = localStorage.getItem('garden-grains-cart');
+    setMounted(true);
+    const savedCart = localStorage.getItem('cart');
     if (savedCart) {
       try {
         const parsed = JSON.parse(savedCart);
-        if (Array.isArray(parsed)) {
-          setCartItems(parsed);
-        }
-      } catch (error) {
-        console.error('Error loading cart:', error);
+        setCartItems(parsed);
+      } catch (e) {
+        console.error('Failed to parse cart:', e);
       }
     }
   }, []);
 
-  useEffect(() => {
-    if (isClient) {
-      localStorage.setItem('garden-grains-cart', JSON.stringify(cartItems));
-    }
-  }, [cartItems, isClient]);
-
-  const getItemTotal = (item: CartItem): number => {
-    let total = (item.price || 0) * (item.quantity || 1);
-    
-    // Add-ons
-    const addOnsList = item.addOns || [];
-    if (addOnsList.length > 0) {
-      const addOnsTotal = addOnsList.reduce((sum: number, addOn: any) => 
-        sum + ((addOn.price || 0) * (addOn.quantity || 1)), 0);
-      total += addOnsTotal;
-    }
-    
-    // Fries upsell
-    if (item.friesUpsell) {
-      total += (item.friesUpsell.price || 0) * (item.quantity || 1);
-    }
-    
-    // Juice upsell
-    if (item.juiceUpsell) {
-      total += (item.juiceUpsell.price || 0) * (item.quantity || 1);
-    }
-    
-    // Legacy support
-    if (item.baseExtra) {
-      total += item.baseExtra * (item.quantity || 1);
-    }
-    if (item.fries) {
-      total += (item.fries.price || 0) * (item.quantity || 1);
-    }
-    if (item.juice) {
-      total += (item.juice.price || 0) * (item.quantity || 1);
-    }
-    
-    return total;
+  // Calculate total price including add-ons
+  const calculateTotalPrice = (items: CartItem[]): number => {
+    return items.reduce((sum, item) => {
+      let itemTotal = item.price * item.quantity;
+      
+      // Add add-ons total
+      if (item.addOns && item.addOns.length > 0) {
+        const addOnsTotal = item.addOns.reduce((addSum, addon) => addSum + (addon.price * addon.quantity), 0);
+        itemTotal += addOnsTotal;
+      }
+      
+      return sum + itemTotal;
+    }, 0);
   };
 
-  const totalItems = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
-  const totalPrice = cartItems.reduce((sum, item) => sum + getItemTotal(item), 0);
-  const isFreeDelivery = totalPrice >= FREE_DELIVERY_THRESHOLD;
-  const deliveryFee = isFreeDelivery ? 0 : STANDARD_DELIVERY_FEE;
-  const amountNeededForFreeDelivery = Math.max(0, FREE_DELIVERY_THRESHOLD - totalPrice);
-  const finalTotal = totalPrice + deliveryFee;
-  const deliveryProgress = Math.min(100, (totalPrice / FREE_DELIVERY_THRESHOLD) * 100);
+  // Save cart to localStorage and update totals
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem('cart', JSON.stringify(cartItems));
+      setTotalPrice(calculateTotalPrice(cartItems));
+      setItemCount(cartItems.reduce((sum, item) => sum + item.quantity, 0));
+    }
+  }, [cartItems, mounted]);
 
-  const addToCart = (itemData: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
-    const quantity = itemData.quantity || 1;
-    const newItem: CartItem = { ...itemData, quantity } as CartItem;
-    
+  const addToCart = (item: CartItem) => {
     setCartItems(prev => {
-      const existingIndex = prev.findIndex(item => item.id === newItem.id);
+      // Check if same item with same add-ons exists
+      const existingIndex = prev.findIndex(i => {
+        if (i.id !== item.id) return false;
+        
+        // Compare add-ons
+        const existingAddOns = JSON.stringify(i.addOns || []);
+        const newAddOns = JSON.stringify(item.addOns || []);
+        return existingAddOns === newAddOns;
+      });
       
-      if (existingIndex >= 0) {
+      if (existingIndex !== -1) {
+        // Update existing item quantity
         const updated = [...prev];
         updated[existingIndex] = {
           ...updated[existingIndex],
-          quantity: (updated[existingIndex].quantity || 1) + quantity
+          quantity: updated[existingIndex].quantity + item.quantity
         };
         return updated;
       }
-      return [...prev, newItem];
+      
+      return [...prev, item];
     });
-  };
-
-  const updateQuantity = (id: string, quantity: number) => {
-    if (quantity < 1) {
-      removeFromCart(id);
-      return;
-    }
-    setCartItems(prev => prev.map(item => item.id === id ? { ...item, quantity } : item));
   };
 
   const removeFromCart = (id: string) => {
     setCartItems(prev => prev.filter(item => item.id !== id));
   };
 
+  const updateQuantity = (id: string, quantity: number) => {
+    if (quantity <= 0) {
+      removeFromCart(id);
+      return;
+    }
+    setCartItems(prev =>
+      prev.map(item => (item.id === id ? { ...item, quantity } : item))
+    );
+  };
+
+  const updateAddOnQuantity = (itemId: string, addOnId: string, quantity: number) => {
+    setCartItems(prev =>
+      prev.map(item => {
+        if (item.id !== itemId) return item;
+        
+        const updatedAddOns = item.addOns?.map(addon => {
+          if (addon.id !== addOnId) return addon;
+          return { ...addon, quantity: Math.max(0, quantity) };
+        }).filter(addon => addon.quantity > 0);
+        
+        return { ...item, addOns: updatedAddOns };
+      })
+    );
+  };
+
+  const removeAddOn = (itemId: string, addOnId: string) => {
+    setCartItems(prev =>
+      prev.map(item => {
+        if (item.id !== itemId) return item;
+        return {
+          ...item,
+          addOns: item.addOns?.filter(addon => addon.id !== addOnId)
+        };
+      })
+    );
+  };
+
+  const updateItemDetails = (itemId: string, updates: Partial<CartItem>) => {
+    setCartItems(prev =>
+      prev.map(item => (item.id === itemId ? { ...item, ...updates } : item))
+    );
+  };
+
   const clearCart = () => {
     setCartItems([]);
-  };
-
-  const updateItemDetails = (id: string, updates: Partial<CartItem>) => {
-    setCartItems(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
-  };
-
-  const updateAddOnQuantity = (itemId: string, addOnIndex: number, newQuantity: number) => {
-    setCartItems(prev => prev.map(item => {
-      if (item.id !== itemId) return item;
-      
-      const addOnsList = item.addOns || [];
-      if (addOnsList.length === 0) return item;
-      
-      const updatedAddOns = [...addOnsList];
-      
-      if (newQuantity <= 0) {
-        updatedAddOns.splice(addOnIndex, 1);
-      } else {
-        updatedAddOns[addOnIndex] = {
-          ...updatedAddOns[addOnIndex],
-          quantity: newQuantity
-        };
-      }
-      
-      return { ...item, addOns: updatedAddOns };
-    }));
-  };
-
-  const removeAddOn = (itemId: string, addOnIndex: number) => {
-    setCartItems(prev => prev.map(item => {
-      if (item.id !== itemId) return item;
-      
-      const addOnsList = item.addOns || [];
-      if (addOnsList.length === 0) return item;
-      
-      const updatedAddOns = addOnsList.filter((_, idx) => idx !== addOnIndex);
-      return { ...item, addOns: updatedAddOns };
-    }));
-  };
-
-  const clearAddOns = (itemId: string) => {
-    setCartItems(prev => prev.map(item => 
-      item.id === itemId ? { ...item, addOns: [] } : item
-    ));
+    localStorage.removeItem('cart');
   };
 
   return (
     <CartContext.Provider value={{
       cartItems,
-      totalItems,
-      totalPrice,
-      isFreeDelivery,
-      deliveryFee,
-      amountNeededForFreeDelivery,
-      finalTotal,
-      deliveryProgress,
       addToCart,
-      updateQuantity,
       removeFromCart,
-      clearCart,
-      updateItemDetails,
+      updateQuantity,
       updateAddOnQuantity,
       removeAddOn,
-      clearAddOns,
-      getItemTotal
+      updateItemDetails,
+      clearCart,
+      totalPrice,
+      itemCount,
     }}>
       {children}
     </CartContext.Provider>
   );
-}
+};

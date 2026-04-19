@@ -4,13 +4,6 @@ import { useState } from 'react';
 import { auth } from "@/lib/firebase";
 import { GoogleAuthProvider, signInWithPopup, AuthError } from "firebase/auth";
 
-// Simple toast function without external dependency
-const showToast = (message: string, type: 'success' | 'error' = 'success') => {
-  // You can replace this with a proper toast library later
-  console.log(`${type.toUpperCase()}: ${message}`);
-  alert(message); // Temporary fallback
-};
-
 export const useGoogleSignIn = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,8 +14,10 @@ export const useGoogleSignIn = () => {
     
     try {
       const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
       const result = await signInWithPopup(auth, provider);
-      showToast(`Welcome ${result.user.displayName || 'User'}!`, 'success');
       return result.user;
     } catch (err) {
       const authError = err as AuthError;
@@ -43,7 +38,6 @@ export const useGoogleSignIn = () => {
       }
       
       setError(errorMessage);
-      showToast(errorMessage, 'error');
       throw err;
     } finally {
       setLoading(false);

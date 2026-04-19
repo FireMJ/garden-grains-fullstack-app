@@ -2,24 +2,38 @@
 const nextConfig = {
   images: {
     unoptimized: true,
-    domains: [],
     remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'maps.googleapis.com',
+      },
       {
         protocol: 'https',
         hostname: 'firebasestorage.googleapis.com',
       },
     ],
   },
-  // Disable static optimization for images
-  output: 'standalone',
   typescript: {
     ignoreBuildErrors: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
+  // Allow CORS for Google APIs
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, POST, OPTIONS',
+          },
+        ],
+      },
+    ];
   },
-  // Ensure public files are served correctly
-  distDir: '.next',
 };
 
 export default nextConfig;

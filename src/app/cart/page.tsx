@@ -4,9 +4,39 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 import Link from "next/link";
-import { Minus, Plus, Trash2, X, MapPin, Truck, Store, Navigation, CheckCircle } from "lucide-react";
+import { 
+  Minus, 
+  Plus, 
+  Trash2, 
+  MapPin, 
+  Truck, 
+  Store, 
+  CheckCircle, 
+  ShoppingBag, 
+  ChevronDown, 
+  ChevronUp,
+  Coffee,
+  Milk,
+  EggFried,
+  UtensilsCrossed,
+  Salad,
+  Apple,
+  Sparkles
+} from "lucide-react";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
-import { getDrivingDistance, RESTAURANT_COORDS, DELIVERY_CONFIG } from "@/lib/googleMaps";
+import { getDrivingDistance, RESTAURANT_COORDS, DELIVERY_CONFIG, isValidCapeTownAddress } from "@/lib/googleMaps";
+
+// Helper to get add-on icon
+const getAddOnIcon = (name: string) => {
+  const lowerName = name.toLowerCase();
+  if (lowerName.includes('cheese')) return <Sparkles size={14} className="text-yellow-600" />;
+  if (lowerName.includes('egg')) return <EggFried size={14} className="text-orange-500" />;
+  if (lowerName.includes('bacon')) return <UtensilsCrossed size={14} className="text-red-600" />;
+  if (lowerName.includes('milk') || lowerName.includes('cream')) return <Milk size={14} className="text-blue-500" />;
+  if (lowerName.includes('salad') || lowerName.includes('lettuce')) return <Salad size={14} className="text-green-600" />;
+  if (lowerName.includes('fruit') || lowerName.includes('berry')) return <Apple size={14} className="text-red-500" />;
+  return <Coffee size={14} className="text-gray-500" />;
+};
 
 export default function CartPage() {
   const cart = useCart();
@@ -22,7 +52,6 @@ export default function CartPage() {
   const [addressError, setAddressError] = useState('');
   const [deliveryFee, setDeliveryFee] = useState(0);
   const [isAddressValid, setIsAddressValid] = useState(false);
-  const [isCalculating, setIsCalculating] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -52,33 +81,33 @@ export default function CartPage() {
     formattedAddress: string;
     coordinates: { lat: number; lng: number };
   }) => {
+    if (!isValidCapeTownAddress(selectedAddress.coordinates.lat, selectedAddress.coordinates.lng)) {
+      setAddressError("Please select an address in Cape Town, South Africa");
+      return;
+    }
+    
     setDeliveryAddress(selectedAddress.formattedAddress);
     setDeliveryCoordinates(selectedAddress.coordinates);
     setIsCalculatingDistance(true);
     setAddressError('');
     setIsAddressValid(false);
-    setIsCalculating(true);
-    
+
     try {
       const result = await getDrivingDistance(selectedAddress.coordinates, RESTAURANT_COORDS);
-      
-      if (result && result.distance) {
+      if (result?.distance) {
         setDistance(result.distance);
         if (result.distance <= DELIVERY_CONFIG.MAX_DISTANCE_KM) {
           setIsAddressValid(true);
-          setAddressError('');
         } else {
-          setAddressError(`Location is ${result.distance.toFixed(1)} km away. Maximum delivery distance is ${DELIVERY_CONFIG.MAX_DISTANCE_KM} km.`);
+          setAddressError(`Location is ${result.distance.toFixed(1)} km away. Maximum is ${DELIVERY_CONFIG.MAX_DISTANCE_KM} km.`);
         }
       } else {
-        setAddressError('Could not calculate distance to this address');
+        setAddressError('Could not calculate distance');
       }
     } catch (error) {
-      console.error('Distance calculation error:', error);
-      setAddressError('Error calculating distance. Please try again.');
+      setAddressError('Error calculating distance');
     } finally {
       setIsCalculatingDistance(false);
-      setIsCalculating(false);
     }
   };
 
@@ -90,261 +119,253 @@ export default function CartPage() {
     setExpandedItems(prev => ({ ...prev, [itemId]: !prev[itemId] }));
   };
 
+  // Calculate item total including add-ons
+  const getItemTotal = (item: any) => {
+    let total = item.price * item.quantity;
+    if (item.addOns && item.addOns.length > 0) {
+      const addOnsTotal = item.addOns.reduce((sum: number, addon: any) => sum + (addon.price * addon.quantity), 0);
+      total += addOnsTotal;
+    }
+    return total;
+  };
+
   const subtotal = cart.totalPrice || 0;
-  const freeDeliveryThreshold = DELIVERY_CONFIG.FREE_DELIVERY_THRESHOLD;
-  const qualifiesForFreeDelivery = subtotal >= freeDeliveryThreshold;
+  const qualifiesForFreeDelivery = subtotal >= DELIVERY_CONFIG.FREE_DELIVERY_THRESHOLD;
   const finalDeliveryFee = (deliveryMethod === 'delivery' && !qualifiesForFreeDelivery && distance !== null) ? deliveryFee : 0;
   const finalTotal = subtotal + finalDeliveryFee;
 
   const isCheckoutEnabled = () => {
     if (cart.cartItems?.length === 0) return false;
-    if (deliveryMethod === 'pickup') return true;
-    return isAddressValid && distance !== null && !isCalculatingDistance;
+    if (deliveryMethod === 'delivery') return isAddressValid && deliveryCoordinates !== null;
+    return true;
   };
 
-  if (!mounted) {
-    return (
-      <main className="min-h-screen bg-[#F3F5F0] p-6 sm:p-8">
-        <div className="flex justify-center items-center h-64">
-          <p className="text-gray-500">Loading cart...</p>
-        </div>
-      </main>
-    );
-  }
-
-  const cartItems = cart.cartItems || [];
-
-  if (cartItems.length === 0) {
-    return (
-      <main className="min-h-screen bg-[#F3F5F0] p-6 sm:p-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-[#2F5D50] mb-6">Your Cart</h1>
-        <div className="bg-white p-6 rounded-xl shadow text-center">
-          <p className="text-gray-600 mb-4">Your cart is empty 🛒</p>
-          <Link href="/menu" className="inline-block bg-[#2F5D50] text-white px-4 py-2 rounded-lg font-semibold transition">
-            Browse Menu
-          </Link>
-        </div>
-      </main>
-    );
-  }
+  if (!mounted) return null;
 
   return (
-    <main className="min-h-screen bg-[#F3F5F0] p-4 sm:p-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl sm:text-3xl font-bold text-[#2F5D50] mb-6">
-          Your Cart ({cart.totalItems} {cart.totalItems === 1 ? 'item' : 'items'})
-        </h1>
-
-        {/* Delivery/Pickup Selection */}
-        <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-          <h2 className="text-xl font-bold text-[#2F5D50] mb-4">Choose Delivery Method</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <button
-              onClick={() => {
-                setDeliveryMethod('pickup');
-                setIsAddressValid(true);
-                setAddressError('');
-              }}
-              className={`p-4 rounded-xl border-2 transition-all ${deliveryMethod === 'pickup' ? 'border-[#2F5D50] bg-[#2F5D50]/5' : 'border-gray-200 hover:border-[#2F5D50]/30'}`}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${deliveryMethod === 'pickup' ? 'bg-[#2F5D50] text-white' : 'bg-gray-100 text-gray-600'}`}>
-                  <Store size={24} />
-                </div>
-                <div className="text-left">
-                  <h3 className="font-bold text-gray-900">Pickup</h3>
-                  <p className="text-sm text-gray-500">Free • Collect at our farm</p>
-                  <p className="text-xs text-gray-400 mt-1">Uitsig Wine Farm, Cape Town</p>
-                </div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setDeliveryMethod('delivery')}
-              className={`p-4 rounded-xl border-2 transition-all ${deliveryMethod === 'delivery' ? 'border-[#2F5D50] bg-[#2F5D50]/5' : 'border-gray-200 hover:border-[#2F5D50]/30'}`}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${deliveryMethod === 'delivery' ? 'bg-[#2F5D50] text-white' : 'bg-gray-100 text-gray-600'}`}>
-                  <Truck size={24} />
-                </div>
-                <div className="text-left">
-                  <h3 className="font-bold text-gray-900">Delivery</h3>
-                  <p className="text-sm text-gray-500">{qualifiesForFreeDelivery ? 'FREE delivery' : distance ? `R${deliveryFee} • ${distance.toFixed(1)}km` : 'Enter address for quote'}</p>
-                </div>
-              </div>
-            </button>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-8">
+      <div className="container mx-auto px-4 max-w-6xl">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Shopping Cart</h1>
+        <p className="text-gray-500 mb-8">Review your order and proceed to checkout</p>
+        
+        {cart.cartItems?.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
+            <ShoppingBag size={80} className="mx-auto text-gray-300 mb-4" />
+            <h2 className="text-2xl font-semibold text-gray-700 mb-2">Your cart is empty</h2>
+            <p className="text-gray-500 mb-6">Looks like you haven't added any items to your cart yet.</p>
+            <Link href="/menu" className="inline-flex items-center gap-2 bg-[#2F5D50] text-white px-6 py-3 rounded-lg hover:bg-[#23483E] transition-all shadow-md">
+              Browse Our Menu
+            </Link>
           </div>
-
-          {deliveryMethod === 'delivery' && (
-            <div className="border-t pt-6">
-              <div className="flex items-center gap-2 mb-4">
-                <MapPin size={20} className="text-[#2F5D50]" />
-                <h3 className="font-semibold text-gray-900">Delivery Address</h3>
-              </div>
-
-              <AddressAutocomplete onAddressSelect={handleAddressSelect} placeholder="Start typing your address in Cape Town..." initialValue={deliveryAddress} />
-
-              {isCalculating && (
-                <div className="mt-4 flex items-center gap-2 text-gray-500">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#2F5D50]"></div>
-                  <span className="text-sm">Calculating distance...</span>
-                </div>
-              )}
-
-              {isAddressValid && distance !== null && (
-                <div className="mt-4 p-4 bg-green-50 rounded-xl border border-green-200">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                      <p className="font-medium text-green-800">Address Verified!</p>
-                      <div className="flex flex-wrap justify-between items-center mt-2 gap-4">
-                        <div><p className="text-sm text-gray-600">Distance from restaurant</p><p className="text-xl font-bold text-[#2F5D50]">{distance.toFixed(1)} km</p></div>
-                        <div className="text-right"><p className="text-sm text-gray-600">Delivery Fee</p><p className="text-xl font-bold text-[#2F5D50]">{qualifiesForFreeDelivery ? 'FREE' : `R${deliveryFee}`}</p></div>
+        ) : (
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Cart Items */}
+            <div className="lg:col-span-2 space-y-4">
+              {cart.cartItems.map((item) => (
+                <div key={item.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+                  <div className="p-5">
+                    <div className="flex gap-4">
+                      {/* Item Image */}
+                      <div className="relative w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-gray-100">
+                        {!imageErrors[item.id] && item.image ? (
+                          <Image src={item.image} alt={item.name} fill className="object-cover" onError={() => handleImageError(item.id)} unoptimized />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-100">
+                            <span className="text-xs">No image</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-semibold text-gray-900 text-lg">{item.name}</h3>
+                            <p className="text-gray-500 text-sm">R {item.price.toFixed(2)} each</p>
+                          </div>
+                          <button onClick={() => cart.removeFromCart(item.id)} className="text-gray-400 hover:text-red-500 transition-colors p-1">
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                        
+                        {/* ADD-ONS SECTION - Enhanced Display */}
+                        {item.addOns && item.addOns.length > 0 && (
+                          <div className="mt-3">
+                            <button
+                              onClick={() => toggleExpandItem(item.id)}
+                              className="flex items-center gap-1 text-xs text-gray-500 hover:text-[#2F5D50] transition-colors"
+                            >
+                              {expandedItems[item.id] ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                              <span>Extras & Add-ons ({item.addOns.length})</span>
+                            </button>
+                            
+                            {expandedItems[item.id] && (
+                              <div className="mt-2 pl-2 border-l-2 border-[#2F5D50] space-y-2">
+                                {item.addOns.map((addon: any) => (
+                                  <div key={addon.id} className="flex justify-between items-center text-sm">
+                                    <div className="flex items-center gap-2">
+                                      {getAddOnIcon(addon.name)}
+                                      <span className="text-gray-700">{addon.name}</span>
+                                      {addon.quantity > 1 && (
+                                        <span className="text-xs text-gray-400">x{addon.quantity}</span>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <span className="text-green-600 font-medium">
+                                        +R {(addon.price * addon.quantity).toFixed(2)}
+                                      </span>
+                                      <div className="flex items-center gap-1">
+                                        <button
+                                          onClick={() => cart.updateAddOnQuantity(item.id, addon.id, addon.quantity - 1)}
+                                          className="w-5 h-5 rounded-full border border-gray-300 flex items-center justify-center hover:border-[#2F5D50] hover:text-[#2F5D50]"
+                                        >
+                                          <Minus size={10} />
+                                        </button>
+                                        <span className="text-xs w-4 text-center">{addon.quantity}</span>
+                                        <button
+                                          onClick={() => cart.updateAddOnQuantity(item.id, addon.id, addon.quantity + 1)}
+                                          className="w-5 h-5 rounded-full border border-gray-300 flex items-center justify-center hover:border-[#2F5D50] hover:text-[#2F5D50]"
+                                        >
+                                          <Plus size={10} />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Special Instructions */}
+                        {item.specialInstructions && (
+                          <div className="mt-3 pt-2">
+                            <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded-lg">
+                              <span className="font-medium text-gray-700">📝 Special Instructions:</span>
+                              <p className="text-gray-600 mt-0.5">{item.specialInstructions}</p>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Quantity Controls */}
+                        <div className="flex items-center justify-between mt-3 pt-2">
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => cart.updateQuantity(item.id, item.quantity - 1)}
+                              className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-[#2F5D50] hover:text-[#2F5D50] transition-all"
+                            >
+                              <Minus size={14} />
+                            </button>
+                            <span className="font-medium text-gray-700 min-w-[20px] text-center">{item.quantity}</span>
+                            <button
+                              onClick={() => cart.updateQuantity(item.id, item.quantity + 1)}
+                              className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-[#2F5D50] hover:text-[#2F5D50] transition-all"
+                            >
+                              <Plus size={14} />
+                            </button>
+                          </div>
+                          <div className="font-bold text-gray-900">
+                            R {getItemTotal(item).toFixed(2)}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              )}
-
-              {addressError && (<div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg"><p className="text-sm text-red-600">{addressError}</p></div>)}
+              ))}
             </div>
-          )}
-
-          {deliveryMethod === 'pickup' && (
-            <div className="border-t pt-6">
-              <div className="p-4 bg-green-50 rounded-xl">
-                <h4 className="font-bold text-[#2F5D50] mb-2">Pickup Location</h4>
-                <p className="text-sm text-gray-600"><strong>Uitsig Wine Farm</strong><br />Spaanschemat River Rd, Fir Grove<br />Cape Town, 7806</p>
-                <p className="text-xs text-gray-500 mt-2">Your order will be ready for pickup at the restaurant.</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Cart Items */}
-        <div className="space-y-4">
-          {cartItems.map((item: any) => {
-            const addOnsList = item.addOns || [];
-            const addOnsTotal = addOnsList.reduce((sum: number, addOn: any) => sum + ((addOn.price || 0) * (addOn.quantity || 1)), 0);
-            const friesPrice = item.friesUpsell?.price || item.fries?.price || 0;
-            const juicePrice = item.juiceUpsell?.price || item.juice?.price || 0;
-            const itemBasePrice = (item.price || 0) * (item.quantity || 1);
-            const itemExtrasTotal = (addOnsTotal + friesPrice + juicePrice) * (item.quantity || 1);
-            const itemTotal = itemBasePrice + itemExtrasTotal;
-            const hasExtras = addOnsList.length > 0 || item.friesUpsell || item.juiceUpsell;
-            const isExpanded = expandedItems[item.id];
-
-            return (
-              <div key={item.id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition">
-                <div className="p-4 flex flex-col sm:flex-row gap-4">
-                  <div className="relative w-24 h-24 flex-shrink-0 mx-auto sm:mx-0 bg-gray-100 rounded-lg overflow-hidden">
-                    {item.image && !imageErrors[item.id] ? (
-                      <Image src={item.image} alt={item.name} fill className="object-cover" onError={() => handleImageError(item.id)} unoptimized />
-                    ) : (<div className="w-full h-full flex items-center justify-center text-3xl text-gray-400">🍽️</div>)}
+            
+            {/* Order Summary */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 sticky top-24">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Order Summary</h2>
+                
+                <div className="space-y-3 mb-6">
+                  <div className="flex justify-between text-gray-600">
+                    <span>Subtotal</span>
+                    <span className="font-medium">R {subtotal.toFixed(2)}</span>
                   </div>
-
-                  <div className="flex-1">
-                    <div className="flex flex-col sm:flex-row sm:justify-between">
-                      <div><h2 className="text-lg font-bold text-[#2F5D50]">{item.name}</h2><p className="text-sm text-gray-500">R{(item.price || 0).toFixed(2)} each</p></div>
-                      <div className="flex items-center gap-2 mt-2 sm:mt-0">
-                        <button onClick={() => cart.updateQuantity(item.id, Math.max(1, (item.quantity || 1) - 1))} className="w-8 h-8 bg-gray-200 rounded-full hover:bg-gray-300 flex items-center justify-center" disabled={item.quantity <= 1}><Minus size={14} /></button>
-                        <span className="w-8 text-center font-medium">{item.quantity || 1}</span>
-                        <button onClick={() => cart.updateQuantity(item.id, (item.quantity || 1) + 1)} className="w-8 h-8 bg-gray-200 rounded-full hover:bg-gray-300 flex items-center justify-center"><Plus size={14} /></button>
-                      </div>
-                    </div>
-
-                    {hasExtras && !isExpanded && (
-                      <div onClick={() => toggleExpandItem(item.id)} className="mt-2 inline-flex items-center gap-1 text-sm text-green-600 cursor-pointer hover:underline">
-                        <span>Show extras ({addOnsList.length + (item.friesUpsell ? 1 : 0) + (item.juiceUpsell ? 1 : 0)})</span><span>▼</span>
-                      </div>
-                    )}
-
-                    {item.specialInstructions && (<p className="text-sm italic text-gray-500 mt-2">📝 "{item.specialInstructions}"</p>)}
-
-                    <div className="flex items-center gap-3 mt-3">
-                      {hasExtras && (<button onClick={() => toggleExpandItem(item.id)} className="text-sm text-green-600 hover:underline flex items-center gap-1">{isExpanded ? 'Hide Extras' : 'Customize'}</button>)}
-                      <button onClick={() => cart.removeFromCart(item.id)} className="text-sm text-red-500 hover:underline flex items-center gap-1"><Trash2 size={14} /> Remove Item</button>
-                    </div>
-                  </div>
-
-                  <div className="text-right sm:w-32 flex-shrink-0">
-                    <p className="text-lg font-bold text-[#2F5D50]">R{itemTotal.toFixed(2)}</p>
-                    {itemExtrasTotal > 0 && (<p className="text-xs text-gray-500">Base: R{itemBasePrice.toFixed(2)}<br />Extras: +R{itemExtrasTotal.toFixed(2)}</p>)}
-                  </div>
-                </div>
-
-                {isExpanded && hasExtras && (
-                  <div className="border-t border-gray-100 bg-gray-50 p-4">
-                    <div className="flex justify-between items-center mb-3">
-                      <h3 className="font-semibold text-gray-700">Customize Your Order</h3>
-                      <button onClick={() => cart.clearAddOns(item.id)} className="text-sm text-red-500 hover:underline flex items-center gap-1"><X size={14} /> Clear all extras</button>
+                  
+                  <div className="border-t pt-4">
+                    <div className="flex gap-4 mb-4">
+                      <button onClick={() => setDeliveryMethod('pickup')} className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border transition-all ${deliveryMethod === 'pickup' ? 'border-[#2F5D50] bg-[#2F5D50]/5 text-[#2F5D50] shadow-sm' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                        <Store size={18} /><span className="text-sm font-medium">Pickup</span>
+                      </button>
+                      <button onClick={() => setDeliveryMethod('delivery')} className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border transition-all ${deliveryMethod === 'delivery' ? 'border-[#2F5D50] bg-[#2F5D50]/5 text-[#2F5D50] shadow-sm' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                        <Truck size={18} /><span className="text-sm font-medium">Delivery</span>
+                      </button>
                     </div>
                     
-                    {/* Add-ons */}
-                    {addOnsList.length > 0 && (
-                      <div className="mb-3">
-                        <h4 className="text-sm font-medium text-gray-600 mb-2">Add-ons</h4>
-                        <div className="space-y-2">
-                          {addOnsList.map((addOn: any, idx: number) => (
-                            <div key={idx} className="flex items-center justify-between bg-white p-2 rounded-lg">
-                              <div><p className="font-medium text-gray-800">{addOn.name}</p><p className="text-xs text-green-600">+R{addOn.price?.toFixed(2) || '0.00'} each</p></div>
-                              <div className="flex items-center gap-2">
-                                <button onClick={() => cart.updateAddOnQuantity(item.id, idx, (addOn.quantity || 1) - 1)} className="w-7 h-7 bg-gray-200 rounded-full hover:bg-gray-300 flex items-center justify-center" disabled={(addOn.quantity || 1) <= 1}><Minus size={12} /></button>
-                                <span className="w-6 text-center font-medium">{addOn.quantity || 1}</span>
-                                <button onClick={() => cart.updateAddOnQuantity(item.id, idx, (addOn.quantity || 1) + 1)} className="w-7 h-7 bg-gray-200 rounded-full hover:bg-gray-300 flex items-center justify-center"><Plus size={12} /></button>
-                                <button onClick={() => cart.removeAddOn(item.id, idx)} className="text-red-400 hover:text-red-600 transition"><Trash2 size={16} /></button>
-                              </div>
+                    {deliveryMethod === 'delivery' && (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <MapPin size={18} className="text-[#2F5D50]" />
+                          <h3 className="font-semibold text-gray-900">Delivery Address</h3>
+                        </div>
+                        
+                        <AddressAutocomplete onAddressSelect={handleAddressSelect} placeholder="Start typing your Cape Town address..." initialValue={deliveryAddress} />
+                        
+                        {isCalculatingDistance && (
+                          <div className="mt-3 flex items-center gap-2 text-gray-500 bg-gray-50 p-3 rounded-xl">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#2F5D50]"></div>
+                            <span className="text-sm">Calculating distance...</span>
+                          </div>
+                        )}
+                        
+                        {addressError && (
+                          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl">
+                            <p className="text-sm text-red-600">{addressError}</p>
+                          </div>
+                        )}
+                        
+                        {isAddressValid && distance !== null && (
+                          <div className="mt-3 p-4 bg-green-50 rounded-xl border border-green-200">
+                            <div className="flex items-center gap-2 mb-2">
+                              <CheckCircle size={16} className="text-green-600" />
+                              <span className="text-sm font-medium text-green-700">Delivery Available</span>
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Fries */}
-                    {item.friesUpsell && (
-                      <div className="mb-3 p-2 bg-white rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <div><p className="font-medium text-gray-800">🍟 {item.friesUpsell.name}</p><p className="text-xs text-green-600">+R{item.friesUpsell.price?.toFixed(2)}</p></div>
-                          <button onClick={() => cart.updateItemDetails(item.id, { friesUpsell: null })} className="text-red-400 hover:text-red-600"><Trash2 size={16} /></button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Juice */}
-                    {item.juiceUpsell && (
-                      <div className="p-2 bg-white rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <div><p className="font-medium text-gray-800">🥤 {item.juiceUpsell.name} {item.juiceUpsell.size && `(${item.juiceUpsell.size})`}</p><p className="text-xs text-green-600">+R{item.juiceUpsell.price?.toFixed(2)}</p></div>
-                          <button onClick={() => cart.updateItemDetails(item.id, { juiceUpsell: null })} className="text-red-400 hover:text-red-600"><Trash2 size={16} /></button>
-                        </div>
+                            <p className="text-xs text-green-600">Distance: {distance.toFixed(1)} km • Est. delivery: 30-45 min</p>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
-                )}
+                  
+                  {deliveryMethod === 'delivery' && !qualifiesForFreeDelivery && distance !== null && (
+                    <div className="flex justify-between text-gray-600 pt-2">
+                      <span>Delivery Fee</span>
+                      <span className="font-medium">R {finalDeliveryFee.toFixed(2)}</span>
+                    </div>
+                  )}
+                  
+                  {qualifiesForFreeDelivery && deliveryMethod === 'delivery' && (
+                    <div className="flex justify-between text-green-600 pt-2">
+                      <span>Free Delivery</span>
+                      <span className="font-medium">✓</span>
+                    </div>
+                  )}
+                  
+                  <div className="border-t pt-4 mt-4">
+                    <div className="flex justify-between text-xl font-bold text-gray-900">
+                      <span>Total</span>
+                      <span>R {finalTotal.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <Link href="/checkout">
+                  <button disabled={!isCheckoutEnabled()} className={`w-full py-3.5 rounded-xl font-semibold transition-all shadow-md ${isCheckoutEnabled() ? 'bg-[#2F5D50] text-white hover:bg-[#23483E] hover:shadow-lg cursor-pointer' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`}>
+                    Proceed to Checkout
+                  </button>
+                </Link>
+                
+                <Link href="/menu" className="block text-center text-sm text-[#2F5D50] hover:underline mt-4 transition-all">
+                  ← Continue Shopping
+                </Link>
               </div>
-            );
-          })}
-
-          {/* Cart Summary */}
-          <div className="bg-white p-6 rounded-xl shadow">
-            <h2 className="text-xl font-bold text-[#2F5D50] mb-4">Order Summary</h2>
-            <div className="space-y-3 mb-4">
-              <div className="flex justify-between text-gray-600"><span>Subtotal</span><span className="font-medium">R {subtotal.toFixed(2)}</span></div>
-              <div className="flex justify-between text-gray-600"><span>Delivery Method</span><span className="font-medium capitalize">{deliveryMethod}</span></div>
-              {deliveryMethod === 'delivery' && distance !== null && (<div className="flex justify-between text-gray-600"><span>Delivery Fee</span><span className={qualifiesForFreeDelivery ? 'text-green-600 font-medium' : ''}>{qualifiesForFreeDelivery ? 'FREE' : `R ${deliveryFee.toFixed(2)}`}</span></div>)}
-              {deliveryMethod === 'delivery' && !qualifiesForFreeDelivery && subtotal > 0 && (<div className="mt-2 p-3 bg-blue-50 rounded-lg"><div className="flex justify-between text-sm text-blue-800 mb-1"><span>Free delivery over R850</span><span className="font-bold">R{(850 - subtotal).toFixed(2)} more</span></div><div className="w-full bg-blue-200 rounded-full h-2"><div className="bg-green-600 h-2 rounded-full transition-all duration-300" style={{ width: `${Math.min(100, (subtotal / 850) * 100)}%` }} /></div></div>)}
-              <div className="flex justify-between items-center text-xl font-bold text-[#2F5D50] border-t pt-3"><span>Total</span><span>R {finalTotal.toFixed(2)}</span></div>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button onClick={cart.clearCart} className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 px-4 rounded-lg font-medium transition">Clear Cart</button>
-              <Link href={isCheckoutEnabled() ? "/checkout" : "#"} onClick={(e) => { if (!isCheckoutEnabled()) { e.preventDefault(); if (deliveryMethod === 'delivery' && !isAddressValid) { setAddressError('Please enter a valid delivery address within 50km'); } } }} className={`flex-1 text-white py-3 px-4 rounded-lg font-medium transition text-center ${isCheckoutEnabled() ? 'bg-[#2F5D50] hover:bg-[#244a3f] cursor-pointer' : 'bg-gray-400 cursor-not-allowed'}`}>Proceed to Checkout →</Link>
-            </div>
-            {deliveryMethod === 'pickup' && (<p className="text-sm text-center text-gray-500 mt-4">🏪 Your order will be ready for pickup at Uitsig Wine Farm. We'll notify you when it's ready.</p>)}
-            {deliveryMethod === 'delivery' && !isAddressValid && !isCalculatingDistance && (<p className="text-sm text-center text-amber-600 mt-4">📍 Please enter a valid delivery address to proceed</p>)}
           </div>
-        </div>
+        )}
       </div>
-    </main>
+    </div>
   );
 }

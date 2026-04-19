@@ -53,7 +53,7 @@ try {
   console.log('🔥 Firebase initialized successfully');
   console.log(`📁 Project ID: ${firebaseConfig.projectId}`);
   console.log(`🌐 Auth Domain: ${firebaseConfig.authDomain}`);
-  
+
   if (firebaseConfig.measurementId) {
     console.log(`📊 Analytics enabled: ${firebaseConfig.measurementId}`);
   } else {
@@ -67,10 +67,11 @@ try {
   db = null;
   auth = null;
   storage = null;
+  firebaseApp = null;
 }
 
-// Export initialized services
-export { firebaseApp, db, auth, storage };
+// Export initialized services (with both names for compatibility)
+export { firebaseApp as app, firebaseApp, db, auth, storage };
 
 // Helper function to check if Firebase is available
 export const isFirebaseAvailable = () => {

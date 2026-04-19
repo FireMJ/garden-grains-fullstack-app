@@ -1,250 +1,120 @@
-"use client";
+'use client';
 
-import React from "react";
-import Image from "next/image";
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { useCart } from '@/context/CartContext';
+import Image from 'next/image';
+import { Minus, Plus, Trash2 } from 'lucide-react';
 
-export interface CartItemProps {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  image: string;
-  category: string;
-  description?: string;
-  instructions?: string;
-  selectedSize?: string;
-  bases?: string[];
-  dressings?: string[];
-  addOns?: { name: string; price: number; id?: string; quantity?: number }[];
-  fries?: { name: string; price: number; size?: string };
-  juice?: { name: string; price: number; size?: string };
-  juices?: { name: string; price: number; size?: string }[]; // Add juices array
-  friesUpsell?: { name: string; price: number; size?: string };
-  juiceUpsell?: { name: string; price: number; size?: string };
-  juiceSize?: string;
-  onUpdateQuantity: (id: string, quantity: number) => void;
-  onRemove: (id: string) => void;
-  getItemPriceBreakdown?: (id: string) => {
-    basePrice: number;
-    addonsTotal: number;
-    juiceUpsellPrice: number;
-    friesUpsellPrice: number;
-    itemTotal: number;
+interface CartItemProps {
+  item: {
+    id: string;
+    name: string;
+    price: number;
+    quantity: number;
+    image?: string;
+    addOns?: Array<{ id: string; name: string; price: number; quantity: number }>;
+    specialInstructions?: string;
   };
 }
 
-export default function CartItem({
-  id,
-  name,
-  price,
-  quantity,
-  image,
-  category,
-  description,
-  instructions,
-  selectedSize,
-  bases = [],
-  dressings = [],
-  addOns = [],
-  fries,
-  juices = [],
-  friesUpsell,
-  juiceUpsell,
-  juiceSize,
-  onUpdateQuantity,
-  onRemove,
-  getItemPriceBreakdown,
-}: CartItemProps) {
+export default function CartItem({ item }: CartItemProps) {
+  const { updateQuantity, removeFromCart, updateAddOnQuantity, removeAddOn } = useCart();
 
-  // Calculate total price including all customizations
-  const calculateItemTotal = () => {
-    let total = price * quantity;
-
-    // Add add-ons
-    addOns.forEach(addOn => {
-      total += (addOn.price || 0) * (addOn.quantity || 1) * quantity;
-    });
-
-    // Add fries
-    if (fries) {
-      total += fries.price * quantity;
+  // Calculate item total including add-ons
+  const getItemTotal = () => {
+    let total = item.price * item.quantity;
+    if (item.addOns && item.addOns.length > 0) {
+      const addOnsTotal = item.addOns.reduce((sum, addon) => sum + (addon.price * addon.quantity), 0);
+      total += addOnsTotal;
     }
-
-    // Add fries upsell
-    if (friesUpsell) {
-      total += friesUpsell.price * quantity;
-    }
-
-    // Add juice upsell
-    if (juiceUpsell) {
-      total += juiceUpsell.price * quantity;
-    }
-    
-    // Add juices array
-    if (juices && juices.length > 0) {
-      juices.forEach(juice => {
-        total += (juice.price || 0) * quantity;
-      });
-    }
-
     return total;
   };
 
-  const displayTotal = calculateItemTotal();
-  const hasCustomizations =
-    addOns.length > 0 ||
-    !!fries ||
-    !!friesUpsell ||
-    !!juiceUpsell ||
-    (juices && juices.length > 0) ||
-    bases.length > 0 ||
-    dressings.length > 0 ||
-    selectedSize ||
-    instructions;
-
   return (
-    <div className="flex gap-4 p-4 border-b border-gray-200 hover:bg-gray-50 transition">
-      {/* Item Image */}
-      <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
-        {image ? (
-          <Image
-            src={image}
-            alt={name}
-            fill
-            className="object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-2xl">
-            🍽️
-          </div>
-        )}
-      </div>
-
-      {/* Item Details */}
-      <div className="flex-1">
-        <div className="flex justify-between items-start">
-          <div>
-            <h3 className="font-semibold text-gray-900">{name}</h3>
-            {category && (
-              <p className="text-xs text-gray-500 uppercase">{category}</p>
-            )}
-            {description && (
-              <p className="text-sm text-gray-600 mt-1 line-clamp-2">{description}</p>
-            )}
-          </div>
-          <button
-            onClick={() => onRemove(id)}
-            className="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 transition"
-            aria-label="Remove item"
-          >
-            <Trash2 size={16} />
-          </button>
+    <div className="bg-white rounded-xl border border-gray-100 p-4 mb-3">
+      <div className="flex gap-3">
+        {/* Image */}
+        <div className="relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
+          {item.image ? (
+            <Image src={item.image} alt={item.name} fill className="object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+              No image
+            </div>
+          )}
         </div>
-
-        {/* Customizations Section */}
-        {hasCustomizations && (
-          <div className="mt-2 text-sm text-gray-600 bg-gray-50 p-2 rounded-lg">
-            {/* Bases */}
-            {bases.length > 0 && (
-              <div className="flex items-center gap-1 text-xs mb-1">
-                <span className="font-medium">Base:</span>
-                <span>{bases.join(', ')}</span>
-              </div>
-            )}
-
-            {/* Dressings */}
-            {dressings.length > 0 && (
-              <div className="flex items-center gap-1 text-xs mb-1">
-                <span className="font-medium">Dressing:</span>
-                <span>{dressings.join(', ')}</span>
-              </div>
-            )}
-
-            {/* Add-ons */}
-            {addOns.length > 0 && (
-              <div className="mb-1">
-                <span className="font-medium text-xs">Add-ons:</span>
-                <div className="grid grid-cols-2 gap-1 mt-1">
-                  {addOns.map((addOn, index) => (
-                    <div key={index} className="flex justify-between text-xs">
-                      <span>+ {addOn.name}</span>
-                      <span className="text-green-600">R{addOn.price.toFixed(2)}</span>
+        
+        {/* Details */}
+        <div className="flex-1">
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="font-semibold text-gray-900">{item.name}</h3>
+              <p className="text-sm text-gray-500">R {item.price.toFixed(2)}</p>
+            </div>
+            <button
+              onClick={() => removeFromCart(item.id)}
+              className="text-gray-400 hover:text-red-500 transition-colors"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+          
+          {/* Add-ons */}
+          {item.addOns && item.addOns.length > 0 && (
+            <div className="mt-2 space-y-1">
+              {item.addOns.map((addon) => (
+                <div key={addon.id} className="flex justify-between items-center text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-600">{addon.name}</span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => updateAddOnQuantity(item.id, addon.id, addon.quantity - 1)}
+                        className="w-5 h-5 rounded-full border border-gray-300 flex items-center justify-center hover:border-[#2F5D50]"
+                      >
+                        <Minus size={10} />
+                      </button>
+                      <span className="text-xs w-4 text-center">{addon.quantity}</span>
+                      <button
+                        onClick={() => updateAddOnQuantity(item.id, addon.id, addon.quantity + 1)}
+                        className="w-5 h-5 rounded-full border border-gray-300 flex items-center justify-center hover:border-[#2F5D50]"
+                      >
+                        <Plus size={10} />
+                      </button>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Fries */}
-            {fries && (
-              <div className="flex justify-between text-xs mb-1">
-                <span>+ {fries.name} {fries.size && `(${fries.size})`}</span>
-                <span className="text-green-600">+R{fries.price.toFixed(2)}</span>
-              </div>
-            )}
-
-            {/* Fries Upsell */}
-            {friesUpsell && (
-              <div className="flex justify-between text-xs mb-1">
-                <span>+ {friesUpsell.name} {friesUpsell.size && `(${friesUpsell.size})`}</span>
-                <span className="text-green-600">+R{friesUpsell.price.toFixed(2)}</span>
-              </div>
-            )}
-
-            {/* Juice Upsell */}
-            {juiceUpsell && (
-              <div className="flex justify-between text-xs mb-1">
-                <span>+ {juiceUpsell.name} {juiceSize && `(${juiceSize})`}</span>
-                <span className="text-green-600">+R{juiceUpsell.price.toFixed(2)}</span>
-              </div>
-            )}
-
-            {/* Juices array */}
-            {juices && juices.length > 0 && (
-              <div className="mb-1">
-                {juices.map((juice, idx) => (
-                  <div key={idx} className="flex justify-between text-xs mb-1">
-                    <span>+ {juice.name} {juice.size && `(${juice.size})`}</span>
-                    <span className="text-green-600">+R{juice.price.toFixed(2)}</span>
                   </div>
-                ))}
-              </div>
-            )}
-
-            {/* Special Instructions */}
-            {instructions && (
-              <div className="text-xs text-gray-500 italic mt-1 pt-1 border-t border-gray-200">
-                Note: {instructions}
-              </div>
-            )}
+                  <span className="text-green-600">R {(addon.price * addon.quantity).toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {/* Quantity Controls */}
+          <div className="flex items-center justify-between mt-3">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center hover:border-[#2F5D50]"
+              >
+                <Minus size={12} />
+              </button>
+              <span className="text-sm font-medium w-6 text-center">{item.quantity}</span>
+              <button
+                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center hover:border-[#2F5D50]"
+              >
+                <Plus size={12} />
+              </button>
+            </div>
+            <span className="font-bold text-gray-900">
+              R {getItemTotal().toFixed(2)}
+            </span>
           </div>
-        )}
-
-        {/* Price and Quantity Controls */}
-        <div className="flex justify-between items-center mt-3">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => onUpdateQuantity(id, Math.max(1, quantity - 1))}
-              className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 transition disabled:opacity-50"
-              disabled={quantity <= 1}
-              aria-label="Decrease quantity"
-            >
-              <Minus size={14} />
-            </button>
-            <span className="w-8 text-center font-medium">{quantity}</span>
-            <button
-              onClick={() => onUpdateQuantity(id, quantity + 1)}
-              className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 transition"
-              aria-label="Increase quantity"
-            >
-              <Plus size={14} />
-            </button>
-          </div>
-
-          <div className="font-bold text-gray-900">
-            R{displayTotal.toFixed(2)}
-          </div>
+          
+          {/* Special Instructions */}
+          {item.specialInstructions && (
+            <div className="mt-2 text-xs text-gray-500 bg-gray-50 p-2 rounded">
+              <span className="font-medium">Note:</span> {item.specialInstructions}
+            </div>
+          )}
         </div>
       </div>
     </div>

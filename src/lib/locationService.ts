@@ -1,6 +1,6 @@
 'use client';
 
-import { loadGoogleMaps } from './googleMaps';
+import { loadGoogleMaps, RESTAURANT_COORDS } from './googleMaps';
 
 export interface LocationResult {
   success: boolean;
@@ -73,7 +73,8 @@ export const getAccurateLocation = async (maxAttempts: number = 3): Promise<Geol
   return null;
 };
 
-export const getCurrentLocation = async (): Promise<LocationResult> => {
+// Main function to get current location - renamed from getCurrentLocation to avoid conflict
+export const getUserLocation = async (): Promise<LocationResult> => {
   try {
     const position = await getAccurateLocation(3);
 
@@ -153,6 +154,9 @@ export const getCurrentLocation = async (): Promise<LocationResult> => {
     };
   }
 };
+
+// Alias for backward compatibility
+export const getCurrentLocation = getUserLocation;
 
 // Get default Cape Town location
 export const getCapeTownLocation = (): LocationResult => {

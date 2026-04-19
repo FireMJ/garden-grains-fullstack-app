@@ -1,10 +1,10 @@
-// Restaurant coordinates (Uitsig Wine Farm, Cape Town)
+// Restaurant coordinates (Uitsig Wine Farm, Constantia, Cape Town)
 export const RESTAURANT_COORDS = {
   lat: -34.0425,
   lng: 18.4412
 };
 
-export const RESTAURANT_ADDRESS = "Uitsig Wine Farm, Spaanschemat River Rd, Fir Grove, Cape Town, 7806";
+export const RESTAURANT_ADDRESS = "Uitsig Wine Farm, Spaanschemat River Rd, Constantia, Cape Town, 7806";
 
 export const DELIVERY_CONFIG = {
   MAX_DISTANCE_KM: 50,
@@ -14,77 +14,55 @@ export const DELIVERY_CONFIG = {
   FREE_DELIVERY_THRESHOLD: 850,
 };
 
-let googleMapsPromise: Promise<typeof google> | null = null;
-let placesLibraryLoaded = false;
+export const CAPE_TOWN_BOUNDS = {
+  north: -33.5,
+  south: -34.2,
+  west: 18.2,
+  east: 18.65,
+};
 
-// Load Google Maps with Places library for new API
+let googleMapsPromise: Promise<typeof google> | null = null;
+
 export const loadGoogleMaps = async () => {
   if (typeof window === 'undefined') return null;
-  
-  if (window.google && window.google.maps) {
-    // Ensure places library is loaded
-    if (!placesLibraryLoaded) {
-      try {
-        await window.google.maps.importLibrary("places");
-        placesLibraryLoaded = true;
-      } catch (e) {
-        console.warn("Could not import places library:", e);
-      }
-    }
+
+  if (window.google?.maps) {
     return window.google;
   }
-  
+
   if (googleMapsPromise) {
     return googleMapsPromise;
   }
-  
+
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  
   if (!apiKey) {
     console.error('Google Maps API key is missing');
     return null;
   }
-  
-  const callbackName = `initGoogleMap_${Date.now()}`;
-  
+
   googleMapsPromise = new Promise((resolve, reject) => {
+    const callbackName = `initGoogleMap_${Date.now()}`;
     const script = document.createElement('script');
-    // Use loading=async and places library
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geometry,routes&region=ZA&loading=async&callback=${callbackName}`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,routes,geometry&region=ZA&loading=async&callback=${callbackName}`;
     script.async = true;
     script.defer = true;
-    
-    const timeout = setTimeout(() => {
-      reject(new Error('Google Maps script loading timeout'));
-    }, 30000);
-    
-    (window as any)[callbackName] = async () => {
+
+    const timeout = setTimeout(() => reject(new Error('Google Maps timeout')), 30000);
+    (window as any)[callbackName] = () => {
       clearTimeout(timeout);
       delete (window as any)[callbackName];
-      
-      // Import places library
-      try {
-        await window.google.maps.importLibrary("places");
-        placesLibraryLoaded = true;
-      } catch (e) {
-        console.warn("Could not import places library:", e);
-      }
-      
       resolve(window.google);
     };
-    
-    script.onerror = () => {
-      clearTimeout(timeout);
-      delete (window as any)[callbackName];
-      googleMapsPromise = null;
-      reject(new Error('Failed to load Google Maps script'));
-    };
-    
+    script.onerror = () => reject(new Error('Failed to load Google Maps'));
     document.head.appendChild(script);
   });
-  
+
   try {
     await googleMapsPromise;
+    if (window.google) {
+      await window.google.maps.importLibrary("places");
+      await window.google.maps.importLibrary("routes");
+    }
     return window.google;
   } catch (error) {
     console.error('Error loading Google Maps:', error);
@@ -93,124 +71,54 @@ export const loadGoogleMaps = async () => {
   }
 };
 
-// NEW: Get address suggestions using AutocompleteSuggestion (recommended)
-export const getAddressSuggestions = async (input: string): Promise<Array<{ description: string; placeId: string }>> => {
-  try {
-    const google = await loadGoogleMaps();
-    if (!google) return [];
-    
-    // Use the new AutocompleteSuggestion API
-    const { AutocompleteSuggestion } = await google.maps.importLibrary("places");
-    
-    // Create a session token for the request
-    const { AutocompleteSessionToken } = await google.maps.importLibrary("places");
-    const sessionToken = new AutocompleteSessionToken();
-    
-    // Create the suggestion request
-    const request = {
-      input: input,
-      locationRestriction: {
-        center: { lat: -33.9249, lng: 18.4241 }, // Cape Town center
-        radius: 100000, // 100km radius
-      },
-      origin: RESTAURANT_COORDS,
-      sessionToken: sessionToken,
-    };
-    
-    // Get suggestions
-    const response = await AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
-    
-    if (response && response.suggestions) {
-      return response.suggestions.map((suggestion: any) => ({
-        description: suggestion.placePrediction?.text?.text || suggestion.placePrediction?.description || '',
-        placeId: suggestion.placePrediction?.placeId || '',
-      }));
-    }
-    
-    return [];
-  } catch (error) {
-    console.error('Autocomplete error:', error);
-    // Fallback to legacy method if new API fails
-    return getAddressSuggestionsLegacy(input);
-  }
+// Calculate straight-line distance (Haversine formula)
+export const calculateStraightLineDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
 };
 
-// Legacy fallback for autocomplete
-const getAddressSuggestionsLegacy = async (input: string): Promise<Array<{ description: string; placeId: string }>> => {
-  try {
-    const google = await loadGoogleMaps();
-    if (!google) return [];
-    
-    const autocompleteService = new google.maps.places.AutocompleteService();
-    
-    return new Promise((resolve) => {
-      autocompleteService.getPlacePredictions(
-        { 
-          input, 
-          componentRestrictions: { country: 'za' },
-          types: ['address'],
-        },
-        (predictions, status) => {
-          if (status === 'OK' && predictions) {
-            resolve(predictions.map(p => ({
-              description: p.description,
-              placeId: p.place_id,
-            })));
-          } else {
-            resolve([]);
-          }
-        }
-      );
-    });
-  } catch (error) {
-    console.error('Legacy autocomplete error:', error);
-    return [];
-  }
+// Check if coordinates are within delivery radius
+export const isWithinDeliveryRadius = (lat: number, lng: number): boolean => {
+  const distance = calculateStraightLineDistance(lat, lng, RESTAURANT_COORDS.lat, RESTAURANT_COORDS.lng);
+  return distance <= DELIVERY_CONFIG.MAX_DISTANCE_KM + 10;
 };
 
-// Get place details using new Place class
-export const getPlaceDetails = async (placeId: string): Promise<any | null> => {
-  try {
-    const google = await loadGoogleMaps();
-    if (!google) return null;
-    
-    const { Place } = await google.maps.importLibrary("places");
-    
-    const place = new Place({
-      id: placeId,
-      requestedLanguage: "en",
-    });
-    
-    await place.fetchFields({
-      fields: ["displayName", "formattedAddress", "location", "addressComponents"],
-    });
-    
-    return place;
-  } catch (error) {
-    console.error('Place details error:', error);
-    return null;
+// Validate Cape Town coordinates
+export const isValidCapeTownAddress = (lat: number, lng: number): boolean => {
+  if (typeof lat !== 'number' || typeof lng !== 'number' || isNaN(lat) || isNaN(lng)) {
+    return false;
   }
+  return lat >= -34.2 && lat <= -33.5 && lng >= 18.2 && lng <= 18.65;
 };
 
-// Geocode address using the Geocoder (still works)
+// Alias for backward compatibility
+export const isValidCapeTownCoordinates = isValidCapeTownAddress;
+
+// Geocode address - convert address to coordinates
 export const geocodeAddress = async (address: string): Promise<{ lat: number; lng: number } | null> => {
   try {
     const google = await loadGoogleMaps();
     if (!google) return null;
-    
+
     const geocoder = new google.maps.Geocoder();
-    
-    const fullAddress = address.toLowerCase().includes('south africa') || address.toLowerCase().includes('za') 
-      ? address 
-      : `${address}, South Africa`;
-    
+    const fullAddress = address.toLowerCase().includes('south africa') || address.toLowerCase().includes('za')
+      ? address
+      : `${address}, Cape Town, South Africa`;
+
     return new Promise((resolve) => {
       geocoder.geocode(
-        { 
+        {
           address: fullAddress,
           componentRestrictions: { country: 'ZA' },
           region: 'ZA',
-        }, 
+        },
         (results, status) => {
           if (status === 'OK' && results && results[0]) {
             const location = results[0].geometry.location;
@@ -231,63 +139,101 @@ export const geocodeAddress = async (address: string): Promise<{ lat: number; ln
   }
 };
 
-// Keep existing functions for distance calculation
+// Get address suggestions
+export const getAddressSuggestions = async (input: string) => {
+  try {
+    const google = await loadGoogleMaps();
+    if (!google) return [];
+
+    const { AutocompleteSuggestion } = await google.maps.importLibrary("places") as any;
+    const sessionToken = new google.maps.places.AutocompleteSessionToken();
+    
+    const response = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
+      input,
+      locationBias: { center: RESTAURANT_COORDS, radius: DELIVERY_CONFIG.MAX_DISTANCE_KM * 1000 },
+      sessionToken,
+    });
+    
+    if (!response.suggestions) return [];
+    
+    return response.suggestions.map((s: any) => ({
+      description: s.placePrediction.structuredFormat?.mainText?.text || s.placePrediction.text?.text || '',
+      placeId: s.placePrediction.placeId,
+    }));
+  } catch (error) {
+    console.error('Autocomplete error:', error);
+    return [];
+  }
+};
+
+// Get place details
+export const getPlaceDetails = async (placeId: string) => {
+  try {
+    const google = await loadGoogleMaps();
+    if (!google) return null;
+    
+    const { Place } = await google.maps.importLibrary("places") as any;
+    const place = new Place({ id: placeId, requestedLanguage: "en" });
+    
+    await place.fetchFields({
+      fields: ["formattedAddress", "location", "addressComponents", "displayName"],
+    });
+    
+    const location = place.location;
+    return {
+      formattedAddress: place.formattedAddress || place.displayName || "",
+      location: location ? { lat: location.lat(), lng: location.lng() } : { lat: 0, lng: 0 },
+      addressComponents: place.addressComponents,
+    };
+  } catch (error) {
+    console.error('Error getting place details:', error);
+    return null;
+  }
+};
+
+// Calculate driving distance
 export const getDrivingDistance = async (
-  origin: google.maps.LatLngLiteral,
-  destination: google.maps.LatLngLiteral
+  origin: { lat: number; lng: number },
+  destination: { lat: number; lng: number }
 ): Promise<{ distance: number; duration: number } | null> => {
   try {
     const google = await loadGoogleMaps();
     if (!google) return null;
     
-    const distanceMatrixService = new google.maps.DistanceMatrixService();
+    const { RouteMatrix } = await google.maps.importLibrary("routes") as any;
     
-    return new Promise((resolve) => {
-      distanceMatrixService.getDistanceMatrix(
-        {
-          origins: [origin],
-          destinations: [destination],
-          travelMode: google.maps.TravelMode.DRIVING,
-          unitSystem: google.maps.UnitSystem.METRIC,
-          region: 'ZA',
-        },
-        (response, status) => {
-          if (status === 'OK' && response && response.rows[0]?.elements[0]) {
-            const element = response.rows[0].elements[0];
-            if (element.status === 'OK') {
-              resolve({
-                distance: element.distance.value / 1000,
-                duration: element.duration.value / 60,
-              });
-            } else {
-              console.error('Distance Matrix element status:', element.status);
-              resolve(null);
-            }
-          } else {
-            console.error('Distance Matrix status:', status);
-            resolve(null);
-          }
-        }
-      );
+    const result = await RouteMatrix.computeRouteMatrix({
+      origins: [origin],
+      destinations: [destination],
+      travelMode: google.maps.TravelMode.DRIVING,
+      units: google.maps.UnitSystem.METRIC,
+      fields: ['distanceMeters', 'durationMillis', 'condition'],
     });
+    
+    if (result?.matrix?.rows?.[0]?.items?.[0]?.condition === 'ROUTE_EXISTS') {
+      const item = result.matrix.rows[0].items[0];
+      return {
+        distance: item.distanceMeters / 1000,
+        duration: item.durationMillis / (1000 * 60),
+      };
+    }
+    
+    // Fallback to straight-line distance
+    const straightLine = calculateStraightLineDistance(origin.lat, origin.lng, destination.lat, destination.lng);
+    return { distance: straightLine, duration: (straightLine / 40) * 60 };
   } catch (error) {
-    console.error('Error in getDrivingDistance:', error);
-    return null;
+    console.error('Error calculating distance:', error);
+    const straightLine = calculateStraightLineDistance(origin.lat, origin.lng, destination.lat, destination.lng);
+    return { distance: straightLine, duration: (straightLine / 40) * 60 };
   }
 };
 
+// Alias for backward compatibility
 export const getDrivingDistanceFromCoords = async (
   userLat: number,
   userLng: number
 ): Promise<{ distance: number; duration: number } | null> => {
-  try {
-    const origin = { lat: userLat, lng: userLng };
-    const destination = RESTAURANT_COORDS;
-    return await getDrivingDistance(origin, destination);
-  } catch (error) {
-    console.error('Error calculating delivery distance:', error);
-    return null;
-  }
+  return getDrivingDistance({ lat: userLat, lng: userLng }, RESTAURANT_COORDS);
 };
 
 export const calculateDeliveryFee = (distanceKm: number, subtotal: number = 0): number => {
@@ -297,6 +243,7 @@ export const calculateDeliveryFee = (distanceKm: number, subtotal: number = 0): 
   return DELIVERY_CONFIG.BASE_DELIVERY_FEE + (extraKm * DELIVERY_CONFIG.EXTRA_KM_RATE);
 };
 
+// Check if delivery is available
 export const isDeliveryAvailable = async (
   userLat: number,
   userLng: number,
@@ -304,14 +251,34 @@ export const isDeliveryAvailable = async (
 ): Promise<{ available: boolean; distance?: number; duration?: number; fee?: number; reason?: string }> => {
   try {
     const result = await getDrivingDistanceFromCoords(userLat, userLng);
-    if (!result) return { available: false, reason: "Could not calculate distance. Please try again." };
+    if (!result) {
+      return { 
+        available: false, 
+        reason: "Could not calculate distance. Please ensure your address is in Cape Town." 
+      };
+    }
+    
     if (result.distance <= maxDistanceKm) {
       const fee = calculateDeliveryFee(result.distance);
-      return { available: true, distance: result.distance, duration: result.duration, fee: fee };
+      return { 
+        available: true, 
+        distance: result.distance, 
+        duration: result.duration, 
+        fee: fee 
+      };
     }
-    return { available: false, distance: result.distance, duration: result.duration, reason: `Location is ${result.distance.toFixed(1)} km away. Maximum delivery distance is ${maxDistanceKm} km.` };
+    
+    return { 
+      available: false, 
+      distance: result.distance, 
+      duration: result.duration, 
+      reason: `Location is ${result.distance.toFixed(1)} km away. Maximum delivery distance is ${maxDistanceKm} km.` 
+    };
   } catch (error) {
     console.error('Error checking delivery availability:', error);
-    return { available: false, reason: "Error checking delivery availability. Please try again." };
+    return { 
+      available: false, 
+      reason: "Error checking delivery availability. Please try again." 
+    };
   }
 };

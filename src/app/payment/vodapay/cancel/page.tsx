@@ -1,38 +1,49 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { FaTimesCircle } from 'react-icons/fa';
+import { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { XCircle } from 'lucide-react';
 
-export default function VodaPayCancelPage() {
+function CancelContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    const status = searchParams.get('status');
+    const errorMessage = searchParams.get('message');
+    
+    setMessage(errorMessage || (status === 'cancelled' ? 'Payment was cancelled by user' : 'Payment was cancelled'));
+    
+    // Clear pending order
+    sessionStorage.removeItem('pendingOrder');
+    
+    // Redirect back to checkout after 3 seconds
+    setTimeout(() => {
+      router.push('/checkout');
+    }, 3000);
+  }, [router, searchParams]);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-2xl mx-auto px-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <FaTimesCircle className="w-10 h-10 text-red-600" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Payment Cancelled</h1>
-          <p className="text-gray-600 mb-6">
-            You cancelled the payment. No charges have been made.
-          </p>
-          <div className="flex gap-4 justify-center">
-            <button
-              onClick={() => router.push('/checkout')}
-              className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
-            >
-              Try Again
-            </button>
-            <button
-              onClick={() => router.push('/menu')}
-              className="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-300"
-            >
-              Back to Menu
-            </button>
-          </div>
-        </div>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md text-center">
+        <XCircle size={64} className="text-red-500 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Cancelled</h2>
+        <p className="text-gray-600 mb-4">{message}</p>
+        <p className="text-sm text-gray-500">Redirecting back to checkout...</p>
       </div>
     </div>
+  );
+}
+
+export default function VodaPayCancelPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2F5D50]"></div>
+      </div>
+    }>
+      <CancelContent />
+    </Suspense>
   );
 }
