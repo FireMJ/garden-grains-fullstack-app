@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { loadGoogleMaps, getAddressSuggestions, geocodeAddress } from '@/lib/googleMaps';
-import { getCurrentLocation, getCapeTownLocation } from '@/lib/locationService';
 import { FaMapMarkerAlt, FaSpinner, FaCrosshairs, FaSearch, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
 
 interface AddressAutocompleteProps {
@@ -31,29 +29,14 @@ export default function AddressAutocomplete({
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [locationStatus, setLocationStatus] = useState<'idle' | 'acquiring' | 'success' | 'error'>('idle');
-  const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     console.log('📍 AddressAutocomplete mounted');
-    loadGoogleMaps().then(() => {
-      console.log('✅ Google Maps API ready');
-    }).catch(err => {
-      console.error('❌ Google Maps API failed:', err);
-    });
   }, []);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
+  // Fetch address suggestions using server-side proxy (bypasses CORS)
   useEffect(() => {
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     
@@ -62,10 +45,24 @@ export default function AddressAutocomplete({
         setIsLoading(true);
         console.log(`🔍 Fetching suggestions for: "${inputValue}"`);
         try {
-          const results = await getAddressSuggestions(inputValue);
-          console.log(`📋 Got ${results.length} suggestions`);
-          setSuggestions(results);
-          setShowSuggestions(results.length > 0);
+          const response = await fetch(`/api/places/autocomplete?input=${encodeURIComponent(inputValue)}`);
+          const data = await response.json();
+          
+          console.log('📋 API Response:', data.status);
+          
+          if (data.status === 'OK' && data.predictions && data.predictions.length > 0) {
+            setSuggestions(data.predictions.map((p: any) => ({
+              description: p.description,
+              placeId: p.place_id,
+            })));
+            setShowSuggestions(true);
+          } else if (data.status === 'ZERO_RESULTS') {
+            console.log('No results found');
+            setSuggestions([]);
+          } else {
+            console.warn('API error:', data.status, data.error_message);
+            setSuggestions([]);
+          }
         } catch (error) {
           console.error('❌ Error fetching suggestions:', error);
           setSuggestions([]);
@@ -76,100 +73,188 @@ export default function AddressAutocomplete({
         setSuggestions([]);
         setShowSuggestions(false);
       }
-    }, 300);
+    }, 500);
     
     return () => { if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current); };
   }, [inputValue]);
 
-  const handleGetCurrentLocation = async () => {
-    console.log('📍 Getting current location...');
+  const handleGetCurrentLocation = () => {
     setIsGettingLocation(true);
     setLocationError(null);
     setLocationStatus('acquiring');
-    setLocationAccuracy(null);
-    setInputValue("Acquiring GPS signal...");
+    setInputValue("Getting your location...");
 
-    const result = await getCurrentLocation();
-    console.log('📍 Location result:', result);
-    
-    if (result.success && result.coordinates) {
-      setLocationStatus('success');
-      setLocationAccuracy(result.accuracy || null);
-      
-      let displayAddress = result.address || `${result.coordinates.lat.toFixed(4)}, ${result.coordinates.lng.toFixed(4)}`;
-      setInputValue(displayAddress);
-      
-      let street = '';
-      let city = '';
-      let postalCode = '';
-      let formattedAddress = displayAddress;
-      
-      if (result.address) {
-        formattedAddress = result.address;
-        const parts = result.address.split(',');
-        if (parts.length >= 2) {
-          street = parts[0].trim();
-          city = parts[1].trim();
-        }
-      }
-      
-      onAddressSelect({
-        street: street || displayAddress.split(',')[0],
-        city: city,
-        postalCode: postalCode,
-        formattedAddress: formattedAddress,
-        coordinates: result.coordinates,
-      });
-      
-      setTimeout(() => setLocationStatus('idle'), 3000);
-    } else {
-      const capeTown = getCapeTownLocation();
-      setLocationStatus('success');
-      setInputValue(capeTown.address || "Cape Town, South Africa");
-      onAddressSelect({
-        street: "Cape Town City Centre",
-        city: "Cape Town",
-        postalCode: "8000",
-        formattedAddress: capeTown.address || "Cape Town, South Africa",
-        coordinates: capeTown.coordinates,
-      });
-      setLocationError(result.error || "Using Cape Town as default location");
-      setTimeout(() => {
-        setLocationStatus('idle');
-        setLocationError(null);
-      }, 3000);
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by your browser");
+      setIsGettingLocation(false);
+      setInputValue("");
+      return;
     }
-    
-    setIsGettingLocation(false);
+
+    const timeoutId = setTimeout(() => {
+      if (isGettingLocation) {
+        console.log('GPS timeout, falling back to Cape Town');
+        const capeTownCoords = { lat: -33.9249, lng: 18.4241 };
+        const capeTownAddress = "Cape Town City Centre, Cape Town, South Africa";
+        setInputValue(capeTownAddress);
+        onAddressSelect({
+          street: "Cape Town City Centre",
+          city: "Cape Town",
+          postalCode: "8000",
+          formattedAddress: capeTownAddress,
+          coordinates: capeTownCoords,
+        });
+        setLocationStatus('success');
+        setIsGettingLocation(false);
+        setTimeout(() => setLocationStatus('idle'), 3000);
+      }
+    }, 8000);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        clearTimeout(timeoutId);
+        const { latitude, longitude } = position.coords;
+        
+        const isInSA = latitude < -22 && latitude > -35 && longitude > 16 && longitude < 33;
+        
+        if (!isInSA) {
+          console.log('Location outside SA, using Cape Town');
+          const capeTownCoords = { lat: -33.9249, lng: 18.4241 };
+          const capeTownAddress = "Cape Town City Centre, Cape Town, South Africa";
+          setInputValue(capeTownAddress);
+          onAddressSelect({
+            street: "Cape Town City Centre",
+            city: "Cape Town",
+            postalCode: "8000",
+            formattedAddress: capeTownAddress,
+            coordinates: capeTownCoords,
+          });
+          setLocationStatus('success');
+          setIsGettingLocation(false);
+          setTimeout(() => setLocationStatus('idle'), 3000);
+          return;
+        }
+        
+        try {
+          const geocodeUrl = `/api/places/geocode?lat=${latitude}&lng=${longitude}`;
+          const response = await fetch(geocodeUrl);
+          const data = await response.json();
+          
+          if (data.status === 'OK' && data.results && data.results[0]) {
+            const address = data.results[0];
+            const formattedAddress = address.formatted_address;
+            setInputValue(formattedAddress);
+            
+            let street = '';
+            let city = '';
+            let postalCode = '';
+            
+            address.address_components?.forEach((component: any) => {
+              if (component.types.includes('street_number')) {
+                street = component.long_name + ' ' + street;
+              }
+              if (component.types.includes('route')) {
+                street = street + component.long_name;
+              }
+              if (component.types.includes('locality')) {
+                city = component.long_name;
+              }
+              if (component.types.includes('postal_code')) {
+                postalCode = component.long_name;
+              }
+            });
+            
+            onAddressSelect({
+              street: street.trim() || formattedAddress.split(',')[0],
+              city: city,
+              postalCode: postalCode,
+              formattedAddress: formattedAddress,
+              coordinates: { lat: latitude, lng: longitude },
+            });
+            setLocationStatus('success');
+          } else {
+            throw new Error('Geocoding failed');
+          }
+        } catch (error) {
+          console.error('Error reverse geocoding:', error);
+          onAddressSelect({
+            street: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
+            city: '',
+            postalCode: '',
+            formattedAddress: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
+            coordinates: { lat: latitude, lng: longitude },
+          });
+        } finally {
+          setIsGettingLocation(false);
+          setTimeout(() => setLocationStatus('idle'), 3000);
+        }
+      },
+      (error) => {
+        clearTimeout(timeoutId);
+        console.error('Geolocation error:', error);
+        const capeTownCoords = { lat: -33.9249, lng: 18.4241 };
+        const capeTownAddress = "Cape Town City Centre, Cape Town, South Africa";
+        setInputValue(capeTownAddress);
+        onAddressSelect({
+          street: "Cape Town City Centre",
+          city: "Cape Town",
+          postalCode: "8000",
+          formattedAddress: capeTownAddress,
+          coordinates: capeTownCoords,
+        });
+        setLocationStatus('success');
+        setIsGettingLocation(false);
+        setTimeout(() => setLocationStatus('idle'), 3000);
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+    );
   };
 
   const handleSelectSuggestion = async (suggestion: { description: string; placeId: string }) => {
-    console.log(`📍 Selected: ${suggestion.description}`);
     setInputValue(suggestion.description);
     setShowSuggestions(false);
     setIsLoading(true);
 
     try {
-      const coords = await geocodeAddress(suggestion.description);
-      if (coords) {
-        console.log(`📍 Geocoded:`, coords);
-        const parts = suggestion.description.split(',');
-        const street = parts[0]?.trim() || '';
-        const city = parts[1]?.trim() || '';
-        const postalCode = parts[2]?.trim() || '';
+      const response = await fetch(`/api/places/geocode?placeId=${suggestion.placeId}`);
+      const data = await response.json();
+      
+      if (data.status === 'OK' && data.results && data.results[0]) {
+        const location = data.results[0].geometry.location;
+        const address = data.results[0];
+        
+        let street = '';
+        let city = '';
+        let postalCode = '';
+        
+        address.address_components?.forEach((component: any) => {
+          if (component.types.includes('street_number')) {
+            street = component.long_name + ' ' + street;
+          }
+          if (component.types.includes('route')) {
+            street = street + component.long_name;
+          }
+          if (component.types.includes('locality')) {
+            city = component.long_name;
+          }
+          if (component.types.includes('postal_code')) {
+            postalCode = component.long_name;
+          }
+        });
         
         onAddressSelect({
-          street: street,
+          street: street.trim() || suggestion.description.split(',')[0],
           city: city,
           postalCode: postalCode,
           formattedAddress: suggestion.description,
-          coordinates: coords,
+          coordinates: {
+            lat: location.lat,
+            lng: location.lng,
+          },
         });
-      } else {
-        console.error('❌ Could not geocode address');
       }
     } catch (error) {
-      console.error('❌ Error:', error);
+      console.error('Error getting place details:', error);
     } finally {
       setIsLoading(false);
     }
@@ -177,13 +262,13 @@ export default function AddressAutocomplete({
 
   const getLocationButtonContent = () => {
     if (locationStatus === 'acquiring') {
-      return <><FaSpinner className="w-4 h-4 animate-spin" /><span className="hidden sm:inline text-sm">Acquiring GPS...</span></>;
+      return <><FaSpinner className="w-4 h-4 animate-spin" /><span className="hidden sm:inline text-sm">Getting location...</span></>;
     }
     if (locationStatus === 'success') {
       return <><FaCheckCircle className="w-4 h-4 text-green-600" /><span className="hidden sm:inline text-sm">Location Set</span></>;
     }
     if (locationStatus === 'error') {
-      return <><FaExclamationTriangle className="w-4 h-4 text-red-600" /><span className="hidden sm:inline text-sm">Retry</span></>;
+      return <><FaExclamationTriangle className="w-4 h-4 text-red-600" /><span className="hidden sm:inline text-sm">Use Cape Town</span></>;
     }
     return <><FaCrosshairs className="w-4 h-4" /><span className="hidden sm:inline text-sm">My Location</span></>;
   };
@@ -209,7 +294,7 @@ export default function AddressAutocomplete({
             placeholder={placeholder}
             className={`w-full pl-10 pr-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${className}`}
           />
-          {(isLoading || isGettingLocation) && (
+          {isLoading && (
             <FaSpinner className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 animate-spin" />
           )}
         </div>
@@ -236,10 +321,10 @@ export default function AddressAutocomplete({
         </div>
       )}
       
-      {locationStatus === 'success' && !locationError && locationAccuracy && (
+      {locationStatus === 'success' && !locationError && (
         <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg text-green-700 text-xs flex items-center gap-2">
           <FaCheckCircle className="w-3 h-3" />
-          <span>Location acquired! Accuracy: {locationAccuracy.toFixed(0)} meters</span>
+          <span>Location acquired!</span>
         </div>
       )}
       
@@ -259,7 +344,7 @@ export default function AddressAutocomplete({
       )}
       
       <p className="text-xs text-gray-400 mt-1">
-        💡 Type your Cape Town address or click "My Location" for GPS
+        📍 Type your Cape Town address or click "My Location" (defaults to Cape Town)
       </p>
     </div>
   );
