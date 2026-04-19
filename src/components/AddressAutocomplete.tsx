@@ -31,21 +31,33 @@ export default function AddressAutocomplete({
   const [locationStatus, setLocationStatus] = useState<'idle' | 'acquiring' | 'success' | 'error'>('idle');
   const wrapperRef = useRef<HTMLDivElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     console.log('📍 AddressAutocomplete mounted');
   }, []);
 
-  // Fetch address suggestions using server-side proxy (bypasses CORS)
+  // Fetch address suggestions using server-side proxy
   useEffect(() => {
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    
+    // Cancel previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
     
     debounceTimerRef.current = setTimeout(async () => {
       if (inputValue.length >= 3) {
         setIsLoading(true);
         console.log(`🔍 Fetching suggestions for: "${inputValue}"`);
+        
+        // Create new abort controller for this request
+        abortControllerRef.current = new AbortController();
+        
         try {
-          const response = await fetch(`/api/places/autocomplete?input=${encodeURIComponent(inputValue)}`);
+          const response = await fetch(`/api/places/autocomplete?input=${encodeURIComponent(inputValue)}`, {
+            signal: abortControllerRef.current.signal,
+          });
           const data = await response.json();
           
           console.log('📋 API Response:', data.status);
@@ -56,15 +68,13 @@ export default function AddressAutocomplete({
               placeId: p.place_id,
             })));
             setShowSuggestions(true);
-          } else if (data.status === 'ZERO_RESULTS') {
-            console.log('No results found');
-            setSuggestions([]);
           } else {
-            console.warn('API error:', data.status, data.error_message);
             setSuggestions([]);
           }
-        } catch (error) {
-          console.error('❌ Error fetching suggestions:', error);
+        } catch (error: any) {
+          if (error.name !== 'AbortError') {
+            console.error('❌ Error fetching suggestions:', error);
+          }
           setSuggestions([]);
         } finally {
           setIsLoading(false);
@@ -75,8 +85,13 @@ export default function AddressAutocomplete({
       }
     }, 500);
     
-    return () => { if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current); };
-  }, [inputValue]);
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [inputValue]); // Only depend on inputValue, not API_KEY
 
   const handleGetCurrentLocation = () => {
     setIsGettingLocation(true);
@@ -115,29 +130,8 @@ export default function AddressAutocomplete({
         clearTimeout(timeoutId);
         const { latitude, longitude } = position.coords;
         
-        const isInSA = latitude < -22 && latitude > -35 && longitude > 16 && longitude < 33;
-        
-        if (!isInSA) {
-          console.log('Location outside SA, using Cape Town');
-          const capeTownCoords = { lat: -33.9249, lng: 18.4241 };
-          const capeTownAddress = "Cape Town City Centre, Cape Town, South Africa";
-          setInputValue(capeTownAddress);
-          onAddressSelect({
-            street: "Cape Town City Centre",
-            city: "Cape Town",
-            postalCode: "8000",
-            formattedAddress: capeTownAddress,
-            coordinates: capeTownCoords,
-          });
-          setLocationStatus('success');
-          setIsGettingLocation(false);
-          setTimeout(() => setLocationStatus('idle'), 3000);
-          return;
-        }
-        
         try {
-          const geocodeUrl = `/api/places/geocode?lat=${latitude}&lng=${longitude}`;
-          const response = await fetch(geocodeUrl);
+          const response = await fetch(`/api/places/geocode?lat=${latitude}&lng=${longitude}`);
           const data = await response.json();
           
           if (data.status === 'OK' && data.results && data.results[0]) {

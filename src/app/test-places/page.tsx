@@ -2,8 +2,6 @@
 
 import { useState } from 'react';
 
-const API_KEY = 'AIzaSyD_iMEsS8q5FJ-YYMXMzUENs-M16VEujLg';
-
 export default function TestPlacesPage() {
   const [input, setInput] = useState('');
   const [results, setResults] = useState<any[]>([]);
@@ -17,10 +15,8 @@ export default function TestPlacesPage() {
     setError('');
     
     try {
-      const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&types=address&components=country:za&key=${API_KEY}`;
-      console.log('Fetching:', url);
-      
-      const response = await fetch(url);
+      // Use the server-side proxy
+      const response = await fetch(`/api/places/autocomplete?input=${encodeURIComponent(input)}`);
       const data = await response.json();
       
       console.log('Response:', data);
@@ -81,11 +77,8 @@ export default function TestPlacesPage() {
           )}
           
           <div className="mt-4 p-3 bg-yellow-50 rounded-lg">
-            <p className="text-sm font-mono break-all">
-              API Key: {API_KEY.substring(0, 15)}...
-            </p>
             <p className="text-xs text-gray-500 mt-2">
-              Check the browser console for detailed logs.
+              Using server-side proxy to bypass CORS.
             </p>
           </div>
         </div>
