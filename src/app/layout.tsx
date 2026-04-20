@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from '@/context/AuthContext';
-import { CartProvider } from '@/context/CartContext';
-import Header from '@/components/Header';
-import LiveVisitCounter from '@/components/LiveVisitCounter';
-import NewUserDiscount from '@/components/NewUserDiscount';
-import VisitTracker from '@/components/VisitTracker';
+import { CartProvider } from "@/context/CartContext";
+import { AuthProvider } from "@/context/AuthContext";
+import { FirebaseProvider } from "@/components/FirebaseProvider";
+import Header from "@/components/Header";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Garden & Grains - Farm to Table",
-  description: "Fresh, organic, farm-to-table meals delivered to your door",
+  title: "Garden Grains - Farm to Table Restaurant",
+  description: "Fresh, locally sourced ingredients prepared with passion in Constantia, Cape Town",
 };
 
 export default function RootLayout({
@@ -19,18 +20,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">
-        <AuthProvider>
-          <CartProvider>
-            <Header />
-            <main className="min-h-screen pt-16">
-              {children}
-            </main>
-            <LiveVisitCounter />
-            <NewUserDiscount />
-            <VisitTracker />
-          </CartProvider>
-        </AuthProvider>
+      <body className={inter.className}>
+        <FirebaseProvider>
+          <AuthProvider>
+            <CartProvider>
+              <Header />
+              <main className="min-h-screen pt-0">
+                {children}
+              </main>
+            </CartProvider>
+          </AuthProvider>
+        </FirebaseProvider>
       </body>
     </html>
   );

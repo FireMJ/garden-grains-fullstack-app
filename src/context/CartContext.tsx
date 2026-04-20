@@ -56,7 +56,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (savedCart) {
       try {
         const parsed = JSON.parse(savedCart);
-        setCartItems(parsed);
+        // Ensure each item has a price
+        const validated = parsed.map((item: any) => ({
+          ...item,
+          price: item.price || 0,
+          quantity: item.quantity || 1
+        }));
+        setCartItems(validated);
       } catch (e) {
         console.error('Failed to parse cart:', e);
       }
@@ -66,11 +72,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Calculate total price including add-ons
   const calculateTotalPrice = (items: CartItem[]): number => {
     return items.reduce((sum, item) => {
-      let itemTotal = item.price * item.quantity;
+      const itemPrice = item.price || 0;
+      const itemQty = item.quantity || 1;
+      let itemTotal = itemPrice * itemQty;
       
       // Add add-ons total
       if (item.addOns && item.addOns.length > 0) {
-        const addOnsTotal = item.addOns.reduce((addSum, addon) => addSum + (addon.price * addon.quantity), 0);
+        const addOnsTotal = item.addOns.reduce((addSum, addon) => {
+          const addonPrice = addon.price || 0;
+          const addonQty = addon.quantity || 1;
+          return addSum + (addonPrice * addonQty);
+        }, 0);
         itemTotal += addOnsTotal;
       }
       
@@ -83,19 +95,25 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (mounted) {
       localStorage.setItem('cart', JSON.stringify(cartItems));
       setTotalPrice(calculateTotalPrice(cartItems));
-      setItemCount(cartItems.reduce((sum, item) => sum + item.quantity, 0));
+      setItemCount(cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0));
     }
   }, [cartItems, mounted]);
 
   const addToCart = (item: CartItem) => {
+    const newItem = {
+      ...item,
+      price: item.price || 0,
+      quantity: item.quantity || 1
+    };
+    
     setCartItems(prev => {
       // Check if same item with same add-ons exists
       const existingIndex = prev.findIndex(i => {
-        if (i.id !== item.id) return false;
+        if (i.id !== newItem.id) return false;
         
         // Compare add-ons
         const existingAddOns = JSON.stringify(i.addOns || []);
-        const newAddOns = JSON.stringify(item.addOns || []);
+        const newAddOns = JSON.stringify(newItem.addOns || []);
         return existingAddOns === newAddOns;
       });
       
@@ -104,12 +122,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const updated = [...prev];
         updated[existingIndex] = {
           ...updated[existingIndex],
-          quantity: updated[existingIndex].quantity + item.quantity
+          quantity: (updated[existingIndex].quantity || 1) + (newItem.quantity || 1)
         };
         return updated;
       }
       
-      return [...prev, item];
+      return [...prev, newItem];
     });
   };
 

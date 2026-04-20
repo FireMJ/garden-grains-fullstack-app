@@ -99,7 +99,7 @@ export const pastas: PastaItem[] = [
     name: "Garlic Beef Pasta",
     description: "Penne pasta, sliced beef, zucchini, button mushrooms, red onions, bell peppers, feta cheese, garlic creamy sauce, topped with parmesan cheese",
     price: 159,
-    image: "/images/pastas/garlic-beef.jpg",
+    image: "/images/pastas/garlic_beef.jpeg",
     tags: ["popular", "creamy", "beef"],
     popular: true,
     addOns: pastaAddOns,

@@ -28,7 +28,7 @@ import { getDrivingDistance, RESTAURANT_COORDS, DELIVERY_CONFIG, isValidCapeTown
 
 // Helper to get add-on icon
 const getAddOnIcon = (name: string) => {
-  const lowerName = name.toLowerCase();
+  const lowerName = name?.toLowerCase() || '';
   if (lowerName.includes('cheese')) return <Sparkles size={14} className="text-yellow-600" />;
   if (lowerName.includes('egg')) return <EggFried size={14} className="text-orange-500" />;
   if (lowerName.includes('bacon')) return <UtensilsCrossed size={14} className="text-red-600" />;
@@ -119,14 +119,27 @@ export default function CartPage() {
     setExpandedItems(prev => ({ ...prev, [itemId]: !prev[itemId] }));
   };
 
-  // Calculate item total including add-ons
+  // Calculate item total including add-ons with safe fallbacks
   const getItemTotal = (item: any) => {
-    let total = item.price * item.quantity;
-    if (item.addOns && item.addOns.length > 0) {
-      const addOnsTotal = item.addOns.reduce((sum: number, addon: any) => sum + (addon.price * addon.quantity), 0);
+    const price = item?.price || 0;
+    const quantity = item?.quantity || 1;
+    let total = price * quantity;
+    
+    if (item?.addOns && item.addOns.length > 0) {
+      const addOnsTotal = item.addOns.reduce((sum: number, addon: any) => {
+        const addonPrice = addon?.price || 0;
+        const addonQty = addon?.quantity || 1;
+        return sum + (addonPrice * addonQty);
+      }, 0);
       total += addOnsTotal;
     }
     return total;
+  };
+
+  // Safe price formatter
+  const formatPrice = (price: number | undefined | null) => {
+    if (typeof price !== 'number' || isNaN(price)) return '0.00';
+    return price.toFixed(2);
   };
 
   const subtotal = cart.totalPrice || 0;
@@ -148,7 +161,7 @@ export default function CartPage() {
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Shopping Cart</h1>
         <p className="text-gray-500 mb-8">Review your order and proceed to checkout</p>
         
-        {cart.cartItems?.length === 0 ? (
+        {!cart.cartItems || cart.cartItems.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
             <ShoppingBag size={80} className="mx-auto text-gray-300 mb-4" />
             <h2 className="text-2xl font-semibold text-gray-700 mb-2">Your cart is empty</h2>
@@ -161,117 +174,128 @@ export default function CartPage() {
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Cart Items */}
             <div className="lg:col-span-2 space-y-4">
-              {cart.cartItems.map((item) => (
-                <div key={item.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
-                  <div className="p-5">
-                    <div className="flex gap-4">
-                      {/* Item Image */}
-                      <div className="relative w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-gray-100">
-                        {!imageErrors[item.id] && item.image ? (
-                          <Image src={item.image} alt={item.name} fill className="object-cover" onError={() => handleImageError(item.id)} unoptimized />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-100">
-                            <span className="text-xs">No image</span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-semibold text-gray-900 text-lg">{item.name}</h3>
-                            <p className="text-gray-500 text-sm">R {item.price.toFixed(2)} each</p>
-                          </div>
-                          <button onClick={() => cart.removeFromCart(item.id)} className="text-gray-400 hover:text-red-500 transition-colors p-1">
-                            <Trash2 size={18} />
-                          </button>
+              {cart.cartItems.map((item) => {
+                const itemPrice = item?.price || 0;
+                const itemName = item?.name || 'Unknown Item';
+                const itemId = item?.id || `item-${Math.random()}`;
+                
+                return (
+                  <div key={itemId} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+                    <div className="p-5">
+                      <div className="flex gap-4">
+                        {/* Item Image */}
+                        <div className="relative w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-gray-100">
+                          {!imageErrors[itemId] && item?.image ? (
+                            <Image src={item.image} alt={itemName} fill className="object-cover" onError={() => handleImageError(itemId)} unoptimized />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-100">
+                              <span className="text-xs">No image</span>
+                            </div>
+                          )}
                         </div>
                         
-                        {/* ADD-ONS SECTION - Enhanced Display */}
-                        {item.addOns && item.addOns.length > 0 && (
-                          <div className="mt-3">
-                            <button
-                              onClick={() => toggleExpandItem(item.id)}
-                              className="flex items-center gap-1 text-xs text-gray-500 hover:text-[#2F5D50] transition-colors"
-                            >
-                              {expandedItems[item.id] ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                              <span>Extras & Add-ons ({item.addOns.length})</span>
-                            </button>
-                            
-                            {expandedItems[item.id] && (
-                              <div className="mt-2 pl-2 border-l-2 border-[#2F5D50] space-y-2">
-                                {item.addOns.map((addon: any) => (
-                                  <div key={addon.id} className="flex justify-between items-center text-sm">
-                                    <div className="flex items-center gap-2">
-                                      {getAddOnIcon(addon.name)}
-                                      <span className="text-gray-700">{addon.name}</span>
-                                      {addon.quantity > 1 && (
-                                        <span className="text-xs text-gray-400">x{addon.quantity}</span>
-                                      )}
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                      <span className="text-green-600 font-medium">
-                                        +R {(addon.price * addon.quantity).toFixed(2)}
-                                      </span>
-                                      <div className="flex items-center gap-1">
-                                        <button
-                                          onClick={() => cart.updateAddOnQuantity(item.id, addon.id, addon.quantity - 1)}
-                                          className="w-5 h-5 rounded-full border border-gray-300 flex items-center justify-center hover:border-[#2F5D50] hover:text-[#2F5D50]"
-                                        >
-                                          <Minus size={10} />
-                                        </button>
-                                        <span className="text-xs w-4 text-center">{addon.quantity}</span>
-                                        <button
-                                          onClick={() => cart.updateAddOnQuantity(item.id, addon.id, addon.quantity + 1)}
-                                          className="w-5 h-5 rounded-full border border-gray-300 flex items-center justify-center hover:border-[#2F5D50] hover:text-[#2F5D50]"
-                                        >
-                                          <Plus size={10} />
-                                        </button>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        
-                        {/* Special Instructions */}
-                        {item.specialInstructions && (
-                          <div className="mt-3 pt-2">
-                            <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded-lg">
-                              <span className="font-medium text-gray-700">📝 Special Instructions:</span>
-                              <p className="text-gray-600 mt-0.5">{item.specialInstructions}</p>
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="font-semibold text-gray-900 text-lg">{itemName}</h3>
+                              <p className="text-gray-500 text-sm">R {formatPrice(itemPrice)} each</p>
                             </div>
-                          </div>
-                        )}
-                        
-                        {/* Quantity Controls */}
-                        <div className="flex items-center justify-between mt-3 pt-2">
-                          <div className="flex items-center gap-3">
-                            <button
-                              onClick={() => cart.updateQuantity(item.id, item.quantity - 1)}
-                              className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-[#2F5D50] hover:text-[#2F5D50] transition-all"
-                            >
-                              <Minus size={14} />
-                            </button>
-                            <span className="font-medium text-gray-700 min-w-[20px] text-center">{item.quantity}</span>
-                            <button
-                              onClick={() => cart.updateQuantity(item.id, item.quantity + 1)}
-                              className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-[#2F5D50] hover:text-[#2F5D50] transition-all"
-                            >
-                              <Plus size={14} />
+                            <button onClick={() => cart.removeFromCart(itemId)} className="text-gray-400 hover:text-red-500 transition-colors p-1">
+                              <Trash2 size={18} />
                             </button>
                           </div>
-                          <div className="font-bold text-gray-900">
-                            R {getItemTotal(item).toFixed(2)}
+                          
+                          {/* ADD-ONS SECTION */}
+                          {item?.addOns && item.addOns.length > 0 && (
+                            <div className="mt-3">
+                              <button
+                                onClick={() => toggleExpandItem(itemId)}
+                                className="flex items-center gap-1 text-xs text-gray-500 hover:text-[#2F5D50] transition-colors"
+                              >
+                                {expandedItems[itemId] ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                <span>Extras & Add-ons ({item.addOns.length})</span>
+                              </button>
+                              
+                              {expandedItems[itemId] && (
+                                <div className="mt-2 pl-2 border-l-2 border-[#2F5D50] space-y-2">
+                                  {item.addOns.map((addon: any) => {
+                                    const addonPrice = addon?.price || 0;
+                                    const addonName = addon?.name || 'Unknown';
+                                    const addonQty = addon?.quantity || 1;
+                                    return (
+                                      <div key={addon?.id || Math.random()} className="flex justify-between items-center text-sm">
+                                        <div className="flex items-center gap-2">
+                                          {getAddOnIcon(addonName)}
+                                          <span className="text-gray-700">{addonName}</span>
+                                          {addonQty > 1 && (
+                                            <span className="text-xs text-gray-400">x{addonQty}</span>
+                                          )}
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                          <span className="text-green-600 font-medium">
+                                            +R {formatPrice(addonPrice * addonQty)}
+                                          </span>
+                                          <div className="flex items-center gap-1">
+                                            <button
+                                              onClick={() => cart.updateAddOnQuantity?.(itemId, addon.id, addonQty - 1)}
+                                              className="w-5 h-5 rounded-full border border-gray-300 flex items-center justify-center hover:border-[#2F5D50] hover:text-[#2F5D50]"
+                                            >
+                                              <Minus size={10} />
+                                            </button>
+                                            <span className="text-xs w-4 text-center">{addonQty}</span>
+                                            <button
+                                              onClick={() => cart.updateAddOnQuantity?.(itemId, addon.id, addonQty + 1)}
+                                              className="w-5 h-5 rounded-full border border-gray-300 flex items-center justify-center hover:border-[#2F5D50] hover:text-[#2F5D50]"
+                                            >
+                                              <Plus size={10} />
+                                            </button>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Special Instructions */}
+                          {item?.specialInstructions && (
+                            <div className="mt-3 pt-2">
+                              <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded-lg">
+                                <span className="font-medium text-gray-700">📝 Special Instructions:</span>
+                                <p className="text-gray-600 mt-0.5">{item.specialInstructions}</p>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Quantity Controls */}
+                          <div className="flex items-center justify-between mt-3 pt-2">
+                            <div className="flex items-center gap-3">
+                              <button
+                                onClick={() => cart.updateQuantity(itemId, (item?.quantity || 1) - 1)}
+                                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-[#2F5D50] hover:text-[#2F5D50] transition-all"
+                              >
+                                <Minus size={14} />
+                              </button>
+                              <span className="font-medium text-gray-700 min-w-[20px] text-center">{item?.quantity || 1}</span>
+                              <button
+                                onClick={() => cart.updateQuantity(itemId, (item?.quantity || 1) + 1)}
+                                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-[#2F5D50] hover:text-[#2F5D50] transition-all"
+                              >
+                                <Plus size={14} />
+                              </button>
+                            </div>
+                            <div className="font-bold text-gray-900">
+                              R {formatPrice(getItemTotal(item))}
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
             
             {/* Order Summary */}
@@ -282,7 +306,7 @@ export default function CartPage() {
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-gray-600">
                     <span>Subtotal</span>
-                    <span className="font-medium">R {subtotal.toFixed(2)}</span>
+                    <span className="font-medium">R {formatPrice(subtotal)}</span>
                   </div>
                   
                   <div className="border-t pt-4">
@@ -333,7 +357,7 @@ export default function CartPage() {
                   {deliveryMethod === 'delivery' && !qualifiesForFreeDelivery && distance !== null && (
                     <div className="flex justify-between text-gray-600 pt-2">
                       <span>Delivery Fee</span>
-                      <span className="font-medium">R {finalDeliveryFee.toFixed(2)}</span>
+                      <span className="font-medium">R {formatPrice(finalDeliveryFee)}</span>
                     </div>
                   )}
                   
@@ -347,7 +371,7 @@ export default function CartPage() {
                   <div className="border-t pt-4 mt-4">
                     <div className="flex justify-between text-xl font-bold text-gray-900">
                       <span>Total</span>
-                      <span>R {finalTotal.toFixed(2)}</span>
+                      <span>R {formatPrice(finalTotal)}</span>
                     </div>
                   </div>
                 </div>

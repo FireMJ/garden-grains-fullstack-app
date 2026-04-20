@@ -22,7 +22,7 @@ export const menuCategories = [
     id: "bowls",
     name: "Signature Bowls",
     description: "Nourishing poke & chipotle inspired bowls",
-    image: "/images/chipotle_poke/chicken_poke.jpg",
+    image: "/images/bowls/chicken_poke.jpeg",
   },
   {
     id: "salads",
@@ -46,13 +46,13 @@ export const menuCategories = [
     id: "pastas",
     name: "Fresh Pastas",
     description: "Homemade pasta dishes",
-    image: "/images/menu/pastas-category.jpg",
+    image: "/images/pastas/garlic_beef.jpeg",
   },
   {
     id: "stirfries",
     name: "Stir Fries",
     description: "Wok-tossed dishes",
-    image: "/images/menu/stirfry-category.jpg",
+    image: "/images/stirfry/chicken-veg.jpeg",
   },
   {
     id: "soups",

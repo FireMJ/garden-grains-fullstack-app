@@ -1,277 +1,258 @@
-'use client';
+"use client";
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { juices, juiceAddOns } from '@/data/juicesData';
+import { juices, juiceAddOns } from '@/data/juices';
 import { useCart } from '@/context/CartContext';
-import { FaArrowLeft, FaPlus, FaMinus, FaShoppingCart, FaTruck, FaCocktail } from 'react-icons/fa';
-
-// Define fries upsell options locally
-const friesUpsellOptions = [
-  { id: "fries1", name: "Skinny French Fries", price: 45 },
-  { id: "fries2", name: "Sweet Potato Fries", price: 59 },
-];
-
-// Define juice upsell options locally
-const juiceUpsellOptions = [
-  {
-    size: "250ml",
-    options: [
-      { id: "juice1", name: "Orange Juice", price: 55 },
-      { id: "juice2", name: "Apple & Lemon Juice", price: 55 },
-      { id: "juice3", name: "The Green Mile", price: 55 },
-      { id: "juice4", name: "Fruit Punch", price: 55 },
-      { id: "juice5", name: "Up Beet Juice", price: 55 },
-      { id: "juice6", name: "GLOW", price: 55 },
-    ],
-  },
-  {
-    size: "350ml",
-    options: [
-      { id: "juice7", name: "Orange Juice", price: 75 },
-      { id: "juice8", name: "Apple & Lemon Juice", price: 75 },
-      { id: "juice9", name: "The Green Mile", price: 75 },
-      { id: "juice10", name: "Fruit Punch", price: 75 },
-      { id: "juice11", name: "Up Beet Juice", price: 75 },
-      { id: "juice12", name: "GLOW", price: 75 },
-    ],
-  },
-  {
-    size: "500ml",
-    options: [
-      { id: "juice13", name: "Orange Juice", price: 95 },
-      { id: "juice14", name: "Apple & Lemon Juice", price: 95 },
-      { id: "juice15", name: "The Green Mile", price: 95 },
-      { id: "juice16", name: "Fruit Punch", price: 95 },
-      { id: "juice17", name: "Up Beet Juice", price: 95 },
-      { id: "juice18", name: "GLOW", price: 95 },
-    ],
-  },
-];
-
-interface JuiceItem {
-  id: string;
-  slug: string;
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-  tags?: string[];
-  popular?: boolean;
-  addOns?: any[];
-}
-
-interface UpsellItem {
-  id: string;
-  name: string;
-  price: number;
-  size?: string;
-}
+import { Minus, Plus, ShoppingCart, Star, Check, ArrowLeft } from 'lucide-react';
 
 export default function JuiceDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { addToCart } = useCart();
-  const slug = params?.slug as string;
-  
-  const [juiceItem, setJuiceItem] = useState<JuiceItem | null>(null);
+  const [juice, setJuice] = useState<any>(null);
+  const [selectedSize, setSelectedSize] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
-  const [selectedAddOns, setSelectedAddOns] = useState<{ name: string; price: number; quantity: number }[]>([]);
+  const [selectedAddOns, setSelectedAddOns] = useState<Map<string, { name: string; price: number; quantity: number }>>(new Map());
   const [specialInstructions, setSpecialInstructions] = useState('');
-  const [selectedFries, setSelectedFries] = useState<UpsellItem | null>(null);
-  const [selectedJuice, setSelectedJuice] = useState<UpsellItem | null>(null);
-  const [selectedJuiceSize, setSelectedJuiceSize] = useState<string>("250ml");
-  const [showUpsells, setShowUpsells] = useState(false);
-  const [imageError, setImageError] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!slug) return;
-    const item = juices?.find((j: any) => j.slug === slug);
-    if (item) setJuiceItem(item);
-  }, [slug]);
-
-  const handleAddOnToggle = (addOn: { name: string; price: number }) => {
-    setSelectedAddOns(prev => {
-      const existing = prev.find(a => a.name === addOn.name);
-      if (existing) {
-        return prev.filter(a => a.name !== addOn.name);
-      } else {
-        return [...prev, { ...addOn, quantity: 1 }];
+    const slug = params.slug as string;
+    const foundJuice = juices.find(j => j.slug === slug);
+    if (foundJuice) {
+      setJuice(foundJuice);
+      if (foundJuice.sizes && foundJuice.sizes.length > 0) {
+        setSelectedSize(foundJuice.sizes[0]);
       }
+    }
+    setLoading(false);
+  }, [params.slug]);
+
+  const handleAddOnToggle = (addon: { id: string; name: string; price: number }) => {
+    setSelectedAddOns(prev => {
+      const newMap = new Map(prev);
+      if (newMap.has(addon.id)) {
+        newMap.delete(addon.id);
+      } else {
+        newMap.set(addon.id, { ...addon, quantity: 1 });
+      }
+      return newMap;
     });
   };
 
-  const updateAddOnQuantity = (addOnName: string, newQuantity: number) => {
-    if (newQuantity <= 0) {
-      setSelectedAddOns(prev => prev.filter(a => a.name !== addOnName));
-    } else {
-      setSelectedAddOns(prev =>
-        prev.map(a => a.name === addOnName ? { ...a, quantity: newQuantity } : a)
-      );
-    }
+  const handleAddOnQuantityChange = (addonId: string, quantity: number) => {
+    setSelectedAddOns(prev => {
+      const newMap = new Map(prev);
+      const addon = newMap.get(addonId);
+      if (addon) {
+        if (quantity <= 0) {
+          newMap.delete(addonId);
+        } else {
+          newMap.set(addonId, { ...addon, quantity });
+        }
+      }
+      return newMap;
+    });
   };
 
-  const calculateTotal = () => {
-    let total = juiceItem?.price || 0;
-    selectedAddOns.forEach(addOn => { total += addOn.price * addOn.quantity; });
-    if (selectedFries) total += selectedFries.price;
-    if (selectedJuice) total += selectedJuice.price;
-    return total * quantity;
+  const getItemTotal = () => {
+    if (!selectedSize) return 0;
+    let total = selectedSize.price * quantity;
+    selectedAddOns.forEach(addon => {
+      total += addon.price * addon.quantity;
+    });
+    return total;
   };
 
   const handleAddToCart = () => {
-    if (!juiceItem) return;
-    
-    addToCart({
-      id: `${juiceItem.id}-${Date.now()}`,
-      name: juiceItem.name,
-      price: juiceItem.price,
+    if (!juice || !selectedSize) return;
+
+    const addOnsArray = Array.from(selectedAddOns.entries()).map(([id, addon]) => ({
+      id,
+      name: addon.name,
+      price: addon.price,
+      quantity: addon.quantity
+    }));
+
+    const cartItem = {
+      id: `${juice.id}-${selectedSize.id}-${Date.now()}`,
+      name: `${juice.name} (${selectedSize.label})`,
+      price: selectedSize.price,
       quantity: quantity,
-      image: juiceItem.image,
-      addOns: selectedAddOns,
-      friesUpsell: selectedFries,
-      juiceUpsell: selectedJuice,
+      image: juice.image,
+      category: 'juices',
       specialInstructions: specialInstructions || undefined,
-    });
-    
-    alert(`Added ${quantity} x ${juiceItem.name} to cart`);
+      addOns: addOnsArray.length > 0 ? addOnsArray : undefined
+    };
+
+    addToCart(cartItem);
     router.push('/cart');
   };
 
-  if (!mounted || !juiceItem) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2F5D50]"></div>
       </div>
     );
   }
 
-  const total = calculateTotal();
+  if (!juice) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Juice not found</h1>
+          <Link href="/menu/juices" className="text-[#2F5D50] hover:underline">
+            Back to Juices
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-4xl mx-auto px-4">
-        <Link href="/menu/juices" className="inline-flex items-center gap-2 text-gray-600 hover:text-green-600 mb-6 transition">
-          <FaArrowLeft /> Back to Juices
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-8">
+      <div className="container mx-auto px-4 max-w-6xl">
+        {/* Back button */}
+        <Link href="/menu/juices" className="inline-flex items-center gap-2 text-gray-600 hover:text-[#2F5D50] transition-colors mb-6">
+          <ArrowLeft size={20} />
+          <span>Back to Juices</span>
         </Link>
 
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="relative h-64 md:h-full min-h-[300px] bg-gray-100">
-              {!imageError ? (
-                <Image
-                  src={juiceItem.image}
-                  alt={juiceItem.name}
-                  fill
-                  className="object-cover"
-                  onError={() => setImageError(true)}
-                  unoptimized
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-6xl">🥤</div>
+        <div className="grid md:grid-cols-2 gap-12">
+          {/* Image */}
+          <div className="relative h-96 rounded-2xl overflow-hidden bg-gray-100">
+            {juice.image ? (
+              <Image src={juice.image} alt={juice.name} fill className="object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                No image available
+              </div>
+            )}
+          </div>
+
+          {/* Details */}
+          <div>
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">{juice.name}</h1>
+                <p className="text-gray-600">{juice.description}</p>
+              </div>
+              {juice.popular && (
+                <div className="flex items-center gap-1 bg-yellow-50 px-3 py-1 rounded-full">
+                  <Star size={14} className="text-yellow-500 fill-yellow-500" />
+                  <span className="text-xs font-medium text-yellow-700">Popular</span>
+                </div>
               )}
             </div>
 
-            <div className="p-6">
-              <h1 className="text-3xl font-bold text-gray-900 mb-3">{juiceItem.name}</h1>
-              <p className="text-gray-600 mb-4 leading-relaxed">{juiceItem.description}</p>
-              <p className="text-2xl font-bold text-green-600 mb-6">R{juiceItem.price}</p>
+            {/* Size Selection */}
+            <div className="mb-6">
+              <h3 className="font-semibold text-gray-900 mb-3">Select Size</h3>
+              <div className="flex gap-3">
+                {juice.sizes.map((size: any) => (
+                  <button
+                    key={size.id}
+                    onClick={() => setSelectedSize(size)}
+                    className={`flex-1 p-4 rounded-xl border-2 transition-all ${
+                      selectedSize?.id === size.id
+                        ? 'border-[#2F5D50] bg-[#2F5D50]/5'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="font-semibold text-gray-900">{size.label}</div>
+                    <div className="text-sm text-gray-500">{size.ml}ml</div>
+                    <div className="text-lg font-bold text-[#2F5D50]">R{size.price}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
 
-              {/* Add-ons */}
-              {juiceAddOns && juiceAddOns.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="font-semibold text-gray-900 mb-3">Add-ons</h3>
-                  <div className="space-y-2">
-                    {juiceAddOns.map((addOn: any) => {
-                      const selected = selectedAddOns.find(a => a.name === addOn.name);
-                      return (
-                        <div key={addOn.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                          <label className="flex items-center gap-3 cursor-pointer flex-1">
-                            <input
-                              type="checkbox"
-                              checked={!!selected}
-                              onChange={() => handleAddOnToggle(addOn)}
-                              className="w-4 h-4 text-green-600 rounded"
-                            />
-                            <span>{addOn.name}</span>
-                            <span className="text-green-600 font-medium">+R{addOn.price}</span>
-                          </label>
-                          {selected && (
-                            <div className="flex items-center gap-2">
-                              <button onClick={() => updateAddOnQuantity(addOn.name, selected.quantity - 1)} className="w-7 h-7 bg-gray-200 rounded-full hover:bg-gray-300"><FaMinus size={12} /></button>
-                              <span className="w-6 text-center">{selected.quantity}</span>
-                              <button onClick={() => updateAddOnQuantity(addOn.name, selected.quantity + 1)} className="w-7 h-7 bg-gray-200 rounded-full hover:bg-gray-300"><FaPlus size={12} /></button>
-                            </div>
-                          )}
+            {/* Add-ons */}
+            {juiceAddOns && juiceAddOns.length > 0 && (
+              <div className="mb-6">
+                <h3 className="font-semibold text-gray-900 mb-3">Add-ons</h3>
+                <div className="space-y-2">
+                  {juiceAddOns.map((addon) => {
+                    const isSelected = selectedAddOns.has(addon.id);
+                    const selectedAddon = selectedAddOns.get(addon.id);
+                    return (
+                      <div key={addon.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => handleAddOnToggle(addon)}
+                            className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                              isSelected ? 'bg-[#2F5D50] border-[#2F5D50]' : 'border-gray-300'
+                            }`}
+                          >
+                            {isSelected && <Check size={12} className="text-white" />}
+                          </button>
+                          <span className="text-gray-700">{addon.name}</span>
+                          <span className="text-sm text-green-600">+R{addon.price}</span>
                         </div>
-                      );
-                    })}
-                  </div>
+                        {isSelected && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleAddOnQuantityChange(addon.id, (selectedAddon?.quantity || 1) - 1)}
+                              className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center"
+                            >
+                              <Minus size={12} />
+                            </button>
+                            <span className="text-sm w-6 text-center">{selectedAddon?.quantity || 1}</span>
+                            <button
+                              onClick={() => handleAddOnQuantityChange(addon.id, (selectedAddon?.quantity || 1) + 1)}
+                              className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center"
+                            >
+                              <Plus size={12} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Complete Your Meal */}
-              <div className="mb-4">
-                <button onClick={() => setShowUpsells(!showUpsells)} className="w-full flex items-center justify-between p-3 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
-                  <span className="font-semibold text-gray-800">Complete Your Meal</span>
-                  <span className="text-green-600">{showUpsells ? '▲' : '▼'}</span>
+            {/* Special Instructions */}
+            <div className="mb-6">
+              <h3 className="font-semibold text-gray-900 mb-3">Special Instructions</h3>
+              <textarea
+                value={specialInstructions}
+                onChange={(e) => setSpecialInstructions(e.target.value)}
+                placeholder="Any special requests? (e.g., no ice, extra sweet, etc.)"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2F5D50] focus:border-transparent"
+                rows={3}
+              />
+            </div>
+
+            {/* Quantity and Add to Cart */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:border-[#2F5D50]"
+                >
+                  <Minus size={16} />
+                </button>
+                <span className="font-semibold text-lg w-12 text-center">{quantity}</span>
+                <button
+                  onClick={() => setQuantity(quantity + 1)}
+                  className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:border-[#2F5D50]"
+                >
+                  <Plus size={16} />
                 </button>
               </div>
-
-              {showUpsells && (
-                <div className="mb-6 p-4 bg-gray-50 rounded-lg space-y-4">
-                  <div>
-                    <h4 className="font-medium text-gray-700 mb-2 flex items-center gap-2"><FaTruck className="text-green-600" /> Add Fries</h4>
-                    <div className="space-y-2">
-                      {friesUpsellOptions.map((fries: any) => (
-                        <label key={fries.id} className="flex items-center justify-between p-2 bg-white rounded-lg cursor-pointer">
-                          <div className="flex items-center gap-3"><input type="radio" name="fries" checked={selectedFries?.id === fries.id} onChange={() => setSelectedFries(fries)} className="w-4 h-4 text-green-600" /><span>{fries.name}</span></div>
-                          <span className="text-green-600 font-medium">+R{fries.price}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-gray-700 mb-2 flex items-center gap-2"><FaCocktail className="text-green-600" /> Add a Drink</h4>
-                    <div className="mb-2"><select value={selectedJuiceSize} onChange={(e) => setSelectedJuiceSize(e.target.value)} className="p-2 border border-gray-300 rounded-lg text-sm">{juiceUpsellOptions.map((g: any) => (<option key={g.size} value={g.size}>{g.size}</option>))}</select></div>
-                    <div className="space-y-2">
-                      {juiceUpsellOptions.find((g: any) => g.size === selectedJuiceSize)?.options.map((juice: any) => (
-                        <label key={juice.id} className="flex items-center justify-between p-2 bg-white rounded-lg cursor-pointer">
-                          <div className="flex items-center gap-3"><input type="radio" name="juice" checked={selectedJuice?.id === juice.id} onChange={() => setSelectedJuice(juice)} className="w-4 h-4 text-green-600" /><span>{juice.name}</span></div>
-                          <span className="text-green-600 font-medium">+R{juice.price}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Special Instructions */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Special Instructions (Optional)</label>
-                <textarea value={specialInstructions} onChange={(e) => setSpecialInstructions(e.target.value)} placeholder="e.g., no ice, extra lemon, etc." rows={2} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" />
-              </div>
-
-              {/* Quantity and Add to Cart */}
-              <div className="border-t pt-4">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="font-semibold text-gray-700">Quantity:</span>
-                  <div className="flex items-center gap-3">
-                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-8 h-8 bg-gray-200 rounded-full hover:bg-gray-300"><FaMinus size={12} /></button>
-                    <span className="text-lg font-semibold w-8 text-center">{quantity}</span>
-                    <button onClick={() => setQuantity(quantity + 1)} className="w-8 h-8 bg-gray-200 rounded-full hover:bg-gray-300"><FaPlus size={12} /></button>
-                  </div>
-                </div>
-                <div className="flex justify-between items-center mb-4"><span className="font-semibold text-gray-700">Total:</span><span className="text-2xl font-bold text-green-600">R{total.toFixed(2)}</span></div>
-                <button onClick={handleAddToCart} className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold flex items-center justify-center gap-2"><FaShoppingCart /> Add to Cart</button>
-              </div>
+              <button
+                onClick={handleAddToCart}
+                className="flex-1 bg-[#2F5D50] text-white py-3 rounded-xl font-semibold hover:bg-[#23483E] transition-all flex items-center justify-center gap-2"
+              >
+                <ShoppingCart size={18} />
+                Add to Cart - R{getItemTotal().toFixed(2)}
+              </button>
             </div>
           </div>
         </div>
