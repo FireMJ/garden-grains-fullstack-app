@@ -40,7 +40,7 @@ export const menuCategories = [
     id: "toasties",
     name: "Toasties",
     description: "Warm pressed sandwiches",
-    image: "/images/toasties/bacon_egg_cheese.jpg",
+    image: "/images/toasties/bacon_egg_cheese.jpeg",
   },
   {
     id: "pastas",

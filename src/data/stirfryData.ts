@@ -143,7 +143,7 @@ export const stirfries: StirFryItem[] = [
     name: "Veg Stir-fry",
     description: "Egg noodles, broccoli, carrots, bell peppers, green onions, low sodium soy sauce, honey, sesame oil, ginger, garlic, cornstarch, sprinkle of sesame seeds",
     price: 130,
-    image: "/images/stirfry/veg-stirfry.jpg",
+    image: "/images/stirfry/veggie.jpeg",
     tags: ["vegetarian", "healthy", "popular"],
     baseOptions: stirFryBaseOptions,
     addOns: stirFryAddOns,

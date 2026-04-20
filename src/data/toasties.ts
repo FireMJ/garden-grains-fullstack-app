@@ -93,7 +93,7 @@ export const toasties: ToastieItem[] = [
     name: "Bacon, Egg & Cheese",
     description: "Sourdough, crispy bacon rashers, two sunny side eggs, cheddar cheese, sliced tomato, avocado",
     price: 129,
-    image: "/images/toasties/bacon_egg.jpeg",
+    image: "/images/toasties/bacon_egg_cheese.jpeg",
     tags: ["popular", "breakfast"],
     popular: true,
     addOns: toastieAddOns,

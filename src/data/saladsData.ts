@@ -152,7 +152,7 @@ export const salads: SaladItem[] = [
     name: "Pesto Glow Salad (V)",
     description: "Baby spinach, arugula, cherry tomatoes, cucumber, zucchini, red onion, quinoa, avocado, chickpeas, sunflower seeds, house-made basil pesto, with a touch of lemon and sesame seeds",
     price: 150,
-    image: "/images/salads/pesto-glow.jpg",
+    image: "/images/salads/pesto_glow.jpeg",
     tags: ["vegetarian", "healthy"],
     dressings: saladDressings,
     addOns: saladAddOns,
