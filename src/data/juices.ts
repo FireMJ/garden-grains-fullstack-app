@@ -36,7 +36,7 @@ export const juices: Juice[] = [
     name: "The Green Mile",
     slug: "the-green-mile",
     description: "Apple, pear, cucumber, spinach, celery, lemon & ginger — for health conscious customers.",
-    image: "/images/juices/the-green-mile.jpg",
+    image: "/images/juices/the_green_mile.jpg",
     sizes: [
       { id: "green-s", label: "Small", ml: 250, price: 59 },
       { id: "green-m", label: "Medium", ml: 350, price: 73 },
@@ -50,7 +50,7 @@ export const juices: Juice[] = [
     name: "Ginger Shot (50ml)",
     slug: "ginger-shot",
     description: "Our ginger shot is a fiery fusion of fresh ginger & a slight hint of lemon — your daily dose of bold, natural energy.",
-    image: "/images/juices/ginger-shot.jpg",
+    image: "/images/juices/ginger_shot.jpg",
     sizes: [
       { id: "ginger-50ml", label: "50ml", ml: 50, price: 60 }
     ],
@@ -61,7 +61,7 @@ export const juices: Juice[] = [
     name: "Fruit Punch",
     slug: "fruit-punch",
     description: "A vibrant blend of the season's freshest fruits and veggies.",
-    image: "/images/juices/fruit-punch.jpg",
+    image: "/images/juices/fruit_punch.jpg",
     sizes: [
       { id: "fp-s", label: "Small", ml: 250, price: 59 },
       { id: "fp-m", label: "Medium", ml: 350, price: 73 },
@@ -75,7 +75,7 @@ export const juices: Juice[] = [
     name: "Up Beet Juice",
     slug: "up-beet-juice",
     description: "Beetroot, carrot, lemon, apple and ginger — popular among health enthusiasts.",
-    image: "/images/juices/up-beet-juice.jpg",
+    image: "/images/juices/up_beet.jpg",
     sizes: [
       { id: "upb-s", label: "Small", ml: 250, price: 59 },
       { id: "upb-m", label: "Medium", ml: 350, price: 73 },
@@ -89,7 +89,7 @@ export const juices: Juice[] = [
     name: "Apple & Lemon Juice",
     slug: "apple-lemon-juice",
     description: "Granny Smith apples, lemon & celery — a classic, always in demand ;)",
-    image: "/images/juices/apple-lemon.jpg",
+    image: "/images/juices/apple_lemon.jpg",
     sizes: [
       { id: "al-s", label: "Small", ml: 250, price: 59 },
       { id: "al-m", label: "Medium", ml: 350, price: 73 },
@@ -116,7 +116,7 @@ export const juices: Juice[] = [
     name: "Apple & Pear Juice",
     slug: "apple-pear-juice",
     description: "Apples, pears, lemon and ginger — known for its health benefits and vibrant colour.",
-    image: "/images/juices/apple-pear.jpg",
+    image: "/images/juices/apple_pear.jpg",
     sizes: [
       { id: "ap-s", label: "Small", ml: 250, price: 59 },
       { id: "ap-m", label: "Medium", ml: 350, price: 73 },
@@ -143,7 +143,7 @@ export const juices: Juice[] = [
     name: "Immunity Boost Elixir",
     slug: "immunity-boost-elixir",
     description: "Orange, fresh lemon, ginger, turmeric root, green apple, carrot, garlic, celery, pinch of cayenne, honey & coconut water — a full-spectrum immunity blend.",
-    image: "/images/juices/immunity-boost-elixir.jpg",
+    image: "/images/juices/immunity_boost_elixir.jpg",
     sizes: [
       { id: "ibe-s", label: "Small", ml: 250, price: 75 },
       { id: "ibe-m", label: "Medium", ml: 350, price: 85 },
@@ -157,8 +157,8 @@ export const juices: Juice[] = [
 export const juiceAddOns = [
   { id: "addon-ginger", name: "Extra Ginger", price: 10 },
   { id: "addon-turmeric", name: "Extra Turmeric", price: 10 },
-  { id: "addon-chia", name: "Chia Seeds", price: 12 },
-  { id: "addon-honey", name: "Honey Drizzle", price: 8 }
+  { id: "addon-chia", name: "Chia Seeds", price: 15 },
+  { id: "addon-honey", name: "Honey Drizzle", price: 10 }
 ];
 
 export const allJuices = juices;

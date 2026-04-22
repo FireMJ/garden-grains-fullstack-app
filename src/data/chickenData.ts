@@ -97,10 +97,15 @@ export const juiceUpsellOptions: JuiceGroup[] = [
 // Common add-ons
 export const chickenAddOns: AddOn[] = [
   { id: "addon1", name: "Extra Grilled Chicken (300g)", price: 40 },
-  { id: "addon2", name: "Cheese Sauce", price: 15 },
-  { id: "addon3", name: "Garlic Butter", price: 10 },
+  { id: "addon2", name: "Chopped Chili", price: 20 },
+  { id: "addon3", name: "Garlic Butter", price: 20 },
   { id: "addon4", name: "Side Salad", price: 25 },
-  { id: "addon5", name: "Onion Rings", price: 20 },
+  { id: "addon5", name: "Extra Skinny Fries", price: 25 },
+  { id: "addon6", name: "Honey Mustard Dressing", price: 0.00 },
+  { id: "addon7", name: "Tomato Sauce", price: 0.00 },
+  { id: "addon8", name: "Garden & Grains Mayo", price: 0.00 },
+  { id: "addon9", name: "Sesame Soya Dressing", price: 0.00 },
+  { id: "addon10", name: "Balsamic Vinaigrette", price: 0.00 },
 ];
 
 // Grilled Chicken Strips items

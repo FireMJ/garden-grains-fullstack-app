@@ -115,7 +115,7 @@ export const stirfries: StirFryItem[] = [
     name: "Chicken & Veg Stir-fry",
     description: "Chicken breast, broccoli, carrots, bell peppers, green onions, low sodium soy sauce, honey, sesame oil, ginger, garlic, cornstarch, sprinkle of sesame seeds",
     price: 145,
-    image: "/images/stirfry/chicken-veg.jpeg",
+    image: "/images/stirfry/chicken_veg.jpeg",
     tags: ["popular", "protein", "chicken"],
     popular: true,
     baseOptions: stirFryBaseOptions,
