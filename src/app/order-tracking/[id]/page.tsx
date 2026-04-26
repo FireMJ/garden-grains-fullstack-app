@@ -1,275 +1,140 @@
-'use client';
+"use client";
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { FaCheckCircle, FaClock, FaUtensils, FaTruck, FaHome, FaStore, FaArrowLeft } from 'react-icons/fa';
-
-interface OrderItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-}
-
-interface Order {
-  orderId: string;
-  orderNumber?: string;
-  transactionId?: string;
-  amount: number;
-  items: OrderItem[];
-  orderType: 'delivery' | 'pickup';
-  deliveryAddress?: any;
-  paymentStatus: string;
-  status: string;
-  timestamp: string;
-}
+import { useParams } from 'next/navigation';
+import { MapPin, Truck, Clock, CheckCircle, Package, Phone, MessageCircle } from 'lucide-react';
 
 export default function OrderTrackingPage() {
   const params = useParams();
-  const router = useRouter();
-  const [order, setOrder] = useState<Order | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const orderId = params.id as string;
+  const [order, setOrder] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
-    const orderId = params?.id as string;
-    if (!orderId) {
-      console.log('No order ID in params:', params);
-      setIsLoading(false);
-      return;
-    }
-
-    console.log('Loading order:', orderId);
-
-    // Load order from localStorage
-    const loadOrder = () => {
+    const fetchOrder = async () => {
       try {
-        const ordersStr = localStorage.getItem('orders');
-        const allOrders = ordersStr ? JSON.parse(ordersStr) : [];
-        
-        console.log('All orders:', allOrders);
-        
-        const foundOrder = allOrders.find((o: any) => o.orderId === orderId);
-        
-        if (foundOrder) {
-          console.log('Found order:', foundOrder);
-          setOrder(foundOrder);
-        } else {
-          console.log('Order not found:', orderId);
+        const response = await fetch(`/api/orders/track?orderId=${orderId}`);
+        const data = await response.json();
+        if (data.success) {
+          setOrder(data.order);
         }
       } catch (error) {
-        console.error('Error loading order:', error);
+        console.error('Error fetching order:', error);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
+    fetchOrder();
 
-    loadOrder();
-  }, [params]);
+    // Simulate real-time tracking updates every 10 seconds
+    const interval = setInterval(() => {
+      // In production, this would fetch actual driver location
+      setDriverLocation({ lat: -34.0425 + Math.random() * 0.01, lng: 18.4412 + Math.random() * 0.01 });
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [orderId]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'pending':
-      case 'paid':
-        return <FaClock className="w-8 h-8 text-yellow-500" />;
-      case 'preparing':
-        return <FaUtensils className="w-8 h-8 text-blue-500" />;
-      case 'ready':
-        return <FaCheckCircle className="w-8 h-8 text-green-500" />;
-      case 'out-for-delivery':
-        return <FaTruck className="w-8 h-8 text-purple-500" />;
-      case 'delivered':
-        return <FaHome className="w-8 h-8 text-green-600" />;
-      default:
-        return <FaClock className="w-8 h-8 text-gray-500" />;
+      case 'pending': return <Clock className="text-yellow-500" size={24} />;
+      case 'preparing': return <Package className="text-blue-500" size={24} />;
+      case 'ready': return <CheckCircle className="text-green-500" size={24} />;
+      case 'out_for_delivery': return <Truck className="text-purple-500" size={24} />;
+      case 'delivered': return <CheckCircle className="text-green-600" size={24} />;
+      default: return <Clock className="text-gray-500" size={24} />;
     }
   };
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'pending':
-        return 'Order Received';
-      case 'paid':
-        return 'Payment Confirmed';
-      case 'preparing':
-        return 'Preparing Your Order';
-      case 'ready':
-        return 'Ready for Pickup/Delivery';
-      case 'out-for-delivery':
-        return 'Out for Delivery';
-      case 'delivered':
-        return 'Delivered';
-      default:
-        return 'Order Placed';
+      case 'pending': return 'Order Received';
+      case 'preparing': return 'Preparing Your Order';
+      case 'ready': return 'Ready for Pickup/Delivery';
+      case 'out_for_delivery': return 'Out for Delivery';
+      case 'delivered': return 'Delivered';
+      default: return status;
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-ZA', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  const statuses = ['pending', 'preparing', 'ready', 'out_for_delivery', 'delivered'];
+  const currentStep = order ? statuses.indexOf(order.status) : -1;
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-      </div>
-    );
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2F5D50]"></div></div>;
   }
 
   if (!order) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-12">
-        <div className="max-w-2xl mx-auto px-4 text-center">
-          <Link href="/orders" className="inline-flex items-center gap-2 text-gray-600 hover:text-green-600 mb-6">
-            <FaArrowLeft /> Back to Orders
-          </Link>
-          <div className="bg-white rounded-2xl shadow-xl p-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Order Not Found</h1>
-            <p className="text-gray-600 mb-6">We couldn't find your order. Please check your order history.</p>
-            <Link
-              href="/orders"
-              className="inline-block bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
-            >
-              View Orders
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
+    return <div className="min-h-screen flex items-center justify-center"><p className="text-gray-500">Order not found</p></div>;
   }
-
-  const orderStatus = order.status || 'paid';
-  let statusSteps = ['paid', 'preparing', 'ready'];
-  if (order.orderType === 'delivery') {
-    statusSteps = ['paid', 'preparing', 'ready', 'out-for-delivery', 'delivered'];
-  } else {
-    statusSteps = ['paid', 'preparing', 'ready', 'delivered'];
-  }
-  
-  const currentStepIndex = statusSteps.findIndex(step => step === orderStatus);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12">
       <div className="max-w-3xl mx-auto px-4">
-        <Link href="/orders" className="inline-flex items-center gap-2 text-gray-600 hover:text-green-600 mb-6">
-          <FaArrowLeft /> Back to Orders
-        </Link>
-
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-green-600 to-green-700 px-6 py-8 text-white">
-            <h1 className="text-2xl font-bold mb-2">Order Tracking</h1>
-            <p className="text-green-100">Order #{order.orderNumber || order.orderId.slice(-8)}</p>
-            <p className="text-green-100 text-sm mt-1">Placed on {formatDate(order.timestamp)}</p>
+        <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-gray-900">Track Your Order</h1>
+            <p className="text-gray-500 mt-1">Order #{order.id}</p>
           </div>
 
-          {/* Status Timeline */}
-          <div className="p-6 border-b">
-            <div className="relative">
-              {statusSteps.map((step, index) => {
-                const isCompleted = index <= currentStepIndex;
-                const isCurrent = index === currentStepIndex;
-                
-                return (
-                  <div key={step} className="flex items-start mb-8 last:mb-0">
-                    <div className={`relative z-10 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      isCompleted ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-400'
-                    } ${isCurrent ? 'ring-4 ring-green-200' : ''}`}>
-                      {step === 'paid' && <FaCheckCircle className="w-6 h-6" />}
-                      {step === 'preparing' && <FaUtensils className="w-6 h-6" />}
-                      {step === 'ready' && <FaStore className="w-6 h-6" />}
-                      {step === 'out-for-delivery' && <FaTruck className="w-6 h-6" />}
-                      {step === 'delivered' && <FaHome className="w-6 h-6" />}
-                    </div>
-                    <div className="ml-4 flex-1">
-                      <h3 className={`font-semibold ${isCompleted ? 'text-gray-900' : 'text-gray-400'}`}>
-                        {getStatusText(step)}
-                      </h3>
-                      {isCurrent && (
-                        <p className="text-sm text-green-600 mt-1">Current status</p>
-                      )}
-                    </div>
-                    {index < statusSteps.length - 1 && (
-                      <div className={`absolute left-6 w-0.5 h-12 ${
-                        isCompleted ? 'bg-green-600' : 'bg-gray-200'
-                      }`} style={{ top: '48px' }} />
-                    )}
+          {/* Progress Steps */}
+          <div className="mb-8">
+            <div className="flex justify-between relative">
+              <div className="absolute top-4 left-0 right-0 h-1 bg-gray-200 z-0">
+                <div className="h-full bg-[#2F5D50] transition-all duration-500" style={{ width: `${(currentStep / (statuses.length - 1)) * 100}%` }}></div>
+              </div>
+              {statuses.map((status, idx) => (
+                <div key={status} className="relative z-10 flex flex-col items-center">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${idx <= currentStep ? 'bg-[#2F5D50] text-white' : 'bg-gray-200 text-gray-500'}`}>
+                    {getStatusIcon(status)}
                   </div>
-                );
-              })}
+                  <span className="text-xs mt-2 text-center">{getStatusText(status)}</span>
+                </div>
+              ))}
             </div>
           </div>
 
           {/* Order Details */}
-          <div className="p-6 border-b">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Order Summary</h2>
-            <div className="space-y-2">
-              {order.items.map((item, idx) => (
-                <div key={idx} className="flex justify-between text-sm">
-                  <span>{item.name} x{item.quantity}</span>
-                  <span>R{(item.price * item.quantity).toFixed(2)}</span>
-                </div>
-              ))}
-              <div className="border-t pt-3 mt-3">
-                <div className="flex justify-between font-bold text-gray-900">
-                  <span>Total Paid</span>
-                  <span>R{order.amount.toFixed(2)}</span>
-                </div>
+          <div className="bg-gray-50 rounded-xl p-4 mb-6">
+            <h3 className="font-semibold text-gray-900 mb-3">Order Summary</h3>
+            {order.items?.map((item: any, idx: number) => (
+              <div key={idx} className="flex justify-between text-sm py-1">
+                <span>{item.quantity}x {item.name}</span>
+                <span>R {(item.price * item.quantity).toFixed(2)}</span>
+              </div>
+            ))}
+            <div className="border-t pt-2 mt-2">
+              <div className="flex justify-between font-bold">
+                <span>Total</span>
+                <span>R {order.total?.toFixed(2)}</span>
               </div>
             </div>
           </div>
 
-          {/* Delivery/Pickup Info */}
-          <div className="p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">
-              {order.orderType === 'delivery' ? 'Delivery Information' : 'Pickup Information'}
-            </h2>
-            {order.orderType === 'delivery' && order.deliveryAddress ? (
-              <div className="flex items-start gap-3">
-                <FaTruck className="w-5 h-5 text-green-600 mt-0.5" />
-                <div>
-                  <p className="text-gray-800">{order.deliveryAddress.street}</p>
-                  <p className="text-gray-600">{order.deliveryAddress.city}</p>
-                  {order.deliveryAddress.distance && (
-                    <p className="text-sm text-gray-500 mt-2">
-                      Distance: {order.deliveryAddress.distance.toFixed(1)} km
-                    </p>
-                  )}
-                </div>
+          {/* Driver Info */}
+          {order.driverId && (
+            <div className="bg-blue-50 rounded-xl p-4 mb-6">
+              <div className="flex items-center gap-3 mb-2">
+                <Truck className="text-blue-600" />
+                <h3 className="font-semibold text-gray-900">Driver Information</h3>
               </div>
-            ) : (
-              <div className="flex items-start gap-3">
-                <FaStore className="w-5 h-5 text-green-600 mt-0.5" />
-                <div>
-                  <p className="text-gray-800">Uitsig Wine Farm</p>
-                  <p className="text-gray-600">Spaanschemat River Rd, Fir Grove</p>
-                  <p className="text-gray-600">Cape Town, 7806</p>
-                </div>
+              <div className="space-y-1 text-sm">
+                <p><span className="text-gray-500">Driver:</span> {order.driverName || 'Assigned Driver'}</p>
+                <p><span className="text-gray-500">Vehicle:</span> {order.driverVehicle || 'Car'}</p>
+                <p><span className="text-gray-500">Contact:</span> <a href={`tel:${order.driverPhone}`} className="text-blue-600 hover:underline">{order.driverPhone || 'Loading...'}</a></p>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* Action Buttons */}
-          <div className="p-6 bg-gray-50 flex gap-3">
-            <Link
-              href="/orders"
-              className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300 transition text-center"
-            >
-              View All Orders
-            </Link>
-            <Link
-              href="/menu"
-              className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition text-center"
-            >
-              Order More
-            </Link>
+          {/* Contact Buttons */}
+          <div className="flex gap-4">
+            <a href={`tel:${order.restaurantPhone || '+27693765574'}`} className="flex-1 flex items-center justify-center gap-2 bg-[#2F5D50] text-white py-3 rounded-xl hover:bg-[#23483E] transition-colors">
+              <Phone size={18} /> Call Restaurant
+            </a>
+            <a href={`https://wa.me/${order.restaurantWhatsApp || '27693765574'}`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] text-white py-3 rounded-xl hover:bg-[#1da851] transition-colors">
+              <MessageCircle size={18} /> WhatsApp
+            </a>
           </div>
         </div>
       </div>
