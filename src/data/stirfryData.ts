@@ -10,11 +10,18 @@ export interface BaseOption {
   price: number;
 }
 
+export interface DipOption {
+  id: string;
+  name: string;
+  price: number;
+}
+
 export interface FriesUpsell {
   id: string;
   name: string;
   price: number;
   optional?: boolean;
+  dipOptions?: DipOption[];
 }
 
 export interface JuiceOption {
@@ -49,15 +56,31 @@ export const stirFryBaseOptions: BaseOption[] = [
   { id: "base1", name: "Egg Noodles", price: 25 },
   { id: "base2", name: "Brown Rice", price: 25 },
   { id: "base3", name: "Quinoa", price: 30 },
-  {id: "base4", name: "Couscous", price: 30 },
-  {id: "base5", name: "Bulgar", price: 30 },
-  {id: "base6", name: "Brown Rice & Quinoa Blend", price: 35 },
+  { id: "base4", name: "Couscous", price: 30 },
+  { id: "base5", name: "Bulgar", price: 30 },
+  { id: "base6", name: "Brown Rice & Quinoa Blend", price: 35 },
 ];
 
-// Fries upsell options
+// Dip options for fries
+export const dipOptions: DipOption[] = [
+  { id: "dip1", name: "Tomato Ketchup", price: 0 },
+  { id: "dip2", name: "Garden & Grains Mayo", price: 0 },
+];
+
+// Fries upsell options with dip choices
 export const friesUpsellOptions: FriesUpsell[] = [
-  { id: "fries1", name: "Skinny French Fries", price: 45 },
-  { id: "fries2", name: "Sweet Potato Fries", price: 59 },
+  { 
+    id: "fries1", 
+    name: "Skinny French Fries", 
+    price: 45,
+    dipOptions: dipOptions
+  },
+  { 
+    id: "fries2", 
+    name: "Sweet Potato Fries", 
+    price: 59,
+    dipOptions: dipOptions
+  },
 ];
 
 // Juice upsell options
@@ -141,8 +164,8 @@ export const stirfries: StirFryItem[] = [
     id: "stirfry-3",
     slug: "veg-stirfry",
     name: "Veg Stir-fry",
-    description: "Egg noodles, broccoli, carrots, bell peppers, green onions, low sodium soy sauce, honey, sesame oil, ginger, garlic, cornstarch, sprinkle of sesame seeds",
-    price: 130,
+    description: "Egg noodles, tofu, broccoli, carrots, bell peppers, green onions, low sodium soy sauce, honey, sesame oil, ginger, garlic, cornstarch, sprinkle of sesame seeds",
+    price: 143,
     image: "/images/stirfry/veggie.jpeg",
     tags: ["vegetarian", "healthy", "popular"],
     baseOptions: stirFryBaseOptions,

@@ -4,11 +4,18 @@ export interface BowlAddOn {
   price: number;
 }
 
+export interface DipOption {
+  id: string;
+  name: string;
+  price: number;
+}
+
 export interface FriesUpsell {
   id: string;
   name: string;
   price: number;
   optional?: boolean;
+  dipOptions?: DipOption[];
 }
 
 export interface JuiceOption {
@@ -46,16 +53,32 @@ export const commonAddOns: BowlAddOn[] = [
   { id: "addon5", name: "Extra Tofu", price: 35 },
   { id: "addon6", name: "Extra Millet", price: 30 },
   { id: "addon7", name: "Extra Feta Cheese", price: 25 },
-  { id: "addon8", name: "Extra Edamame Beans", price: 20 },
+  { id: "addon8", name: "Extra Edamame Beans", price: 35 },
   { id: "addon9", name: "Extra Avocado", price: 20 },
   { id: "addon10", name: "Roasted Chickpeas", price: 15 },
   { id: "addon11", name: "Mixed Seeds (Cashews/Linseeds/Pumpkin/Sesame)", price: 20 }
 ];
 
-// ✅ Fries upsell options
+// ✅ Dip options for fries
+export const dipOptions: DipOption[] = [
+  { id: "dip1", name: "Tomato Ketchup", price: 0 },
+  { id: "dip2", name: "Garden & Grains Mayo", price: 0 },
+];
+
+// ✅ Fries upsell options with dip choices
 export const friesUpsell: FriesUpsell[] = [
-  { id: "fries1", name: "Skinny French Fries", price: 45 },
-  { id: "fries2", name: "Sweet Potato Fries", price: 59 },
+  { 
+    id: "fries1", 
+    name: "Skinny French Fries", 
+    price: 45,
+    dipOptions: dipOptions
+  },
+  { 
+    id: "fries2", 
+    name: "Sweet Potato Fries", 
+    price: 59,
+    dipOptions: dipOptions
+  },
 ];
 
 // ✅ Juice upsell options

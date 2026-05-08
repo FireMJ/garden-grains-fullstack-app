@@ -6,7 +6,7 @@ import { useCart } from "@/context/CartContext";
 import Image from "next/image";
 import Link from "next/link";
 import { FaArrowLeft, FaPlus, FaMinus, FaTruck, FaCocktail } from "react-icons/fa";
-import { breakfastItems, breakfastAddOns, friesUpsell, juiceGroup } from "@/data/breakfastData";
+import { breakfastItems, breakfastAddOns, friesUpsell, juiceGroup, juiceAddOns } from "@/data/breakfastData";
 
 interface BreakfastItem {
   id: string;
@@ -16,16 +16,46 @@ interface BreakfastItem {
   price: number;
   image: string;
   tags?: string[];
-  addOns?: any[];
-  friesUpsell?: any[];
-  juiceUpsell?: any[];
 }
 
-interface UpsellItem {
+interface DipOption {
   id: string;
   name: string;
   price: number;
-  size?: string;
+}
+
+interface FriesUpsellItem {
+  id: string;
+  name: string;
+  price: number;
+  dipOptions?: DipOption[];
+}
+
+interface JuiceAddOn {
+  id: string;
+  name: string;
+  price: number;
+}
+
+interface JuiceUpsellItem {
+  id: string;
+  name: string;
+  price: number;
+  addOns?: JuiceAddOn[];
+}
+
+interface SelectedFriesWithDip {
+  id: string;
+  name: string;
+  price: number;
+  selectedDip?: DipOption;
+}
+
+interface SelectedJuiceWithAddOns {
+  id: string;
+  name: string;
+  price: number;
+  selectedAddOns: JuiceAddOn[];
 }
 
 interface PageProps {
@@ -43,8 +73,8 @@ export default function BreakfastDetailPage({ params }: PageProps) {
   const [mounted, setMounted] = useState(false);
   
   // Upsell states
-  const [selectedFries, setSelectedFries] = useState<UpsellItem | null>(null);
-  const [selectedJuice, setSelectedJuice] = useState<UpsellItem | null>(null);
+  const [selectedFries, setSelectedFries] = useState<SelectedFriesWithDip | null>(null);
+  const [selectedJuice, setSelectedJuice] = useState<SelectedJuiceWithAddOns | null>(null);
   const [selectedJuiceSize, setSelectedJuiceSize] = useState<string>("250ml");
   const [showUpsells, setShowUpsells] = useState(false);
 
@@ -94,6 +124,63 @@ export default function BreakfastDetailPage({ params }: PageProps) {
     }
   };
 
+  // Handle fries selection with dip
+  const handleFriesSelect = (fries: FriesUpsellItem) => {
+    if (selectedFries?.id === fries.id) {
+      setSelectedFries(null);
+    } else {
+      setSelectedFries({
+        id: fries.id,
+        name: fries.name,
+        price: fries.price,
+        selectedDip: undefined,
+      });
+    }
+  };
+
+  const handleDipSelect = (dip: DipOption) => {
+    if (selectedFries) {
+      setSelectedFries({
+        ...selectedFries,
+        selectedDip: selectedFries.selectedDip?.id === dip.id ? undefined : dip,
+      });
+    }
+  };
+
+  // Handle juice selection with add-ons
+  const handleJuiceSelect = (juice: JuiceUpsellItem) => {
+    if (selectedJuice?.id === juice.id) {
+      setSelectedJuice(null);
+    } else {
+      setSelectedJuice({
+        id: juice.id,
+        name: juice.name,
+        price: juice.price,
+        selectedAddOns: [],
+      });
+    }
+  };
+
+  const handleJuiceAddOnToggle = (addOn: JuiceAddOn) => {
+    if (selectedJuice) {
+      setSelectedJuice(prev => {
+        if (!prev) return prev;
+        const existing = prev.selectedAddOns.find(a => a.id === addOn.id);
+        if (existing) {
+          return {
+            ...prev,
+            selectedAddOns: prev.selectedAddOns.filter(a => a.id !== addOn.id),
+          };
+        } else {
+          return {
+            ...prev,
+            selectedAddOns: [...prev.selectedAddOns, addOn],
+          };
+        }
+      });
+    }
+  };
+
   const calculateTotal = () => {
     let total = breakfastItem?.price || 0;
     
@@ -103,42 +190,46 @@ export default function BreakfastDetailPage({ params }: PageProps) {
     
     if (selectedFries) {
       total += selectedFries.price;
+      if (selectedFries.selectedDip && selectedFries.selectedDip.price > 0) {
+        total += selectedFries.selectedDip.price;
+      }
     }
     
     if (selectedJuice) {
       total += selectedJuice.price;
+      if (selectedJuice.selectedAddOns.length > 0) {
+        total += selectedJuice.selectedAddOns.reduce((sum, addOn) => sum + addOn.price, 0);
+      }
     }
     
     return total * quantity;
   };
 
   const handleAddToCart = () => {
-    // Create the cart item with all selected options
+    if (!breakfastItem) return;
+    
     const cartItem = {
-      id: `${breakfastItem?.id}-${Date.now()}`,
-      name: breakfastItem?.name || "",
-      price: breakfastItem?.price || 0,
+      id: `${breakfastItem.id}-${Date.now()}`,
+      name: breakfastItem.name,
+      price: breakfastItem.price,
       quantity: quantity,
-      image: breakfastItem?.image || "",
+      image: breakfastItem.image,
       category: "breakfast",
-      description: breakfastItem?.description || "",
+      description: breakfastItem.description,
       addOns: selectedAddOns,
       specialInstructions: specialInstructions,
-      // Include fries and juice as separate properties that CartContext will recognize
       fries: selectedFries ? {
         name: selectedFries.name,
         price: selectedFries.price,
-        size: selectedFries.size
+        dip: selectedFries.selectedDip?.name,
+        dipPrice: selectedFries.selectedDip?.price || 0,
       } : null,
       juice: selectedJuice ? {
         name: selectedJuice.name,
         price: selectedJuice.price,
-        size: selectedJuiceSize
+        size: selectedJuiceSize,
+        addOns: selectedJuice.selectedAddOns,
       } : null,
-      // Also include as upsells for backward compatibility
-      friesUpsell: selectedFries,
-      juiceUpsell: selectedJuice,
-      juiceSize: selectedJuiceSize
     };
     
     console.log("Adding to cart:", cartItem);
@@ -211,7 +302,7 @@ export default function BreakfastDetailPage({ params }: PageProps) {
             {/* Add-ons */}
             {breakfastAddOns && breakfastAddOns.length > 0 && (
               <div className="mb-6">
-                <h3 className="font-semibold text-gray-900 mb-2">Add-ons (Optional)</h3>
+                <h3 className="font-semibold text-gray-900 mb-3">Add-ons (Optional)</h3>
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   {breakfastAddOns.map((addOn, index) => {
                     const selected = selectedAddOns.find(a => a.name === addOn.name);
@@ -256,40 +347,67 @@ export default function BreakfastDetailPage({ params }: PageProps) {
             <div className="mb-6">
               <button
                 onClick={() => setShowUpsells(!showUpsells)}
-                className="flex items-center gap-2 text-green-600 font-medium mb-3 hover:text-green-700"
+                className="flex items-center gap-2 text-green-600 font-medium mb-3 hover:text-green-700 w-full text-left"
               >
-                {showUpsells ? '▼' : '▶'} Add Fries & Drink to Complete Your Meal
+                <span>{showUpsells ? '▼' : '▶'}</span> 
+                <span>Add Fries & Drink to Complete Your Meal</span>
               </button>
               
               {showUpsells && (
                 <div className="space-y-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
-                  {/* Fries Selection */}
+                  {/* Fries Selection with Dip Options */}
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
                       <FaTruck className="text-amber-600" />
                       Add Fries
                     </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {friesUpsell.map((fries) => (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {friesUpsell.map((fries: FriesUpsellItem) => (
                         <button
                           key={fries.id}
-                          onClick={() => setSelectedFries(selectedFries?.id === fries.id ? null : fries)}
-                          className={`px-3 py-2 rounded-lg border text-sm transition ${
+                          onClick={() => handleFriesSelect(fries)}
+                          className={`px-4 py-2 rounded-lg border text-sm transition ${
                             selectedFries?.id === fries.id
                               ? 'border-amber-500 bg-amber-100 text-amber-700'
-                              : 'border-gray-300 hover:border-amber-300'
+                              : 'border-gray-300 bg-white hover:border-amber-300'
                           }`}
                         >
-                          {fries.name} <span className="text-green-600">+R{fries.price}</span>
+                          {fries.name} <span className="text-green-600 font-medium">+R{fries.price}</span>
                         </button>
                       ))}
                     </div>
-                    {selectedFries && (
-                      <p className="text-xs text-green-600 mt-2">✓ {selectedFries.name} added</p>
+                    
+                    {/* Dip Options - only show if fries are selected */}
+                    {selectedFries && friesUpsell.find(f => f.id === selectedFries.id)?.dipOptions && (
+                      <div className="mt-3 pl-4 border-l-2 border-amber-300">
+                        <p className="text-sm font-medium text-gray-700 mb-2">Choose a dip (optional):</p>
+                        <div className="flex flex-wrap gap-2">
+                          {friesUpsell
+                            .find(f => f.id === selectedFries.id)
+                            ?.dipOptions?.map((dip: DipOption) => (
+                              <button
+                                key={dip.id}
+                                onClick={() => handleDipSelect(dip)}
+                                className={`px-3 py-1 rounded-full text-xs transition ${
+                                  selectedFries.selectedDip?.id === dip.id
+                                    ? 'bg-green-600 text-white'
+                                    : 'bg-white border border-gray-300 text-gray-700 hover:border-green-400'
+                                }`}
+                              >
+                                {dip.name} {dip.price > 0 && `+R${dip.price}`}
+                              </button>
+                            ))}
+                        </div>
+                        {selectedFries.selectedDip && (
+                          <p className="text-xs text-green-600 mt-2">
+                            ✓ {selectedFries.selectedDip.name} added
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
 
-                  {/* Juice Selection */}
+                  {/* Juice Selection with Add-ons */}
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
                       <FaCocktail className="text-amber-600" />
@@ -298,39 +416,71 @@ export default function BreakfastDetailPage({ params }: PageProps) {
                     
                     {/* Juice Size Selector */}
                     <div className="flex flex-wrap gap-2 mb-3">
-                      {juiceGroup.map((size) => (
+                      {juiceGroup.map((sizeGroup) => (
                         <button
-                          key={size.size}
-                          onClick={() => setSelectedJuiceSize(size.size)}
+                          key={sizeGroup.size}
+                          onClick={() => {
+                            setSelectedJuiceSize(sizeGroup.size);
+                            setSelectedJuice(null);
+                          }}
                           className={`px-3 py-1 rounded-lg text-sm transition ${
-                            selectedJuiceSize === size.size
+                            selectedJuiceSize === sizeGroup.size
                               ? 'bg-green-600 text-white'
                               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                           }`}
                         >
-                          {size.size}
+                          {sizeGroup.size}
                         </button>
                       ))}
                     </div>
                     
                     {/* Juice Options for Selected Size */}
-                    <div className="flex flex-wrap gap-2">
-                      {getJuiceOptionsForSize().map((juice) => (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {getJuiceOptionsForSize().map((juice: JuiceUpsellItem) => (
                         <button
                           key={juice.id}
-                          onClick={() => setSelectedJuice(selectedJuice?.id === juice.id ? null : juice)}
+                          onClick={() => handleJuiceSelect(juice)}
                           className={`px-3 py-2 rounded-lg border text-sm transition ${
                             selectedJuice?.id === juice.id
                               ? 'border-amber-500 bg-amber-100 text-amber-700'
-                              : 'border-gray-300 hover:border-amber-300'
+                              : 'border-gray-300 bg-white hover:border-amber-300'
                           }`}
                         >
                           {juice.name} <span className="text-green-600">+R{juice.price}</span>
                         </button>
                       ))}
                     </div>
-                    {selectedJuice && (
-                      <p className="text-xs text-green-600 mt-2">✓ {selectedJuice.name} ({selectedJuiceSize}) added</p>
+
+                    {/* Juice Add-ons - only show if juice is selected */}
+                    {selectedJuice && juiceAddOns && (
+                      <div className="mt-3 pl-4 border-l-2 border-amber-300">
+                        <p className="text-sm font-medium text-gray-700 mb-2">Boost your juice (optional):</p>
+                        <div className="flex flex-wrap gap-2">
+                          {juiceAddOns.map((addOn: JuiceAddOn) => {
+                            const isSelected = selectedJuice.selectedAddOns.some(a => a.id === addOn.id);
+                            return (
+                              <button
+                                key={addOn.id}
+                                onClick={() => handleJuiceAddOnToggle(addOn)}
+                                className={`px-3 py-1 rounded-full text-xs transition ${
+                                  isSelected
+                                    ? 'bg-green-600 text-white'
+                                    : 'bg-white border border-gray-300 text-gray-700 hover:border-green-400'
+                                }`}
+                              >
+                                + {addOn.name} <span className="text-xs">R{addOn.price}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {selectedJuice.selectedAddOns.length > 0 && (
+                          <div className="mt-2">
+                            <p className="text-xs text-green-600">
+                              ✓ Added: {selectedJuice.selectedAddOns.map(a => a.name).join(', ')}
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -371,32 +521,52 @@ export default function BreakfastDetailPage({ params }: PageProps) {
 
             {/* Total and Add to Cart */}
             <div className="border-t pt-6">
-              <div className="mb-4">
-                <div className="flex justify-between items-center text-gray-600 mb-2">
+              <div className="mb-4 space-y-1">
+                <div className="flex justify-between items-center text-gray-600">
                   <span>Base Price:</span>
                   <span>R{breakfastItem.price}</span>
                 </div>
                 {selectedAddOns.length > 0 && (
-                  <div className="flex justify-between items-center text-gray-600 mb-2">
+                  <div className="flex justify-between items-center text-gray-600">
                     <span>Add-ons:</span>
                     <span>+R{selectedAddOns.reduce((sum, addOn) => sum + (addOn.price * addOn.quantity), 0)}</span>
                   </div>
                 )}
                 {selectedFries && (
-                  <div className="flex justify-between items-center text-gray-600 mb-2">
-                    <span>Fries:</span>
-                    <span>+R{selectedFries.price}</span>
-                  </div>
+                  <>
+                    <div className="flex justify-between items-center text-gray-600">
+                      <span>{selectedFries.name}:</span>
+                      <span>+R{selectedFries.price}</span>
+                    </div>
+                    {selectedFries.selectedDip && selectedFries.selectedDip.price > 0 && (
+                      <div className="flex justify-between items-center text-gray-600 pl-4 text-sm">
+                        <span>└ {selectedFries.selectedDip.name}:</span>
+                        <span>+R{selectedFries.selectedDip.price}</span>
+                      </div>
+                    )}
+                  </>
                 )}
                 {selectedJuice && (
-                  <div className="flex justify-between items-center text-gray-600 mb-2">
-                    <span>Juice:</span>
-                    <span>+R{selectedJuice.price}</span>
-                  </div>
+                  <>
+                    <div className="flex justify-between items-center text-gray-600">
+                      <span>{selectedJuice.name} ({selectedJuiceSize}):</span>
+                      <span>+R{selectedJuice.price}</span>
+                    </div>
+                    {selectedJuice.selectedAddOns.length > 0 && (
+                      <div className="pl-4 text-sm space-y-1">
+                        {selectedJuice.selectedAddOns.map((addOn, idx) => (
+                          <div key={idx} className="flex justify-between items-center text-gray-600">
+                            <span>└ + {addOn.name}:</span>
+                            <span>+R{addOn.price}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
                 )}
-                <div className="flex justify-between items-center text-gray-600 pt-2 border-t">
-                  <span className="font-semibold">Subtotal ({quantity} item{quantity > 1 ? 's' : ''}):</span>
-                  <span className="font-semibold">R{calculateTotal().toFixed(2)}</span>
+                <div className="flex justify-between items-center text-gray-900 font-semibold pt-2 border-t mt-2">
+                  <span>Total ({quantity} item{quantity > 1 ? 's' : ''}):</span>
+                  <span className="text-green-600 text-xl">R{calculateTotal().toFixed(2)}</span>
                 </div>
               </div>
               <button

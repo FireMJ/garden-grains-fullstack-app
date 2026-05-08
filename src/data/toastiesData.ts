@@ -4,10 +4,17 @@ export interface AddOn {
   price: number;
 }
 
+export interface DipOption {
+  id: string;
+  name: string;
+  price: number;
+}
+
 export interface FriesUpsell {
   id: string;
   name: string;
   price: number;
+  dips?: DipOption[];
   optional?: boolean;
 }
 
@@ -36,11 +43,19 @@ export interface ToastieItem {
   juiceUpsell?: JuiceGroup[];
 }
 
-export const friesUpsellOptions: FriesUpsell[] = [
-  { id: "fries1", name: "Skinny French Fries", price: 45 },
-  { id: "fries2", name: "Sweet Potato Fries", price: 59 },
+// Fries dip options (matching wraps page)
+export const friesDips: DipOption[] = [
+  { id: "dip1", name: "Garden Mayo", price: 0 },
+  { id: "dip2", name: "Tomato Ketchup", price: 0 },
 ];
 
+// Fries upsell options with dips (matching wraps page)
+export const friesUpsellOptions: FriesUpsell[] = [
+  { id: "fries1", name: "Skinny French Fries", price: 25, dips: friesDips },
+  { id: "fries2", name: "Sweet Potato Fries", price: 25, dips: friesDips },
+];
+
+// Juice upsell options (matching wraps page)
 export const juiceUpsellOptions: JuiceGroup[] = [
   {
     size: "250ml",
@@ -77,13 +92,17 @@ export const juiceUpsellOptions: JuiceGroup[] = [
   },
 ];
 
+// Toastie add-ons
 export const toastieAddOns: AddOn[] = [
   { id: "addon1", name: "Extra Cheese", price: 15 },
   { id: "addon2", name: "Bacon", price: 20 },
   { id: "addon3", name: "Avocado", price: 25 },
   { id: "addon4", name: "Fried Egg", price: 15 },
+  { id: "addon5", name: "Pickles", price: 10 },
+  { id: "addon6", name: "Caramelised Onions", price: 12 },
 ];
 
+// Toastie items from the menu
 export const toasties: ToastieItem[] = [
   {
     id: "toastie-1",
@@ -91,8 +110,8 @@ export const toasties: ToastieItem[] = [
     name: "Bacon, Egg & Cheese",
     description: "Sourdough, crispy bacon rashers, two sunny side eggs, cheddar cheese, sliced tomato, avocado",
     price: 129,
-    image: "/images/toasties/bacon_egg_cheese.jpg",
-    tags: ["popular"],
+    image: "/images/toasties/bacon_egg_cheese.jpeg",
+    tags: ["popular", "breakfast"],
     popular: true,
     addOns: toastieAddOns,
     friesUpsell: friesUpsellOptions,
@@ -104,8 +123,8 @@ export const toasties: ToastieItem[] = [
     name: "Beef & Onion",
     description: "Sourdough, sliced beef, bba sauce, pickles, caramelised onions, arugula, cheddar cheese",
     price: 132,
-    image: "/images/toasties/beef_slaw.jpg",
-    tags: ["popular"],
+    image: "/images/toasties/beef_onion.jpeg",
+    tags: ["popular", "beef"],
     popular: true,
     addOns: toastieAddOns,
     friesUpsell: friesUpsellOptions,
@@ -117,8 +136,8 @@ export const toasties: ToastieItem[] = [
     name: "Chicken & Pesto",
     description: "Sourdough, grilled chicken breast, house-made pesto, sun-dried tomato, cheddar cheese, arugula",
     price: 128,
-    image: "/images/toasties/bacon_egg.jpeg",
-    tags: [],
+    image: "/images/toasties/chicken_pesto.jpeg",
+    tags: ["chicken"],
     popular: false,
     addOns: toastieAddOns,
     friesUpsell: friesUpsellOptions,
@@ -126,26 +145,65 @@ export const toasties: ToastieItem[] = [
   },
   {
     id: "toastie-4",
-    slug: "pulled-beef-slaw",
-    name: "Pulled Beef & Slaw",
-    description: "Sourdough, pulled beef, house-made slaw (cabbage, onions, carrots, raisins, apple, mayo), cheddar cheese",
-    price: 135,
-    image: "/images/toasties/beef_slaw.jpg",
-    tags: [],
-    popular: false,
+    slug: "chicken-cheese-mayo",
+    name: "Chicken, Cheese & Mayo",
+    description: "Sourdough, grilled chicken breast, cheddar cheese, mayonnaise, lettuce, tomato",
+    price: 128,
+    image: "/images/toasties/chicken_mayo.jpeg",
+    tags: ["chicken", "popular"],
+    popular: true,
     addOns: toastieAddOns,
     friesUpsell: friesUpsellOptions,
     juiceUpsell: juiceUpsellOptions,
   },
   {
     id: "toastie-5",
+    slug: "pulled-beef-slaw",
+    name: "Pulled Beef & Slaw",
+    description: "Sourdough, pulled beef, house-made slaw (cabbage, onions, carrots, raisins, apple, mayo), cheddar cheese",
+    price: 135,
+    image: "/images/toasties/beef_slaw.jpg",
+    tags: ["beef", "popular"],
+    popular: true,
+    addOns: toastieAddOns,
+    friesUpsell: friesUpsellOptions,
+    juiceUpsell: juiceUpsellOptions,
+  },
+  {
+    id: "toastie-6",
+    slug: "pulled-lamb-caramelised-onion",
+    name: "Pulled Lamb & Caramelised Onion",
+    description: "Sourdough, spiced pulled lamb, garlic, caramelised onion, arugula, cheddar cheese & pickled cucumber ribbons",
+    price: 139,
+    image: "/images/toasties/pulled_beef.jpeg",
+    tags: ["lamb", "popular"],
+    popular: true,
+    addOns: toastieAddOns,
+    friesUpsell: friesUpsellOptions,
+    juiceUpsell: juiceUpsellOptions,
+  },
+  {
+    id: "toastie-7",
+    slug: "pulled-pork",
+    name: "Pulled Pork",
+    description: "Sourdough, spiced bbq pulled pork, caramelised onions, cheddar cheese & chillies",
+    price: 133,
+    image: "/images/toasties/pulled_pork.jpeg",
+    tags: ["pork", "popular"],
+    popular: true,
+    addOns: toastieAddOns,
+    friesUpsell: friesUpsellOptions,
+    juiceUpsell: juiceUpsellOptions,
+  },
+  {
+    id: "toastie-8",
     slug: "spinach-feta",
     name: "Spinach & Feta",
     description: "Sourdough, baby spinach, crumbled feta cheese, pickled red onion, olives, olive oil, cheddar cheese",
-    price: 129,
+    price: 126,
     image: "/images/toasties/spinach_feta.jpg",
-    tags: ["vegetarian"],
-    popular: false,
+    tags: ["vegetarian", "popular"],
+    popular: true,
     addOns: toastieAddOns,
     friesUpsell: friesUpsellOptions,
     juiceUpsell: juiceUpsellOptions,

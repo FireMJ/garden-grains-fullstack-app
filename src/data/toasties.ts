@@ -4,10 +4,17 @@ export interface AddOn {
   price: number;
 }
 
+export interface DipOption {
+  id: string;
+  name: string;
+  price: number;
+}
+
 export interface FriesUpsell {
   id: string;
   name: string;
   price: number;
+  dips?: DipOption[];
   optional?: boolean;
 }
 
@@ -36,11 +43,19 @@ export interface ToastieItem {
   juiceUpsell?: JuiceGroup[];
 }
 
-export const friesUpsellOptions: FriesUpsell[] = [
-  { id: "fries1", name: "Skinny French Fries", price: 25 },
-  { id: "fries2", name: "Sweet Potato Fries", price: 25 },
+// Fries dip options (matching wraps page)
+export const friesDips: DipOption[] = [
+  { id: "dip1", name: "Garden Mayo", price: 0 },
+  { id: "dip2", name: "Tomato Ketchup", price: 0 },
 ];
 
+// Fries upsell options with dips (matching wraps page)
+export const friesUpsellOptions: FriesUpsell[] = [
+  { id: "fries1", name: "Skinny French Fries", price: 25, dips: friesDips },
+  { id: "fries2", name: "Sweet Potato Fries", price: 25, dips: friesDips },
+];
+
+// Juice upsell options (matching wraps page)
 export const juiceUpsellOptions: JuiceGroup[] = [
   {
     size: "250ml",
@@ -77,6 +92,7 @@ export const juiceUpsellOptions: JuiceGroup[] = [
   },
 ];
 
+// Toastie add-ons
 export const toastieAddOns: AddOn[] = [
   { id: "addon1", name: "Extra Cheese", price: 15 },
   { id: "addon2", name: "Bacon", price: 20 },
@@ -86,6 +102,7 @@ export const toastieAddOns: AddOn[] = [
   { id: "addon6", name: "Caramelised Onions", price: 12 },
 ];
 
+// Toastie items from the menu
 export const toasties: ToastieItem[] = [
   {
     id: "toastie-1",
