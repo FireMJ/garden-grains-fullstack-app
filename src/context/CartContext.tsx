@@ -9,6 +9,26 @@ export interface AddOn {
   quantity: number;
 }
 
+export interface FriesItem {
+  name: string;
+  price: number;
+  dip?: string;
+  dipPrice?: number;
+}
+
+export interface JuiceItem {
+  name: string;
+  price: number;
+  size: string;
+  addOns?: JuiceAddOn[];
+}
+
+export interface JuiceAddOn {
+  id: string;
+  name: string;
+  price: number;
+}
+
 export interface CartItem {
   id: string;
   name: string;
@@ -16,8 +36,11 @@ export interface CartItem {
   quantity: number;
   image?: string;
   category?: string;
+  description?: string;
   specialInstructions?: string;
   addOns?: AddOn[];
+  fries?: FriesItem | null;
+  juice?: JuiceItem | null;
 }
 
 interface CartContextType {
@@ -30,7 +53,7 @@ interface CartContextType {
   updateItemDetails: (itemId: string, updates: Partial<CartItem>) => void;
   clearCart: () => void;
   totalPrice: number;
-  itemCount: number;
+  totalItems: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -46,7 +69,7 @@ export const useCart = () => {
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [totalPrice, setTotalPrice] = useState(0);
-  const [itemCount, setItemCount] = useState(0);
+  const [totalItems, setTotalItems] = useState(0);
   const [mounted, setMounted] = useState(false);
 
   // Load cart from localStorage on mount
@@ -56,7 +79,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (savedCart) {
       try {
         const parsed = JSON.parse(savedCart);
-        // Ensure each item has a price
         const validated = parsed.map((item: any) => ({
           ...item,
           price: item.price || 0,
@@ -69,13 +91,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Calculate total price including add-ons
+  // Calculate total price including add-ons, fries, and juice
   const calculateTotalPrice = (items: CartItem[]): number => {
     return items.reduce((sum, item) => {
       const itemPrice = item.price || 0;
       const itemQty = item.quantity || 1;
       let itemTotal = itemPrice * itemQty;
-      
+
       // Add add-ons total
       if (item.addOns && item.addOns.length > 0) {
         const addOnsTotal = item.addOns.reduce((addSum, addon) => {
@@ -85,7 +107,26 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }, 0);
         itemTotal += addOnsTotal;
       }
-      
+
+      // Add fries total
+      if (item.fries) {
+        let friesTotal = item.fries.price * itemQty;
+        if (item.fries.dipPrice) {
+          friesTotal += item.fries.dipPrice * itemQty;
+        }
+        itemTotal += friesTotal;
+      }
+
+      // Add juice total
+      if (item.juice) {
+        let juiceTotal = item.juice.price * itemQty;
+        if (item.juice.addOns && item.juice.addOns.length > 0) {
+          const juiceAddOnsTotal = item.juice.addOns.reduce((sum, addon) => sum + addon.price, 0);
+          juiceTotal += juiceAddOnsTotal * itemQty;
+        }
+        itemTotal += juiceTotal;
+      }
+
       return sum + itemTotal;
     }, 0);
   };
@@ -95,7 +136,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (mounted) {
       localStorage.setItem('cart', JSON.stringify(cartItems));
       setTotalPrice(calculateTotalPrice(cartItems));
-      setItemCount(cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0));
+      setTotalItems(cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0));
     }
   }, [cartItems, mounted]);
 
@@ -105,18 +146,30 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       price: item.price || 0,
       quantity: item.quantity || 1
     };
-    
+
     setCartItems(prev => {
-      // Check if same item with same add-ons exists
+      // Check if same item with same add-ons, fries, and juice exists
       const existingIndex = prev.findIndex(i => {
         if (i.id !== newItem.id) return false;
         
         // Compare add-ons
         const existingAddOns = JSON.stringify(i.addOns || []);
         const newAddOns = JSON.stringify(newItem.addOns || []);
-        return existingAddOns === newAddOns;
+        if (existingAddOns !== newAddOns) return false;
+        
+        // Compare fries
+        const existingFries = JSON.stringify(i.fries || null);
+        const newFries = JSON.stringify(newItem.fries || null);
+        if (existingFries !== newFries) return false;
+        
+        // Compare juice
+        const existingJuice = JSON.stringify(i.juice || null);
+        const newJuice = JSON.stringify(newItem.juice || null);
+        if (existingJuice !== newJuice) return false;
+        
+        return true;
       });
-      
+
       if (existingIndex !== -1) {
         // Update existing item quantity
         const updated = [...prev];
@@ -126,7 +179,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         return updated;
       }
-      
+
       return [...prev, newItem];
     });
   };
@@ -194,7 +247,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateItemDetails,
       clearCart,
       totalPrice,
-      itemCount,
+      totalItems,
     }}>
       {children}
     </CartContext.Provider>

@@ -47,9 +47,15 @@ const bannerImages = [
   { image: "/images/banners/banner1.jpeg", mobileImage: "/images/banners/banner1.jpeg" },
   { image: "/images/banners/banner2.jpg", mobileImage: "/images/banners/banner2.jpg" },
   { image: "/images/banners/banner3.jpg", mobileImage: "/images/banners/banner3.jpg" },
+  { image: "/images/banners/banner4.jpg", mobileImage: "/images/banners/banner4.jpg" },
   { image: "/images/banners/banner5.jpeg", mobileImage: "/images/banners/banner5.jpeg" },
+  { image: "/images/banners/banner6.jpeg", mobileImage: "/images/banners/banner6.jpeg" },
   { image: "/images/banners/beef-slaw.jpeg", mobileImage: "/images/banners/beef-slaw.jpeg" },
-  { image: "/images/banners/cover-image2.jpeg", mobileImage: "/images/banners/cover-image2.jpeg" }
+  { image: "/images/banners/cover-image2.jpeg", mobileImage: "/images/banners/cover-image2.jpeg" },
+  { image: "/images/banners/restaurant_view.jpeg", mobileImage: "/images/banners/restaurant_view.jpeg" },
+  { image: "/images/banners/rose_garden.jpeg", mobileImage: "/images/banners/rose_garden.jpeg" },
+  { image: "/images/banners/rose_garden1.jpeg", mobileImage: "/images/banners/rose_garden1.jpeg" },
+  { image: "/images/banners/rose_garden2.jpeg", mobileImage: "/images/banners/rose_garden2.jpeg" }
 ];
 
 // Menu highlight images
