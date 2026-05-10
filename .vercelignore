@@ -1,4 +1,9 @@
-node_modules/.cache
-.next
 .git
-!.gitignore
+.gitignore
+README.md
+.env.local
+.env.production
+node_modules
+.next
+.DS_Store
+*.log
