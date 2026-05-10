@@ -1,144 +1,155 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // =========================
-    // MOMENTS COLLECTION - #ConstantiaMoment Feed
-    // =========================
+    
+    // ========================================
+    // CONSTANTIA MOMENTS COLLECTION
+    // ========================================
     match /moments/{momentId} {
-      // Anyone can read moments (public feed)
       allow read: if true;
-      
-      // Anyone can create moments (no authentication required)
       allow create: if true;
-      
-      // Users can only update likes and comments count
       allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'comments']);
-      
-      // No deletion allowed
       allow delete: if false;
     }
-
-    // =========================
-    // COMMENTS COLLECTION
-    // =========================
+    
+    // ========================================
+    // COMMENTS & REPLIES
+    // ========================================
     match /comments/{commentId} {
-      // Anyone can read comments
       allow read: if true;
-      
-      // Anyone can create comments
+      allow create: if true;
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']);
+      allow delete: if false;
+    }
+    
+    match /replies/{replyId} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']);
+      allow delete: if false;
+    }
+    
+    // ========================================
+    // LIKES TRACKING
+    // ========================================
+    match /likes/{likeId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    
+    // ========================================
+    // REVIEWS COLLECTION
+    // ========================================
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if request.auth != null && request.auth.token.role == 'admin';
+      allow delete: if request.auth != null && request.auth.token.role == 'admin';
+    }
+    
+    // ========================================
+    // DRIVER APPLICATIONS (NEW)
+    // Online registration with admin approval workflow
+    // ========================================
+    match /driverApplications/{applicationId} {
+      // Anyone can submit a driver application
       allow create: if true;
       
-      // Users can only update likes
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']);
+      // Applicants can read their own application
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
       
-      // No deletion allowed
+      // Admin can read all applications
+      allow read: if request.auth != null && request.auth.token.role == 'admin';
+      
+      // Admin can approve/reject applications
+      allow update: if request.auth != null 
+        && request.auth.token.role == 'admin'
+        && request.resource.data.keys().hasOnly(['status', 'adminNotes', 'reviewedAt', 'reviewedBy']);
+      
+      // Driver can update only after approval
+      allow update: if request.auth != null 
+        && request.auth.uid == resource.data.userId
+        && resource.data.status == 'approved';
+      
       allow delete: if false;
     }
-
-    // =========================
-    // 20% PROMOTION FOR FIRST REGISTRATION
-    // =========================
+    
+    // ========================================
+    // DRIVERS COLLECTION (Approved drivers)
+    // ========================================
+    match /drivers/{driverId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.auth.token.role == 'admin';
+      allow update: if request.auth != null && (request.auth.token.role == 'admin' || request.auth.uid == resource.data.uid);
+      allow delete: if request.auth != null && request.auth.token.role == 'admin';
+    }
+    
+    // ========================================
+    // DRIVER VERIFICATION DOCUMENTS
+    // ========================================
+    match /driverDocuments/{documentId} {
+      allow read: if request.auth != null && (request.auth.token.role == 'admin' || request.auth.uid == resource.data.userId);
+      allow create: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow update: if request.auth != null && request.auth.token.role == 'admin';
+      allow delete: if false;
+    }
+    
+    // ========================================
+    // PROMOTIONS & DISCOUNTS
+    // ========================================
     match /promotions/{promotionId} {
-      // Read promotions
       allow read: if true;
-      
-      // Track used promotions to prevent abuse
-      allow create: if request.auth != null 
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.promoCode == 'WELCOME20'
-        && request.resource.data.used == false
-        && request.resource.data.usedAt == null;
-      
-      // Mark promotion as used (only once per user)
-      allow update: if request.auth != null
-        && resource.data.userId == request.auth.uid
-        && resource.data.used == false
-        && request.resource.data.used == true
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['used', 'usedAt']);
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
     }
     
-    // =========================
-    // DEVICE TRACKING FOR PROMOTION ABUSE PREVENTION
-    // =========================
     match /devicePromotions/{deviceId} {
-      // Track which devices have used the promotion
-      allow read: if request.auth != null && request.auth.token.role in ['admin', 'owner'];
-      allow create: if true;  // Allow creation for checking if device already exists
-      allow write: if false;   // Prevent modification of existing records
-    }
-
-    // =========================
-    // ORDERS COLLECTION
-    // =========================
-    match /orders/{orderId} {
-      // Customers can create orders only for themselves
-      allow create: if request.auth != null
-        && request.auth.token.role == 'customer'
-        && request.resource.data.customerId == request.auth.uid
-        && request.resource.data.status == 'pending'
-        && request.resource.data.totalPrice > 0;
-
-      // Customers can update only items or instructions, not status or price
-      allow update: if request.auth != null
-        && request.auth.token.role == 'customer'
-        && request.auth.uid == resource.data.customerId
-        && request.resource.data.keys().hasOnly(['items', 'specialInstructions'])
-        && request.resource.data.totalPrice == resource.data.totalPrice
-        && request.resource.data.status == resource.data.status;
-
-      // Staff can move status forward: pending → preparing → ready
-      allow update: if request.auth != null
-        && request.auth.token.role == 'staff'
-        && request.resource.data.keys().hasOnly(['status'])
-        && (
-          (resource.data.status == 'pending' && request.resource.data.status == 'preparing') ||
-          (resource.data.status == 'preparing' && request.resource.data.status == 'ready')
-        );
-
-      // Delivery can only move ready → delivered
-      allow update: if request.auth != null
-        && request.auth.token.role == 'delivery'
-        && request.auth.uid == resource.data.deliveryId
-        && request.resource.data.keys().hasOnly(['status'])
-        && resource.data.status == 'ready'
-        && request.resource.data.status == 'delivered';
-
-      // Admin can update any field except customerId, but must respect status transitions
-      allow update: if request.auth != null
-        && request.auth.token.role == 'admin'
-        && request.resource.data.customerId == resource.data.customerId
-        && (
-          (resource.data.status == 'pending' && request.resource.data.status in ['pending','preparing']) ||
-          (resource.data.status == 'preparing' && request.resource.data.status in ['preparing','ready']) ||
-          (resource.data.status == 'ready' && request.resource.data.status in ['ready','delivered']) ||
-          (resource.data.status == 'delivered' && request.resource.data.status == 'delivered')
-        );
-
-      // Owner has full write access
-      allow write: if request.auth != null && request.auth.token.role == 'owner';
-
-      // Read rules
-      allow read: if request.auth != null && (
-        request.auth.token.role in ['customer','staff','delivery','admin','owner']
-      );
+      allow read: if request.auth != null && request.auth.token.role == 'admin';
+      allow create: if true;
     }
     
-    // =========================
-    // USERS COLLECTION
-    // =========================
-    match /users/{userId} {
-      // Users can read any user profile (for displaying author names)
-      allow read: if true;
-      
-      // Users can only write their own profile
-      allow write: if request.auth != null && request.auth.uid == userId;
-      
-      // Track if user has used the 20% promotion
+    // ========================================
+    // ORDERS COLLECTION
+    // ========================================
+    match /orders/{orderId} {
+      allow create: if request.auth != null
+        && request.auth.uid != null
+        && request.resource.data.customerId == request.auth.uid;
+      allow read: if request.auth != null && request.auth.uid == resource.data.customerId;
       allow update: if request.auth != null 
-        && request.auth.uid == userId
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usedPromotion', 'promotionUsedAt']);
+        && request.auth.uid == resource.data.customerId
+        && request.resource.data.keys().hasOnly(['items', 'specialInstructions']);
+      allow write: if request.auth != null && request.auth.token.role == 'admin';
+    }
+    
+    // ========================================
+    // USERS COLLECTION
+    // ========================================
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // ========================================
+    // STATS & NOTIFICATIONS
+    // ========================================
+    match /stats/{statId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.role == 'admin';
+    }
+    
+    match /notifications/{notificationId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    
+    match /favorites/{favoriteId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
   }
 }

@@ -217,3 +217,30 @@ export default function SignupPage() {
     </Suspense>
   );
 }
+
+// Add this to your existing signup page
+import { promotionService } from '@/services/promotionService';
+
+// In your signup handler, add:
+const handleSignup = async (email: string, password: string) => {
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const userId = userCredential.user.uid;
+    
+    // Generate device fingerprint
+    const fingerprint = promotionService.generateDeviceFingerprint();
+    
+    // Check if eligible for promotion
+    const isEligible = await promotionService.isEligibleForPromotion(userId, fingerprint);
+    
+    if (isEligible) {
+      await promotionService.applyPromotion(userId, fingerprint);
+      // Show promotion message to user
+      alert('Welcome! You qualify for 20% off your first order!');
+    }
+    
+    // Continue with signup...
+  } catch (error) {
+    console.error('Signup error:', error);
+  }
+};
