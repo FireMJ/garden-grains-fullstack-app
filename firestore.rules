@@ -4,6 +4,72 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // =========================
+    // MOMENTS COLLECTION - #ConstantiaMoment Feed
+    // =========================
+    match /moments/{momentId} {
+      // Anyone can read moments (public feed)
+      allow read: if true;
+      
+      // Anyone can create moments (no authentication required)
+      allow create: if true;
+      
+      // Users can only update likes and comments count
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'comments']);
+      
+      // No deletion allowed
+      allow delete: if false;
+    }
+
+    // =========================
+    // COMMENTS COLLECTION
+    // =========================
+    match /comments/{commentId} {
+      // Anyone can read comments
+      allow read: if true;
+      
+      // Anyone can create comments
+      allow create: if true;
+      
+      // Users can only update likes
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']);
+      
+      // No deletion allowed
+      allow delete: if false;
+    }
+
+    // =========================
+    // 20% PROMOTION FOR FIRST REGISTRATION
+    // =========================
+    match /promotions/{promotionId} {
+      // Read promotions
+      allow read: if true;
+      
+      // Track used promotions to prevent abuse
+      allow create: if request.auth != null 
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.promoCode == 'WELCOME20'
+        && request.resource.data.used == false
+        && request.resource.data.usedAt == null;
+      
+      // Mark promotion as used (only once per user)
+      allow update: if request.auth != null
+        && resource.data.userId == request.auth.uid
+        && resource.data.used == false
+        && request.resource.data.used == true
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['used', 'usedAt']);
+    }
+    
+    // =========================
+    // DEVICE TRACKING FOR PROMOTION ABUSE PREVENTION
+    // =========================
+    match /devicePromotions/{deviceId} {
+      // Track which devices have used the promotion
+      allow read: if request.auth != null && request.auth.token.role in ['admin', 'owner'];
+      allow create: if true;  // Allow creation for checking if device already exists
+      allow write: if false;   // Prevent modification of existing records
+    }
+
+    // =========================
     // ORDERS COLLECTION
     // =========================
     match /orders/{orderId} {
@@ -57,6 +123,22 @@ service cloud.firestore {
       allow read: if request.auth != null && (
         request.auth.token.role in ['customer','staff','delivery','admin','owner']
       );
+    }
+    
+    // =========================
+    // USERS COLLECTION
+    // =========================
+    match /users/{userId} {
+      // Users can read any user profile (for displaying author names)
+      allow read: if true;
+      
+      // Users can only write their own profile
+      allow write: if request.auth != null && request.auth.uid == userId;
+      
+      // Track if user has used the 20% promotion
+      allow update: if request.auth != null 
+        && request.auth.uid == userId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usedPromotion', 'promotionUsedAt']);
     }
   }
 }
