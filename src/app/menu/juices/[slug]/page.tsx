@@ -6,6 +6,14 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { juices, juiceAddOns } from '@/data/juices';
 import { useCart } from '@/context/CartContext';
+interface AddOnWithId {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+const generateAddOnId = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, "-");
 import { Minus, Plus, ShoppingCart, Star, Check, ArrowLeft } from 'lucide-react';
 
 export default function JuiceDetailPage() {

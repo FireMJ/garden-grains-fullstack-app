@@ -1,0 +1,23 @@
+
+> garden-grains-fullstack-app@0.1.0 build
+> next build
+
+▲ Next.js 16.2.2 (Turbopack)
+- Environments: .env.local, .env.production
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 20.2s
+  Running TypeScript ...
+Failed to type check.
+
+./src/components/cart/page.tsx:120:23
+Type error: Property 'base' does not exist on type 'CartItem'.
+
+  [90m118 |[0m
+  [90m119 |[0m                 {[90m/* Base and Dressing */[0m}
+[31m[1m>[0m [90m120 |[0m                 {item.base && (
+  [90m    |[0m                       [31m[1m^[0m
+  [90m121 |[0m                   <p className=[32m"text-sm text-gray-600 mt-1"[0m>[33mBase[0m: {item.base}</p>
+  [90m122 |[0m                 )}
+  [90m123 |[0m                 {item.dressing && (
+Next.js build worker exited with code: 1 and signal: null

@@ -27,7 +27,7 @@ class PromotionService {
       if (!userSnapshot.empty) {
         const promo = userSnapshot.docs[0].data();
         if (promo.used) {
-          return false; // User already used the promotion
+          return false;
         }
       }
 
@@ -39,7 +39,7 @@ class PromotionService {
       const deviceSnapshot = await getDocs(deviceQuery);
       
       if (!deviceSnapshot.empty) {
-        return false; // This device already used the promotion
+        return false;
       }
 
       return true;
@@ -100,16 +100,25 @@ class PromotionService {
   // Generate device fingerprint for abuse prevention
   generateDeviceFingerprint(): string {
     const components = [
-      navigator.userAgent,
-      navigator.language,
-      screen.colorDepth,
-      screen.width + 'x' + screen.height,
+      navigator.userAgent || '',
+      navigator.language || '',
+      screen.colorDepth || '',
+      `${screen.width}x${screen.height}`,
       new Date().getTimezoneOffset(),
-      !!navigator.hardwareConcurrency,
-      navigator.deviceMemory || '',
-      // @ts-ignore
-      navigator.platform || ''
+      navigator.hardwareConcurrency || '',
     ];
+    
+    // Add deviceMemory only if available
+    const deviceMemory = (navigator as any).deviceMemory;
+    if (deviceMemory) {
+      components.push(deviceMemory);
+    }
+    
+    // Add platform if available
+    const platform = (navigator as any).platform;
+    if (platform) {
+      components.push(platform);
+    }
     
     return btoa(components.join('|')).replace(/=/g, '');
   }

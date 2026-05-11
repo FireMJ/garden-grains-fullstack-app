@@ -5,6 +5,7 @@ import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCart, type CartItem } from "@/context/CartContext";
+const generateAddOnId = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, "-");
 
 // This is a generic dynamic page for menu items that don't have specific pages
 // For breakfast and bowls, use their specific pages instead
@@ -61,7 +62,7 @@ export default function MenuItemDetailPage() {
       total: itemTotal, // ✅ Added missing total
       image: menuItem.image,
       category: menuItem.category, // ✅ Added missing category
-      addOns: selectedAddOns,
+      addOns: selectedAddOns.map(a => ({ id: a.id || generateAddOnId(a.name), name: a.name, price: a.price, quantity: a.quantity })),
       specialInstructions: specialInstructions,
       size: selectedSize
     };

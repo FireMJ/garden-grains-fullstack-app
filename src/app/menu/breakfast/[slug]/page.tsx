@@ -62,17 +62,19 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
+// Helper function to generate add-on ID
+const generateAddOnId = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+
 export default function BreakfastDetailPage({ params }: PageProps) {
   const router = useRouter();
   const { addToCart } = useCart();
   const [breakfastItem, setBreakfastItem] = useState<BreakfastItem | null>(null);
-  const [selectedAddOns, setSelectedAddOns] = useState<{ name: string; price: number; quantity: number }[]>([]);
+  const [selectedAddOns, setSelectedAddOns] = useState<{ id: string; name: string; price: number; quantity: number }[]>([]);
   const [specialInstructions, setSpecialInstructions] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [slug, setSlug] = useState<string>("");
   const [mounted, setMounted] = useState(false);
   
-  // Upsell states
   const [selectedFries, setSelectedFries] = useState<SelectedFriesWithDip | null>(null);
   const [selectedJuice, setSelectedJuice] = useState<SelectedJuiceWithAddOns | null>(null);
   const [selectedJuiceSize, setSelectedJuiceSize] = useState<string>("250ml");
@@ -82,7 +84,6 @@ export default function BreakfastDetailPage({ params }: PageProps) {
     setMounted(true);
   }, []);
 
-  // Unwrap params
   useEffect(() => {
     const unwrapParams = async () => {
       const unwrapped = await params;
@@ -91,7 +92,6 @@ export default function BreakfastDetailPage({ params }: PageProps) {
     unwrapParams();
   }, [params]);
 
-  // Load breakfast data
   useEffect(() => {
     if (!slug) return;
     
@@ -101,30 +101,29 @@ export default function BreakfastDetailPage({ params }: PageProps) {
     }
   }, [slug]);
 
-  const handleAddOnToggle = (addOn: { name: string; price: number }) => {
+  const handleAddOnToggle = (addOn: { id: string; name: string; price: number }) => {
     setSelectedAddOns(prev => {
-      const existing = prev.find(a => a.name === addOn.name);
+      const existing = prev.find(a => a.id === addOn.id);
       if (existing) {
-        return prev.filter(a => a.name !== addOn.name);
+        return prev.filter(a => a.id !== addOn.id);
       } else {
         return [...prev, { ...addOn, quantity: 1 }];
       }
     });
   };
 
-  const updateAddOnQuantity = (addOnName: string, newQuantity: number) => {
+  const updateAddOnQuantity = (addOnId: string, newQuantity: number) => {
     if (newQuantity <= 0) {
-      setSelectedAddOns(prev => prev.filter(a => a.name !== addOnName));
+      setSelectedAddOns(prev => prev.filter(a => a.id !== addOnId));
     } else {
       setSelectedAddOns(prev =>
         prev.map(a =>
-          a.name === addOnName ? { ...a, quantity: newQuantity } : a
+          a.id === addOnId ? { ...a, quantity: newQuantity } : a
         )
       );
     }
   };
 
-  // Handle fries selection with dip
   const handleFriesSelect = (fries: FriesUpsellItem) => {
     if (selectedFries?.id === fries.id) {
       setSelectedFries(null);
@@ -147,7 +146,6 @@ export default function BreakfastDetailPage({ params }: PageProps) {
     }
   };
 
-  // Handle juice selection with add-ons
   const handleJuiceSelect = (juice: JuiceUpsellItem) => {
     if (selectedJuice?.id === juice.id) {
       setSelectedJuice(null);
@@ -208,15 +206,31 @@ export default function BreakfastDetailPage({ params }: PageProps) {
   const handleAddToCart = () => {
     if (!breakfastItem) return;
     
+    let itemName = breakfastItem.name;
+    if (selectedFries) {
+      itemName += ` + ${selectedFries.name}`;
+      if (selectedFries.selectedDip) {
+        itemName += ` (${selectedFries.selectedDip.name})`;
+      }
+    }
+    if (selectedJuice) {
+      itemName += ` + ${selectedJuice.name} (${selectedJuiceSize})`;
+    }
+    
     const cartItem = {
       id: `${breakfastItem.id}-${Date.now()}`,
-      name: breakfastItem.name,
+      name: itemName,
       price: breakfastItem.price,
       quantity: quantity,
       image: breakfastItem.image,
       category: "breakfast",
       description: breakfastItem.description,
-      addOns: selectedAddOns,
+      addOns: selectedAddOns.map(a => ({ 
+        id: a.id, 
+        name: a.name, 
+        price: a.price, 
+        quantity: a.quantity 
+      })),
       specialInstructions: specialInstructions,
       fries: selectedFries ? {
         name: selectedFries.name,
@@ -237,7 +251,6 @@ export default function BreakfastDetailPage({ params }: PageProps) {
     router.push("/cart");
   };
 
-  // Get available juice options for selected size
   const getJuiceOptionsForSize = () => {
     const juiceSizeGroup = juiceGroup.find(g => g.size === selectedJuiceSize);
     return juiceSizeGroup?.options || [];
@@ -256,7 +269,6 @@ export default function BreakfastDetailPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white shadow-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
           <Link href="/menu/breakfast" className="inline-flex items-center text-gray-600 hover:text-green-600 transition">
@@ -268,7 +280,6 @@ export default function BreakfastDetailPage({ params }: PageProps) {
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Column - Image */}
           <div>
             <div className="relative h-96 rounded-2xl overflow-hidden shadow-lg">
               <Image
@@ -280,13 +291,11 @@ export default function BreakfastDetailPage({ params }: PageProps) {
             </div>
           </div>
 
-          {/* Right Column - Details */}
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">{breakfastItem.name}</h1>
             <p className="text-gray-600 mb-4">{breakfastItem.description}</p>
             <div className="text-2xl font-bold text-green-600 mb-6">R{breakfastItem.price}</div>
 
-            {/* Tags */}
             {breakfastItem.tags && breakfastItem.tags.length > 0 && (
               <div className="mb-6">
                 <div className="flex flex-wrap gap-2">
@@ -299,15 +308,15 @@ export default function BreakfastDetailPage({ params }: PageProps) {
               </div>
             )}
 
-            {/* Add-ons */}
             {breakfastAddOns && breakfastAddOns.length > 0 && (
               <div className="mb-6">
-                <h3 className="font-semibold text-gray-900 mb-3">Add-ons (Optional)</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">Add-ons (Optional)</h3>
                 <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {breakfastAddOns.map((addOn, index) => {
-                    const selected = selectedAddOns.find(a => a.name === addOn.name);
+                  {breakfastAddOns.map((addOn) => {
+                    const addOnWithId = { ...addOn, id: addOn.id || generateAddOnId(addOn.name) };
+                    const selected = selectedAddOns.find(a => a.id === addOnWithId.id);
                     return (
-                      <div key={`addon-${index}-${addOn.name}`} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div key={addOnWithId.id} className="flex items-center justify-between p-3 border rounded-lg">
                         <div>
                           <p className="font-medium text-gray-900">{addOn.name}</p>
                           <p className="text-sm text-green-600">+R{addOn.price}</p>
@@ -315,14 +324,14 @@ export default function BreakfastDetailPage({ params }: PageProps) {
                         {selected ? (
                           <div className="flex items-center gap-3">
                             <button
-                              onClick={() => updateAddOnQuantity(addOn.name, selected.quantity - 1)}
+                              onClick={() => updateAddOnQuantity(addOnWithId.id, selected.quantity - 1)}
                               className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
                             >
                               <FaMinus className="text-sm" />
                             </button>
                             <span className="w-8 text-center">{selected.quantity}</span>
                             <button
-                              onClick={() => updateAddOnQuantity(addOn.name, selected.quantity + 1)}
+                              onClick={() => updateAddOnQuantity(addOnWithId.id, selected.quantity + 1)}
                               className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
                             >
                               <FaPlus className="text-sm" />
@@ -330,7 +339,7 @@ export default function BreakfastDetailPage({ params }: PageProps) {
                           </div>
                         ) : (
                           <button
-                            onClick={() => handleAddOnToggle(addOn)}
+                            onClick={() => handleAddOnToggle(addOnWithId)}
                             className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
                           >
                             Add
@@ -343,19 +352,16 @@ export default function BreakfastDetailPage({ params }: PageProps) {
               </div>
             )}
 
-            {/* Upsells Section - Fries & Juice */}
             <div className="mb-6">
               <button
                 onClick={() => setShowUpsells(!showUpsells)}
-                className="flex items-center gap-2 text-green-600 font-medium mb-3 hover:text-green-700 w-full text-left"
+                className="flex items-center gap-2 text-green-600 font-medium mb-3 hover:text-green-700"
               >
-                <span>{showUpsells ? '▼' : '▶'}</span> 
-                <span>Add Fries & Drink to Complete Your Meal</span>
+                {showUpsells ? '▼' : '▶'} Add Fries & Drink to Complete Your Meal
               </button>
               
               {showUpsells && (
                 <div className="space-y-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
-                  {/* Fries Selection with Dip Options */}
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
                       <FaTruck className="text-amber-600" />
@@ -366,19 +372,18 @@ export default function BreakfastDetailPage({ params }: PageProps) {
                         <button
                           key={fries.id}
                           onClick={() => handleFriesSelect(fries)}
-                          className={`px-4 py-2 rounded-lg border text-sm transition ${
+                          className={`px-3 py-2 rounded-lg border text-sm transition ${
                             selectedFries?.id === fries.id
                               ? 'border-amber-500 bg-amber-100 text-amber-700'
-                              : 'border-gray-300 bg-white hover:border-amber-300'
+                              : 'border-gray-300 hover:border-amber-300'
                           }`}
                         >
-                          {fries.name} <span className="text-green-600 font-medium">+R{fries.price}</span>
+                          {fries.name} <span className="text-green-600">+R{fries.price}</span>
                         </button>
                       ))}
                     </div>
                     
-                    {/* Dip Options - only show if fries are selected */}
-                    {selectedFries && friesUpsell.find(f => f.id === selectedFries.id)?.dipOptions && (
+                    {selectedFries && (
                       <div className="mt-3 pl-4 border-l-2 border-amber-300">
                         <p className="text-sm font-medium text-gray-700 mb-2">Choose a dip (optional):</p>
                         <div className="flex flex-wrap gap-2">
@@ -407,20 +412,19 @@ export default function BreakfastDetailPage({ params }: PageProps) {
                     )}
                   </div>
 
-                  {/* Juice Selection with Add-ons */}
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
                       <FaCocktail className="text-amber-600" />
                       Add Juice
                     </h3>
                     
-                    {/* Juice Size Selector */}
                     <div className="flex flex-wrap gap-2 mb-3">
                       {juiceGroup.map((sizeGroup) => (
                         <button
                           key={sizeGroup.size}
                           onClick={() => {
                             setSelectedJuiceSize(sizeGroup.size);
+                            setSelectedJuice(null);
                             setSelectedJuice(null);
                           }}
                           className={`px-3 py-1 rounded-lg text-sm transition ${
@@ -434,7 +438,6 @@ export default function BreakfastDetailPage({ params }: PageProps) {
                       ))}
                     </div>
                     
-                    {/* Juice Options for Selected Size */}
                     <div className="flex flex-wrap gap-2 mb-3">
                       {getJuiceOptionsForSize().map((juice: JuiceUpsellItem) => (
                         <button
@@ -443,7 +446,7 @@ export default function BreakfastDetailPage({ params }: PageProps) {
                           className={`px-3 py-2 rounded-lg border text-sm transition ${
                             selectedJuice?.id === juice.id
                               ? 'border-amber-500 bg-amber-100 text-amber-700'
-                              : 'border-gray-300 bg-white hover:border-amber-300'
+                              : 'border-gray-300 hover:border-amber-300'
                           }`}
                         >
                           {juice.name} <span className="text-green-600">+R{juice.price}</span>
@@ -451,7 +454,6 @@ export default function BreakfastDetailPage({ params }: PageProps) {
                       ))}
                     </div>
 
-                    {/* Juice Add-ons - only show if juice is selected */}
                     {selectedJuice && juiceAddOns && (
                       <div className="mt-3 pl-4 border-l-2 border-amber-300">
                         <p className="text-sm font-medium text-gray-700 mb-2">Boost your juice (optional):</p>
@@ -487,7 +489,6 @@ export default function BreakfastDetailPage({ params }: PageProps) {
               )}
             </div>
 
-            {/* Special Instructions */}
             <div className="mb-6">
               <h3 className="font-semibold text-gray-900 mb-2">Special Instructions</h3>
               <textarea
@@ -499,7 +500,6 @@ export default function BreakfastDetailPage({ params }: PageProps) {
               />
             </div>
 
-            {/* Quantity */}
             <div className="mb-6">
               <h3 className="font-semibold text-gray-900 mb-2">Quantity</h3>
               <div className="flex items-center gap-3">
@@ -519,27 +519,26 @@ export default function BreakfastDetailPage({ params }: PageProps) {
               </div>
             </div>
 
-            {/* Total and Add to Cart */}
             <div className="border-t pt-6">
-              <div className="mb-4 space-y-1">
-                <div className="flex justify-between items-center text-gray-600">
+              <div className="mb-4">
+                <div className="flex justify-between items-center text-gray-600 mb-2">
                   <span>Base Price:</span>
                   <span>R{breakfastItem.price}</span>
                 </div>
                 {selectedAddOns.length > 0 && (
-                  <div className="flex justify-between items-center text-gray-600">
+                  <div className="flex justify-between items-center text-gray-600 mb-2">
                     <span>Add-ons:</span>
                     <span>+R{selectedAddOns.reduce((sum, addOn) => sum + (addOn.price * addOn.quantity), 0)}</span>
                   </div>
                 )}
                 {selectedFries && (
                   <>
-                    <div className="flex justify-between items-center text-gray-600">
+                    <div className="flex justify-between items-center text-gray-600 mb-2">
                       <span>{selectedFries.name}:</span>
                       <span>+R{selectedFries.price}</span>
                     </div>
                     {selectedFries.selectedDip && selectedFries.selectedDip.price > 0 && (
-                      <div className="flex justify-between items-center text-gray-600 pl-4 text-sm">
+                      <div className="flex justify-between items-center text-gray-600 mb-2 pl-4 text-sm">
                         <span>└ {selectedFries.selectedDip.name}:</span>
                         <span>+R{selectedFries.selectedDip.price}</span>
                       </div>
@@ -547,26 +546,24 @@ export default function BreakfastDetailPage({ params }: PageProps) {
                   </>
                 )}
                 {selectedJuice && (
-                  <>
-                    <div className="flex justify-between items-center text-gray-600">
-                      <span>{selectedJuice.name} ({selectedJuiceSize}):</span>
-                      <span>+R{selectedJuice.price}</span>
-                    </div>
-                    {selectedJuice.selectedAddOns.length > 0 && (
-                      <div className="pl-4 text-sm space-y-1">
-                        {selectedJuice.selectedAddOns.map((addOn, idx) => (
-                          <div key={idx} className="flex justify-between items-center text-gray-600">
-                            <span>└ + {addOn.name}:</span>
-                            <span>+R{addOn.price}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </>
+                  <div className="flex justify-between items-center text-gray-600 mb-2">
+                    <span>{selectedJuice.name} ({selectedJuiceSize}):</span>
+                    <span>+R{selectedJuice.price}</span>
+                  </div>
                 )}
-                <div className="flex justify-between items-center text-gray-900 font-semibold pt-2 border-t mt-2">
-                  <span>Total ({quantity} item{quantity > 1 ? 's' : ''}):</span>
-                  <span className="text-green-600 text-xl">R{calculateTotal().toFixed(2)}</span>
+                {selectedJuice?.selectedAddOns.length > 0 && (
+                  <div className="pl-4 text-sm">
+                    {selectedJuice.selectedAddOns.map((addOn, idx) => (
+                      <div key={idx} className="flex justify-between items-center text-gray-600 mb-1">
+                        <span>└ + {addOn.name}:</span>
+                        <span>+R{addOn.price}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="flex justify-between items-center text-gray-600 pt-2 border-t">
+                  <span className="font-semibold">Subtotal ({quantity} item{quantity > 1 ? 's' : ''}):</span>
+                  <span className="font-semibold">R{calculateTotal().toFixed(2)}</span>
                 </div>
               </div>
               <button

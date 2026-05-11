@@ -5,7 +5,6 @@ export const debugAddressFlow = (step: string, data: any) => {
     ...data
   });
 };
-
 // Validate if coordinates are in South Africa
 export const isValidCapeTownCoordinates = (lat: number, lng: number): boolean => {
   // Cape Town bounding box roughly:
@@ -19,11 +18,9 @@ export const isValidCapeTownCoordinates = (lat: number, lng: number): boolean =>
   
   return isValid;
 };
-
 // Get restaurant coordinates with validation
 export const getValidRestaurantCoords = () => {
   const coords = { lat: -34.0425, lng: 18.4412 };
   console.log(`Restaurant coordinates (Uitsig Wine Farm):`, coords);
   return coords;
-};
 };

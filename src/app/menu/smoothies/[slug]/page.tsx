@@ -5,21 +5,14 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import Image from "next/image";
 import Link from "next/link";
-import { FaArrowLeft, FaPlus, FaMinus } from "react-icons/fa";
 import { smoothies, smoothieSizes, smoothieAddOns } from "@/data/smoothiesData";
+import { FaArrowLeft, FaPlus, FaMinus } from "react-icons/fa";
 
-interface SmoothieItem {
+// Helper function to generate add-on ID
+const generateAddOnId = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+
+interface AddOnWithId {
   id: string;
-  slug: string;
-  name: string;
-  description: string;
-  sizes: any[];
-  image: string;
-  tags?: string[];
-  addOns?: any[];
-}
-
-interface AddOnItem {
   name: string;
   price: number;
   quantity: number;
@@ -32,9 +25,9 @@ interface PageProps {
 export default function SmoothieDetailPage({ params }: PageProps) {
   const router = useRouter();
   const { addToCart } = useCart();
-  const [smoothieItem, setSmoothieItem] = useState<SmoothieItem | null>(null);
+  const [smoothieItem, setSmoothieItem] = useState<any>(null);
   const [selectedSize, setSelectedSize] = useState<any>(null);
-  const [selectedAddOns, setSelectedAddOns] = useState<AddOnItem[]>([]);
+  const [selectedAddOns, setSelectedAddOns] = useState<AddOnWithId[]>([]);
   const [specialInstructions, setSpecialInstructions] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [slug, setSlug] = useState<string>("");
@@ -44,7 +37,6 @@ export default function SmoothieDetailPage({ params }: PageProps) {
     setMounted(true);
   }, []);
 
-  // Unwrap params
   useEffect(() => {
     const unwrapParams = async () => {
       const unwrapped = await params;
@@ -53,10 +45,8 @@ export default function SmoothieDetailPage({ params }: PageProps) {
     unwrapParams();
   }, [params]);
 
-  // Load smoothie data
   useEffect(() => {
     if (!slug) return;
-    
     const item = smoothies?.find((s: any) => s.slug === slug);
     if (item) {
       setSmoothieItem(item);
@@ -67,30 +57,31 @@ export default function SmoothieDetailPage({ params }: PageProps) {
   }, [slug]);
 
   const handleAddOnToggle = (addOn: { name: string; price: number }) => {
+    const addOnId = generateAddOnId(addOn.name);
     setSelectedAddOns(prev => {
-      const existing = prev.find(a => a.name === addOn.name);
+      const existing = prev.find(a => a.id === addOnId);
       if (existing) {
-        return prev.filter(a => a.name !== addOn.name);
+        return prev.filter(a => a.id !== addOnId);
       } else {
-        return [...prev, { ...addOn, quantity: 1 }];
+        return [...prev, { id: addOnId, ...addOn, quantity: 1 }];
       }
     });
   };
 
-  const updateAddOnQuantity = (addOnName: string, newQuantity: number) => {
+  const updateAddOnQuantity = (addOnId: string, newQuantity: number) => {
     if (newQuantity <= 0) {
-      setSelectedAddOns(prev => prev.filter(a => a.name !== addOnName));
+      setSelectedAddOns(prev => prev.filter(a => a.id !== addOnId));
     } else {
       setSelectedAddOns(prev =>
         prev.map(a =>
-          a.name === addOnName ? { ...a, quantity: newQuantity } : a
+          a.id === addOnId ? { ...a, quantity: newQuantity } : a
         )
       );
     }
   };
 
   const calculateTotal = () => {
-    let total = selectedSize?.price || 0;
+    let total = (smoothieItem?.price || 0) + (selectedSize?.price || 0);
     
     if (selectedAddOns.length > 0) {
       total += selectedAddOns.reduce((sum, addOn) => sum + (addOn.price * addOn.quantity), 0);
@@ -100,16 +91,27 @@ export default function SmoothieDetailPage({ params }: PageProps) {
   };
 
   const handleAddToCart = () => {
+    if (!smoothieItem) return;
+    
+    let itemName = smoothieItem.name;
+    if (selectedSize && selectedSize.name !== "Regular") {
+      itemName += ` (${selectedSize.name})`;
+    }
+    
     const cartItem = {
-      id: `${smoothieItem?.id}-${selectedSize?.id}-${Date.now()}`,
-      name: smoothieItem?.name || "",
-      price: selectedSize?.price || 0,
+      id: `${smoothieItem.id}-${Date.now()}`,
+      name: itemName,
+      price: smoothieItem.price + (selectedSize?.price || 0),
       quantity: quantity,
-      image: smoothieItem?.image || "",
+      image: smoothieItem.image,
       category: "smoothies",
-      description: smoothieItem?.description || "",
-      selectedSize: selectedSize?.name,
-      addOns: selectedAddOns,
+      description: smoothieItem.description,
+      addOns: selectedAddOns.map(a => ({ 
+        id: a.id, 
+        name: a.name, 
+        price: a.price, 
+        quantity: a.quantity 
+      })),
       specialInstructions: specialInstructions,
     };
     
@@ -131,7 +133,6 @@ export default function SmoothieDetailPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white shadow-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
           <Link href="/menu/smoothies" className="inline-flex items-center text-gray-600 hover:text-green-600 transition">
@@ -143,7 +144,6 @@ export default function SmoothieDetailPage({ params }: PageProps) {
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Column - Image */}
           <div>
             <div className="relative h-96 rounded-2xl overflow-hidden shadow-lg">
               <Image
@@ -155,16 +155,17 @@ export default function SmoothieDetailPage({ params }: PageProps) {
             </div>
           </div>
 
-          {/* Right Column - Details */}
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">{smoothieItem.name}</h1>
             <p className="text-gray-600 mb-4">{smoothieItem.description}</p>
+            <div className="text-2xl font-bold text-green-600 mb-6">
+              From R{smoothieItem.price}
+            </div>
 
-            {/* Tags */}
             {smoothieItem.tags && smoothieItem.tags.length > 0 && (
               <div className="mb-6">
                 <div className="flex flex-wrap gap-2">
-                  {smoothieItem.tags.map((tag, idx) => (
+                  {smoothieItem.tags.map((tag: string, idx: number) => (
                     <span key={idx} className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full">
                       {tag}
                     </span>
@@ -173,37 +174,36 @@ export default function SmoothieDetailPage({ params }: PageProps) {
               </div>
             )}
 
-            {/* Size Selection */}
-            <div className="mb-6">
-              <h3 className="font-semibold text-gray-900 mb-2">Select Size</h3>
-              <div className="grid grid-cols-3 gap-3">
-                {smoothieItem.sizes.map((size) => (
-                  <button
-                    key={size.id}
-                    onClick={() => setSelectedSize(size)}
-                    className={`p-4 rounded-lg border-2 text-center transition ${
-                      selectedSize?.id === size.id
-                        ? 'border-green-500 bg-green-50 ring-2 ring-green-200'
-                        : 'border-gray-300 hover:border-green-300'
-                    }`}
-                  >
-                    <div className="font-bold text-gray-900">{size.name}</div>
-                    <div className="text-sm text-gray-500">{size.ml}ml</div>
-                    <div className="text-lg font-bold text-green-600">R{size.price}</div>
-                  </button>
-                ))}
+            {smoothieSizes && smoothieSizes.length > 0 && (
+              <div className="mb-6">
+                <h3 className="font-semibold text-gray-900 mb-2">Choose Your Size</h3>
+                <div className="flex flex-wrap gap-2">
+                  {smoothieSizes.map((size) => (
+                    <button
+                      key={size.id}
+                      onClick={() => setSelectedSize(size)}
+                      className={`px-3 py-2 rounded-lg border text-sm transition ${
+                        selectedSize?.id === size.id
+                          ? 'border-green-500 bg-green-50 text-green-700'
+                          : 'border-gray-300 hover:border-green-300'
+                      }`}
+                    >
+                      {size.name} {size.price > 0 && `(+R${size.price})`}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Add-ons */}
             {smoothieAddOns && smoothieAddOns.length > 0 && (
               <div className="mb-6">
                 <h3 className="font-semibold text-gray-900 mb-2">Add-ons (Optional)</h3>
-                <div className="space-y-2">
-                  {smoothieAddOns.map((addOn, index) => {
-                    const selected = selectedAddOns.find(a => a.name === addOn.name);
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {smoothieAddOns.map((addOn) => {
+                    const addOnId = generateAddOnId(addOn.name);
+                    const selected = selectedAddOns.find(a => a.id === addOnId);
                     return (
-                      <div key={`addon-${index}-${addOn.name}`} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div key={addOnId} className="flex items-center justify-between p-3 border rounded-lg">
                         <div>
                           <p className="font-medium text-gray-900">{addOn.name}</p>
                           <p className="text-sm text-green-600">+R{addOn.price}</p>
@@ -211,17 +211,17 @@ export default function SmoothieDetailPage({ params }: PageProps) {
                         {selected ? (
                           <div className="flex items-center gap-3">
                             <button
-                              onClick={() => updateAddOnQuantity(addOn.name, selected.quantity - 1)}
-                              className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
+                              onClick={() => updateAddOnQuantity(addOnId, selected.quantity - 1)}
+                              className="w-8 h-8 bg-gray-200 rounded-full"
                             >
-                              <FaMinus className="text-sm" />
+                              <FaMinus />
                             </button>
                             <span className="w-8 text-center">{selected.quantity}</span>
                             <button
-                              onClick={() => updateAddOnQuantity(addOn.name, selected.quantity + 1)}
-                              className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
+                              onClick={() => updateAddOnQuantity(addOnId, selected.quantity + 1)}
+                              className="w-8 h-8 bg-gray-200 rounded-full"
                             >
-                              <FaPlus className="text-sm" />
+                              <FaPlus />
                             </button>
                           </div>
                         ) : (
@@ -239,60 +239,32 @@ export default function SmoothieDetailPage({ params }: PageProps) {
               </div>
             )}
 
-            {/* Special Instructions */}
             <div className="mb-6">
               <h3 className="font-semibold text-gray-900 mb-2">Special Instructions</h3>
               <textarea
                 value={specialInstructions}
                 onChange={(e) => setSpecialInstructions(e.target.value)}
-                placeholder="Any special requests or dietary requirements?"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="Any special requests?"
+                className="w-full p-3 border border-gray-300 rounded-lg"
                 rows={2}
               />
             </div>
 
-            {/* Quantity */}
             <div className="mb-6">
               <h3 className="font-semibold text-gray-900 mb-2">Quantity</h3>
               <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
-                >
+                <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-10 h-10 bg-gray-200 rounded-full">
                   <FaMinus />
                 </button>
                 <span className="text-xl font-medium w-12 text-center">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
-                >
+                <button onClick={() => setQuantity(quantity + 1)} className="w-10 h-10 bg-gray-200 rounded-full">
                   <FaPlus />
                 </button>
               </div>
             </div>
 
-            {/* Total and Add to Cart */}
             <div className="border-t pt-6">
-              <div className="mb-4">
-                <div className="flex justify-between items-center text-gray-600 mb-2">
-                  <span>Base Price ({selectedSize?.name || "Select size"}):</span>
-                  <span>R{selectedSize?.price || 0}</span>
-                </div>
-                {selectedAddOns.length > 0 && (
-                  <div className="flex justify-between items-center text-gray-600 mb-2">
-                    <span>Add-ons:</span>
-                    <span>+R{selectedAddOns.reduce((sum, addOn) => sum + (addOn.price * addOn.quantity), 0)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between items-center text-gray-600 pt-2 border-t">
-                  <span className="font-semibold">Subtotal ({quantity} item{quantity > 1 ? 's' : ''}):</span>
-                  <span className="font-semibold">R{calculateTotal().toFixed(2)}</span>
-                </div>
-              </div>
-              <button
-                onClick={handleAddToCart}
-                className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-medium"
-              >
+              <button onClick={handleAddToCart} className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-medium">
                 Add to Cart - R{calculateTotal().toFixed(2)}
               </button>
             </div>

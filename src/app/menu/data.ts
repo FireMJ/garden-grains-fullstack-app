@@ -6,7 +6,7 @@ import { wraps } from '@/data/wrapsData';
 import { salads } from '@/data/saladsData';
 import { pastas } from '@/data/pastasData';
 import { stirfries } from '@/data/stirfryData';
-import { soups } from '@/app/menu/soups/soupData';
+import { soups } from '@/data/soupsData';
 import { smoothies } from '@/data/smoothiesData';
 import { chickenItems } from '@/data/chickenData';
 

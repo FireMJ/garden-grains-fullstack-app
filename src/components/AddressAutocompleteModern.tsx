@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { loadGoogleMaps } from '@/lib/googleMaps';
 import { searchAddressesModern, getPlaceDetailsModern } from '@/lib/placesAutocomplete';
 import { FaMapMarkerAlt, FaSpinner, FaCrosshairs } from 'react-icons/fa';
@@ -16,70 +16,69 @@ interface AddressAutocompleteProps {
     coordinates: { lat: number; lng: number };
   }) => void;
   placeholder?: string;
-  className?: string;
-  initialValue?: string;
 }
 
-export default function AddressAutocompleteModern({
-  onAddressSelect,
-  placeholder = "Enter your Cape Town address",
-  className = "",
-  initialValue = "",
-}: AddressAutocompleteProps) {
-  const [inputValue, setInputValue] = useState(initialValue);
+export default function AddressAutocompleteModern({ onAddressSelect, placeholder }: AddressAutocompleteProps) {
+  const [inputValue, setInputValue] = useState('');
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isLocating, setIsLocating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isReady, setIsReady] = useState(false);
-  
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
   const sessionTokenRef = useRef<any>(null);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout>();
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Initialize Google Maps and session token
+  // Initialize session token
   useEffect(() => {
-    const init = async () => {
-      try {
-        await loadGoogleMaps();
-        // Create a new session token for the new API
+    const initGoogleMaps = async () => {
+      const google = await loadGoogleMaps();
+      if (google && google.maps && !sessionTokenRef.current) {
         sessionTokenRef.current = new google.maps.places.AutocompleteSessionToken();
-        setIsReady(true);
-      } catch (err) {
-        console.error('Failed to load Google Maps:', err);
-        setError('Failed to load address search. Please refresh the page.');
       }
     };
-    
-    init();
+    initGoogleMaps();
   }, []);
 
-  // Search using modern API
-  const searchAddresses = async (query: string) => {
-    if (!query.trim() || !isReady) {
+  // Handle click outside to close suggestions
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Search for addresses
+  const searchAddresses = useCallback(async (query: string) => {
+    if (!query || query.length < 3) {
       setSuggestions([]);
       return;
     }
 
     setIsLoading(true);
-    setError(null);
-
     try {
       const results = await searchAddressesModern(query, sessionTokenRef.current, CAPE_TOWN_COORDS);
       setSuggestions(results);
+      setShowSuggestions(true);
       
-      // Reset session token for next search (good practice for billing)
-      sessionTokenRef.current = new google.maps.places.AutocompleteSessionToken();
-    } catch (err) {
-      console.error('Address search error:', err);
-      setError('Failed to search addresses. Please try again.');
+      // Reset session token for next search
+      const google = await loadGoogleMaps();
+      if (google && google.maps) {
+        sessionTokenRef.current = new google.maps.places.AutocompleteSessionToken();
+      }
+    } catch (error) {
+      console.error('Error searching addresses:', error);
       setSuggestions([]);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  // Debounced handler
-  const handleInputChange = (value: string) => {
+  // Debounced search
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
     setInputValue(value);
     
     if (debounceTimerRef.current) {
@@ -91,170 +90,119 @@ export default function AddressAutocompleteModern({
     }, 300);
   };
 
-  // Handle selection using modern API
+  // Handle suggestion selection
   const handleSelectSuggestion = async (suggestion: any) => {
+    setInputValue(suggestion.description);
+    setShowSuggestions(false);
     setIsLoading(true);
-    setError(null);
     
     try {
-      const placeDetails = await getPlaceDetailsModern(suggestion.placeId);
-      
-      const selectedAddress = {
-        street: placeDetails.street,
-        city: placeDetails.city || "Cape Town",
-        postalCode: placeDetails.postalCode,
-        formattedAddress: placeDetails.formattedAddress,
-        coordinates: placeDetails.location,
-      };
-      
-      setInputValue(selectedAddress.formattedAddress);
-      setSuggestions([]);
-      onAddressSelect(selectedAddress);
-      
-      // Create fresh session token for next search
-      sessionTokenRef.current = new google.maps.places.AutocompleteSessionToken();
-      
-    } catch (err) {
-      console.error('Error fetching place details:', err);
-      setError('Failed to get address details. Please try again.');
+      const placeDetails = await getPlaceDetailsModern(suggestion.id);
+      if (placeDetails) {
+        onAddressSelect({
+          street: placeDetails.street || '',
+          city: placeDetails.city || 'Cape Town',
+          postalCode: placeDetails.postalCode || '',
+          formattedAddress: placeDetails.formattedAddress,
+          coordinates: placeDetails.coordinates,
+        });
+      }
+    } catch (error) {
+      console.error('Error getting place details:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Get current location with reverse geocoding
+  // Get current location
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
-      setError("Geolocation is not supported by your browser");
+      alert('Geolocation is not supported by your browser');
       return;
     }
-    
-    setIsLocating(true);
-    setError(null);
+
+    setIsGettingLocation(true);
     
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         try {
-          const { lat, lng } = position.coords;
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
           
-          // Use modern Place class for reverse geocoding
-          const { Place } = await google.maps.importLibrary("places") as any;
-          
-          const place = new Place({
-            location: { lat, lng },
-            requestedLanguage: "en",
-          });
-          
-          await place.fetchFields({
-            fields: ["formattedAddress", "addressComponents"],
-          });
-          
-          let street = "";
-          let city = "";
-          let postalCode = "";
-          
-          if (place.addressComponents) {
-            for (const component of place.addressComponents) {
-              const types = component.types;
-              if (types.includes("route") || types.includes("street_address")) {
-                street = component.longText;
-              }
-              if (types.includes("locality")) {
-                city = component.longText;
-              }
-              if (types.includes("postal_code")) {
-                postalCode = component.longText;
-              }
+          const google = await loadGoogleMaps();
+          if (google && google.maps) {
+            const { Place } = await google.maps.importLibrary('places') as any;
+            const place = new Place({ id: null, location: new google.maps.LatLng(lat, lng) });
+            await place.fetchFields({ fields: ['displayName', 'formattedAddress', 'location', 'addressComponents'] });
+            
+            if (place.formattedAddress) {
+              setInputValue(place.formattedAddress);
+              onAddressSelect({
+                street: place.formattedAddress,
+                city: 'Cape Town',
+                postalCode: '',
+                formattedAddress: place.formattedAddress,
+                coordinates: { lat, lng },
+              });
             }
           }
-          
-          onAddressSelect({
-            street: street || "Current Location",
-            city: city || "Cape Town",
-            postalCode: postalCode || "",
-            formattedAddress: place.formattedAddress || "Current Location",
-            coordinates: { lat, lng },
-          });
-          
-          setInputValue(place.formattedAddress || "Current Location");
-          setSuggestions([]);
-        } catch (err) {
-          console.error('Reverse geocoding error:', err);
-          setError("Could not get address for your location");
+        } catch (error) {
+          console.error('Error getting location details:', error);
+          alert('Could not get address for your location');
         } finally {
-          setIsLocating(false);
+          setIsGettingLocation(false);
         }
       },
       (error) => {
-        let errorMessage = "Could not get your location. ";
-        if (error.code === error.PERMISSION_DENIED) {
-          errorMessage += "Please enable location access.";
-        }
-        setError(errorMessage);
-        setIsLocating(false);
+        console.error('Geolocation error:', error);
+        alert('Unable to get your location. Please check your permissions.');
+        setIsGettingLocation(false);
       }
     );
   };
 
-  // Cleanup
-  useEffect(() => {
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, []);
-
   return (
-    <div className={`relative ${className}`}>
-      <div className="relative">
-        <input
-          type="text"
-          value={inputValue}
-          onChange={(e) => handleInputChange(e.target.value)}
-          placeholder={placeholder}
-          className="w-full px-4 py-3 pr-24 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-          disabled={!isReady}
-        />
-        
-        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
-          <button
-            onClick={getCurrentLocation}
-            disabled={isLocating || !isReady}
-            className="p-2 text-gray-500 hover:text-green-600 disabled:opacity-50"
-            title="Use my current location"
-          >
-            {isLocating ? <FaSpinner className="animate-spin" /> : <FaCrosshairs />}
-          </button>
-          
-          {isLoading && <FaSpinner className="animate-spin text-gray-400" />}
+    <div ref={wrapperRef} className="relative w-full">
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <input
+            type="text"
+            value={inputValue}
+            onChange={handleInputChange}
+            onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+            placeholder={placeholder || "Enter your delivery address"}
+            className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          />
+          {isLoading && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              <FaSpinner className="animate-spin text-gray-400" />
+            </div>
+          )}
         </div>
+        <button
+          type="button"
+          onClick={getCurrentLocation}
+          disabled={isGettingLocation}
+          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition disabled:opacity-50"
+          title="Use current location"
+        >
+          <FaCrosshairs className={isGettingLocation ? "animate-spin" : ""} />
+        </button>
       </div>
       
-      {error && (
-        <div className="mt-2 text-sm text-red-600">{error}</div>
-      )}
-      
-      {suggestions.length > 0 && (
-        <ul className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+      {showSuggestions && suggestions.length > 0 && (
+        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
           {suggestions.map((suggestion) => (
-            <li
-              key={suggestion.placeId}
+            <button
+              key={suggestion.id}
               onClick={() => handleSelectSuggestion(suggestion)}
-              className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0 flex items-start gap-3"
+              className="w-full text-left px-4 py-2 hover:bg-gray-50 transition text-sm"
             >
-              <FaMapMarkerAlt className="text-gray-400 mt-1 flex-shrink-0" />
-              <div>
-                <div className="font-medium text-gray-800">{suggestion.mainText}</div>
-                <div className="text-sm text-gray-500">{suggestion.secondaryText}</div>
-              </div>
-            </li>
+              <div className="font-medium">{suggestion.mainText}</div>
+              <div className="text-xs text-gray-500">{suggestion.secondaryText}</div>
+            </button>
           ))}
-        </ul>
-      )}
-      
-      {!isReady && (
-        <div className="mt-2 text-sm text-gray-500">Loading address search...</div>
+        </div>
       )}
     </div>
   );

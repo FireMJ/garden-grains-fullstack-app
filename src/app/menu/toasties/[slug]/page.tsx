@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { toasties, friesUpsellOptions, juiceUpsellOptions, toastieAddOns } from '@/data/toastiesData';
 import { useCart } from '@/context/CartContext';
+const generateAddOnId = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, "-");
 import { Minus, Plus, ShoppingCart, Star, Check, ArrowLeft, Coffee, Flame } from 'lucide-react';
 import { FaFire, FaTruck, FaCocktail } from 'react-icons/fa';
 import { loadPopularItems, isItemPopular } from '@/services/popularItemsService';

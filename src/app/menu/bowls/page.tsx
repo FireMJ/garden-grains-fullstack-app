@@ -70,7 +70,7 @@ export default function BowlsPage() {
                 <h3 className="font-bold text-gray-900 text-lg mb-1 line-clamp-1">{bowl.name}</h3>
                 <p className="text-gray-500 text-sm mb-3 line-clamp-2">{bowl.description}</p>
                 <div className="flex justify-between items-center mt-3">
-                  <div><span className="text-2xl font-bold text-green-600">R{bowl.price}</span></div>
+                  <div><span className="text-2xl font-bold text-green-600">R{bowl.basePrice}</span></div>
                   <div className="flex items-center gap-1 text-green-600 group-hover:gap-2 transition-all duration-300">
                     <span className="text-sm font-medium">View Details</span>
                     <FaChevronRight className="w-4 h-4 group-hover:translate-x-1 transition" />

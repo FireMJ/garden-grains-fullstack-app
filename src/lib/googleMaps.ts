@@ -282,3 +282,5 @@ export const isDeliveryAvailable = async (
     };
   }
 };
+
+// Add this function to check if delivery is available

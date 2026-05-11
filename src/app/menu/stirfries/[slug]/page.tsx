@@ -5,39 +5,17 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import Image from "next/image";
 import Link from "next/link";
-import { FaArrowLeft, FaPlus, FaMinus, FaTruck, FaCocktail } from "react-icons/fa";
 import { stirfries, stirFryBaseOptions, stirFryAddOns, friesUpsellOptions, juiceUpsellOptions } from "@/data/stirfryData";
+import { FaArrowLeft, FaPlus, FaMinus, FaTruck, FaCocktail } from "react-icons/fa";
 
-interface StirFryItem {
-  id: string;
-  slug: string;
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-  tags?: string[];
-  popular?: boolean;
-  baseOptions: any[];
-}
+// Helper function to generate add-on ID
+const generateAddOnId = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, '-');
 
-interface DipOption {
+interface AddOnWithId {
   id: string;
   name: string;
   price: number;
-}
-
-interface FriesUpsellItem {
-  id: string;
-  name: string;
-  price: number;
-  dipOptions?: DipOption[];
-}
-
-interface SelectedFriesWithDip {
-  id: string;
-  name: string;
-  price: number;
-  selectedDip?: DipOption;
+  quantity: number;
 }
 
 interface PageProps {
@@ -47,16 +25,15 @@ interface PageProps {
 export default function StirFryDetailPage({ params }: PageProps) {
   const router = useRouter();
   const { addToCart } = useCart();
-  const [stirfry, setStirfry] = useState<StirFryItem | null>(null);
+  const [stirfry, setStirfry] = useState<any>(null);
   const [selectedBase, setSelectedBase] = useState<string>("");
-  const [selectedAddOns, setSelectedAddOns] = useState<{ name: string; price: number; quantity: number }[]>([]);
+  const [selectedAddOns, setSelectedAddOns] = useState<AddOnWithId[]>([]);
   const [specialInstructions, setSpecialInstructions] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [slug, setSlug] = useState<string>("");
   const [mounted, setMounted] = useState(false);
-  
-  // Upsell states
-  const [selectedFries, setSelectedFries] = useState<SelectedFriesWithDip | null>(null);
+
+  const [selectedFries, setSelectedFries] = useState<any>(null);
   const [selectedJuice, setSelectedJuice] = useState<any>(null);
   const [selectedJuiceSize, setSelectedJuiceSize] = useState<string>("250ml");
   const [showUpsells, setShowUpsells] = useState(false);
@@ -65,7 +42,6 @@ export default function StirFryDetailPage({ params }: PageProps) {
     setMounted(true);
   }, []);
 
-  // Unwrap params
   useEffect(() => {
     const unwrapParams = async () => {
       const unwrapped = await params;
@@ -74,10 +50,8 @@ export default function StirFryDetailPage({ params }: PageProps) {
     unwrapParams();
   }, [params]);
 
-  // Load stirfry data
   useEffect(() => {
     if (!slug) return;
-    
     const item = stirfries?.find((s: any) => s.slug === slug);
     if (item) {
       setStirfry(item);
@@ -88,61 +62,42 @@ export default function StirFryDetailPage({ params }: PageProps) {
   }, [slug]);
 
   const handleAddOnToggle = (addOn: { name: string; price: number }) => {
+    const addOnId = generateAddOnId(addOn.name);
     setSelectedAddOns(prev => {
-      const existing = prev.find(a => a.name === addOn.name);
+      const existing = prev.find(a => a.id === addOnId);
       if (existing) {
-        return prev.filter(a => a.name !== addOn.name);
+        return prev.filter(a => a.id !== addOnId);
       } else {
-        return [...prev, { ...addOn, quantity: 1 }];
+        return [...prev, { id: addOnId, ...addOn, quantity: 1 }];
       }
     });
   };
 
-  const updateAddOnQuantity = (addOnName: string, newQuantity: number) => {
+  const updateAddOnQuantity = (addOnId: string, newQuantity: number) => {
     if (newQuantity <= 0) {
-      setSelectedAddOns(prev => prev.filter(a => a.name !== addOnName));
+      setSelectedAddOns(prev => prev.filter(a => a.id !== addOnId));
     } else {
       setSelectedAddOns(prev =>
         prev.map(a =>
-          a.name === addOnName ? { ...a, quantity: newQuantity } : a
+          a.id === addOnId ? { ...a, quantity: newQuantity } : a
         )
       );
     }
   };
 
-  // Handle fries selection with dip
-  const handleFriesSelect = (fries: FriesUpsellItem) => {
+  const handleFriesSelect = (fries: any) => {
     if (selectedFries?.id === fries.id) {
       setSelectedFries(null);
     } else {
-      setSelectedFries({
-        id: fries.id,
-        name: fries.name,
-        price: fries.price,
-        selectedDip: undefined,
-      });
+      setSelectedFries(fries);
     }
   };
 
-  const handleDipSelect = (dip: DipOption) => {
-    if (selectedFries) {
-      setSelectedFries({
-        ...selectedFries,
-        selectedDip: selectedFries.selectedDip?.id === dip.id ? undefined : dip,
-      });
-    }
-  };
-
-  // Handle juice selection
   const handleJuiceSelect = (juice: any, size: string) => {
     if (selectedJuice?.name === juice.name && selectedJuice?.size === size) {
       setSelectedJuice(null);
     } else {
-      setSelectedJuice({
-        size: size,
-        name: juice.name,
-        price: juice.price
-      });
+      setSelectedJuice({ ...juice, size });
     }
   };
 
@@ -154,7 +109,6 @@ export default function StirFryDetailPage({ params }: PageProps) {
   const calculateTotal = () => {
     let total = stirfry?.price || 0;
     
-    // Add base price if selected and not "No Base"
     if (selectedBase && selectedBase !== "No Base") {
       const baseOption = stirFryBaseOptions.find(b => b.name === selectedBase);
       if (baseOption && baseOption.price > 0) {
@@ -168,9 +122,6 @@ export default function StirFryDetailPage({ params }: PageProps) {
     
     if (selectedFries) {
       total += selectedFries.price;
-      if (selectedFries.selectedDip && selectedFries.selectedDip.price > 0) {
-        total += selectedFries.selectedDip.price;
-      }
     }
     
     if (selectedJuice) {
@@ -189,9 +140,6 @@ export default function StirFryDetailPage({ params }: PageProps) {
     }
     if (selectedFries) {
       itemName += ` + ${selectedFries.name}`;
-      if (selectedFries.selectedDip) {
-        itemName += ` (${selectedFries.selectedDip.name})`;
-      }
     }
     if (selectedJuice) {
       itemName += ` + ${selectedJuice.name} (${selectedJuice.size})`;
@@ -206,13 +154,16 @@ export default function StirFryDetailPage({ params }: PageProps) {
       category: "stirfries",
       description: stirfry.description,
       base: selectedBase,
-      addOns: selectedAddOns,
+      addOns: selectedAddOns.map(a => ({ 
+        id: a.id, 
+        name: a.name, 
+        price: a.price, 
+        quantity: a.quantity 
+      })),
       specialInstructions: specialInstructions,
       fries: selectedFries ? {
         name: selectedFries.name,
         price: selectedFries.price,
-        dip: selectedFries.selectedDip?.name,
-        dipPrice: selectedFries.selectedDip?.price || 0,
       } : null,
       juice: selectedJuice ? {
         name: selectedJuice.name,
@@ -221,7 +172,7 @@ export default function StirFryDetailPage({ params }: PageProps) {
       } : null,
     };
     
-    console.log("Adding to cart:", cartItem);
+    console.log("Adding stirfry to cart:", cartItem);
     addToCart(cartItem);
     router.push("/cart");
   };
@@ -250,7 +201,6 @@ export default function StirFryDetailPage({ params }: PageProps) {
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Column - Image */}
           <div>
             <div className="relative h-96 rounded-2xl overflow-hidden shadow-lg">
               <Image
@@ -262,17 +212,15 @@ export default function StirFryDetailPage({ params }: PageProps) {
             </div>
           </div>
 
-          {/* Right Column - Details */}
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">{stirfry.name}</h1>
             <p className="text-gray-600 mb-4">{stirfry.description}</p>
             <div className="text-2xl font-bold text-green-600 mb-6">R{stirfry.price}</div>
 
-            {/* Tags */}
             {stirfry.tags && stirfry.tags.length > 0 && (
               <div className="mb-6">
                 <div className="flex flex-wrap gap-2">
-                  {stirfry.tags.map((tag, idx) => (
+                  {stirfry.tags.map((tag: string, idx: number) => (
                     <span key={idx} className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full">
                       {tag}
                     </span>
@@ -281,7 +229,6 @@ export default function StirFryDetailPage({ params }: PageProps) {
               </div>
             )}
 
-            {/* Base Selection */}
             {stirFryBaseOptions && stirFryBaseOptions.length > 0 && (
               <div className="mb-6">
                 <h3 className="font-semibold text-gray-900 mb-2">Choose Your Base (Optional)</h3>
@@ -303,15 +250,15 @@ export default function StirFryDetailPage({ params }: PageProps) {
               </div>
             )}
 
-            {/* Add-ons */}
             {stirFryAddOns && stirFryAddOns.length > 0 && (
               <div className="mb-6">
                 <h3 className="font-semibold text-gray-900 mb-2">Add-ons (Optional)</h3>
                 <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {stirFryAddOns.map((addOn, index) => {
-                    const selected = selectedAddOns.find(a => a.name === addOn.name);
+                  {stirFryAddOns.map((addOn) => {
+                    const addOnId = generateAddOnId(addOn.name);
+                    const selected = selectedAddOns.find(a => a.id === addOnId);
                     return (
-                      <div key={`addon-${index}-${addOn.name}`} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div key={addOnId} className="flex items-center justify-between p-3 border rounded-lg">
                         <div>
                           <p className="font-medium text-gray-900">{addOn.name}</p>
                           <p className="text-sm text-green-600">+R{addOn.price}</p>
@@ -319,17 +266,17 @@ export default function StirFryDetailPage({ params }: PageProps) {
                         {selected ? (
                           <div className="flex items-center gap-3">
                             <button
-                              onClick={() => updateAddOnQuantity(addOn.name, selected.quantity - 1)}
-                              className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
+                              onClick={() => updateAddOnQuantity(addOnId, selected.quantity - 1)}
+                              className="w-8 h-8 bg-gray-200 rounded-full"
                             >
-                              <FaMinus className="text-sm" />
+                              <FaMinus />
                             </button>
                             <span className="w-8 text-center">{selected.quantity}</span>
                             <button
-                              onClick={() => updateAddOnQuantity(addOn.name, selected.quantity + 1)}
-                              className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
+                              onClick={() => updateAddOnQuantity(addOnId, selected.quantity + 1)}
+                              className="w-8 h-8 bg-gray-200 rounded-full"
                             >
-                              <FaPlus className="text-sm" />
+                              <FaPlus />
                             </button>
                           </div>
                         ) : (
@@ -347,7 +294,6 @@ export default function StirFryDetailPage({ params }: PageProps) {
               </div>
             )}
 
-            {/* Upsells Section - Fries & Juice */}
             <div className="mb-6">
               <button
                 onClick={() => setShowUpsells(!showUpsells)}
@@ -359,14 +305,13 @@ export default function StirFryDetailPage({ params }: PageProps) {
               
               {showUpsells && (
                 <div className="space-y-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
-                  {/* Fries Selection with Dip Options */}
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
                       <FaTruck className="text-amber-600" />
                       Add Fries
                     </h3>
                     <div className="flex flex-wrap gap-2 mb-3">
-                      {friesUpsellOptions.map((fries: FriesUpsellItem) => (
+                      {friesUpsellOptions.map((fries) => (
                         <button
                           key={fries.id}
                           onClick={() => handleFriesSelect(fries)}
@@ -380,53 +325,19 @@ export default function StirFryDetailPage({ params }: PageProps) {
                         </button>
                       ))}
                     </div>
-                    
-                    {/* Dip Options - only show if fries are selected */}
-                    {selectedFries && friesUpsellOptions.find(f => f.id === selectedFries.id)?.dipOptions && (
-                      <div className="mt-3 pl-4 border-l-2 border-amber-300">
-                        <p className="text-sm font-medium text-gray-700 mb-2">Choose a dip (optional):</p>
-                        <div className="flex flex-wrap gap-2">
-                          {friesUpsellOptions
-                            .find(f => f.id === selectedFries.id)
-                            ?.dipOptions?.map((dip: DipOption) => (
-                              <button
-                                key={dip.id}
-                                onClick={() => handleDipSelect(dip)}
-                                className={`px-3 py-1 rounded-full text-xs transition ${
-                                  selectedFries.selectedDip?.id === dip.id
-                                    ? 'bg-green-600 text-white'
-                                    : 'bg-white border border-gray-300 text-gray-700 hover:border-green-400'
-                                }`}
-                              >
-                                {dip.name} {dip.price > 0 && `+R${dip.price}`}
-                              </button>
-                            ))}
-                        </div>
-                        {selectedFries.selectedDip && (
-                          <p className="text-xs text-green-600 mt-2">
-                            ✓ {selectedFries.selectedDip.name} added
-                          </p>
-                        )}
-                      </div>
-                    )}
                   </div>
 
-                  {/* Juice Selection */}
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
                       <FaCocktail className="text-amber-600" />
                       Add Juice
                     </h3>
                     
-                    {/* Juice Size Selector */}
                     <div className="flex flex-wrap gap-2 mb-3">
                       {juiceUpsellOptions.map((sizeGroup) => (
                         <button
                           key={sizeGroup.size}
-                          onClick={() => {
-                            setSelectedJuiceSize(sizeGroup.size);
-                            setSelectedJuice(null);
-                          }}
+                          onClick={() => setSelectedJuiceSize(sizeGroup.size)}
                           className={`px-3 py-1 rounded-lg text-sm transition ${
                             selectedJuiceSize === sizeGroup.size
                               ? 'bg-green-600 text-white'
@@ -438,7 +349,6 @@ export default function StirFryDetailPage({ params }: PageProps) {
                       ))}
                     </div>
                     
-                    {/* Juice Options for Selected Size */}
                     <div className="flex flex-wrap gap-2">
                       {getJuiceOptionsForSize().map((juice) => (
                         <button
@@ -454,96 +364,37 @@ export default function StirFryDetailPage({ params }: PageProps) {
                         </button>
                       ))}
                     </div>
-                    {selectedJuice && (
-                      <p className="text-xs text-green-600 mt-2">
-                        ✓ {selectedJuice.name} ({selectedJuice.size}) added
-                      </p>
-                    )}
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Special Instructions */}
             <div className="mb-6">
               <h3 className="font-semibold text-gray-900 mb-2">Special Instructions</h3>
               <textarea
                 value={specialInstructions}
                 onChange={(e) => setSpecialInstructions(e.target.value)}
-                placeholder="Any special requests or dietary requirements?"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="Any special requests?"
+                className="w-full p-3 border border-gray-300 rounded-lg"
                 rows={2}
               />
             </div>
 
-            {/* Quantity */}
             <div className="mb-6">
               <h3 className="font-semibold text-gray-900 mb-2">Quantity</h3>
               <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
-                >
+                <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-10 h-10 bg-gray-200 rounded-full">
                   <FaMinus />
                 </button>
                 <span className="text-xl font-medium w-12 text-center">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
-                >
+                <button onClick={() => setQuantity(quantity + 1)} className="w-10 h-10 bg-gray-200 rounded-full">
                   <FaPlus />
                 </button>
               </div>
             </div>
 
-            {/* Total and Add to Cart */}
             <div className="border-t pt-6">
-              <div className="mb-4 space-y-1">
-                <div className="flex justify-between items-center text-gray-600">
-                  <span>Base Price:</span>
-                  <span>R{stirfry.price}</span>
-                </div>
-                {selectedBase && selectedBase !== "No Base" && (
-                  <div className="flex justify-between items-center text-gray-600">
-                    <span>Base ({selectedBase}):</span>
-                    <span>+R{stirFryBaseOptions.find(b => b.name === selectedBase)?.price || 0}</span>
-                  </div>
-                )}
-                {selectedAddOns.length > 0 && (
-                  <div className="flex justify-between items-center text-gray-600">
-                    <span>Add-ons:</span>
-                    <span>+R{selectedAddOns.reduce((sum, addOn) => sum + (addOn.price * addOn.quantity), 0)}</span>
-                  </div>
-                )}
-                {selectedFries && (
-                  <>
-                    <div className="flex justify-between items-center text-gray-600">
-                      <span>{selectedFries.name}:</span>
-                      <span>+R{selectedFries.price}</span>
-                    </div>
-                    {selectedFries.selectedDip && selectedFries.selectedDip.price > 0 && (
-                      <div className="flex justify-between items-center text-gray-600 pl-4 text-sm">
-                        <span>└ {selectedFries.selectedDip.name}:</span>
-                        <span>+R{selectedFries.selectedDip.price}</span>
-                      </div>
-                    )}
-                  </>
-                )}
-                {selectedJuice && (
-                  <div className="flex justify-between items-center text-gray-600">
-                    <span>{selectedJuice.name} ({selectedJuice.size}):</span>
-                    <span>+R{selectedJuice.price}</span>
-                  </div>
-                )}
-                <div className="flex justify-between items-center text-gray-900 font-semibold pt-2 border-t mt-2">
-                  <span>Total ({quantity} item{quantity > 1 ? 's' : ''}):</span>
-                  <span className="text-green-600 text-xl">R{calculateTotal().toFixed(2)}</span>
-                </div>
-              </div>
-              <button
-                onClick={handleAddToCart}
-                className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-medium"
-              >
+              <button onClick={handleAddToCart} className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-medium">
                 Add to Cart - R{calculateTotal().toFixed(2)}
               </button>
             </div>

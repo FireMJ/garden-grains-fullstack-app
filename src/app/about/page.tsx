@@ -27,6 +27,15 @@ const FaOliveBranchIcon = (props: any) => (
   </svg>
 );
 
+// Helper function to convert Firestore Timestamp to Date
+const toDate = (value: any): Date => {
+  if (!value) return new Date();
+  if (value instanceof Date) return value;
+  if (value.toDate && typeof value.toDate === 'function') return value.toDate();
+  if (value.seconds) return new Date(value.seconds * 1000);
+  return new Date(value);
+};
+
 type SortOption = 'newest' | 'oldest' | 'mostLiked' | 'mostCommented';
 
 export default function AboutPage() {
@@ -71,10 +80,10 @@ export default function AboutPage() {
     }
     switch (sortBy) {
       case 'newest':
-        result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        result.sort((a, b) => toDate(b.date).getTime() - toDate(a.date).getTime());
         break;
       case 'oldest':
-        result.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        result.sort((a, b) => toDate(a.date).getTime() - toDate(b.date).getTime());
         break;
       case 'mostLiked':
         result.sort((a, b) => b.likes - a.likes);
@@ -127,10 +136,16 @@ export default function AboutPage() {
   const handleAddComment = async () => {
     if (!newComment.trim() || !selectedMoment) return;
     await momentService.addComment(selectedMoment.id, {
+      momentId: selectedMoment.id,
       author: "Guest",
       content: newComment
     });
     setNewComment("");
+  };
+
+  const formatDate = (date: any): string => {
+    const d = toDate(date);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   const stats = [
@@ -142,11 +157,16 @@ export default function AboutPage() {
 
   return (
     <main className="min-h-screen bg-white">
-      {/* Hero Section */}
       <section className="relative h-[60vh] min-h-[500px] overflow-hidden">
         <div className="absolute inset-0">
-          <Image src="/images/banners/rose_garden.jpeg" alt="Rose Garden" fill sizes="(max-width: 1200px) 100vw, 85vw" className="object-cover" priority />
-            sizes="(max-width: 768px) 100vw, 50vw"
+          <Image 
+            src="/images/banners/rose_garden.jpeg" 
+            alt="Rose Garden" 
+            fill 
+            sizes="(max-width: 1200px) 100vw, 85vw"
+            className="object-cover" 
+            priority 
+          />
           <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-black/30" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
         </div>
@@ -164,7 +184,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Story Section */}
       <section className="py-16 md:py-24 bg-white">
         <div className="container mx-auto px-4 max-w-4xl">
           <div className="text-center mb-12">
@@ -185,7 +204,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Stats Section */}
       <section className="py-16 bg-gradient-to-r from-green-50 to-emerald-50">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
@@ -203,7 +221,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Live Feed Section */}
       <section className="py-16 bg-gray-50" id="moments">
         <div className="container mx-auto px-4 max-w-5xl">
           <div className="text-center mb-12">
@@ -215,15 +232,14 @@ export default function AboutPage() {
             <p className="text-gray-600 max-w-2xl mx-auto">Real-time moments shared by our community. Share yours below!</p>
           </div>
 
-          {/* Share Form */}
           <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
             <h3 className="text-xl font-semibold text-gray-900 mb-4">Share Your Constantia Moment</h3>
             <div className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
-                <input type="text" placeholder="Your Name" value={authorName} onChange={(e) => setAuthorName(e.target.value)} className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500" />
-                <input type="text" placeholder="Instagram Handle (optional)" value={authorHandle} onChange={(e) => setAuthorHandle(e.target.value)} className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500" />
+                <input type="text" placeholder="Your Name" value={authorName} onChange={(e) => setAuthorName(e.target.value)} className="px-4 py-2 border rounded-lg" />
+                <input type="text" placeholder="Instagram Handle" value={authorHandle} onChange={(e) => setAuthorHandle(e.target.value)} className="px-4 py-2 border rounded-lg" />
               </div>
-              <textarea placeholder="Share your #ConstantiaMoment..." value={newMomentContent} onChange={(e) => setNewMomentContent(e.target.value)} rows={3} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500" />
+              <textarea placeholder="Share your #ConstantiaMoment..." value={newMomentContent} onChange={(e) => setNewMomentContent(e.target.value)} rows={3} className="w-full px-4 py-2 border rounded-lg" />
               <div className="flex items-center gap-4 flex-wrap">
                 <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg transition flex items-center gap-2">
                   <FaCamera /> <span>Add Photo</span>
@@ -245,7 +261,6 @@ export default function AboutPage() {
             </div>
           </div>
 
-          {/* Controls */}
           <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
             <div className="flex gap-2">
               <div className="relative">
@@ -279,7 +294,6 @@ export default function AboutPage() {
             <p className="text-sm text-gray-500">{filteredMoments.length} live moments</p>
           </div>
 
-          {/* Moments Feed */}
           {isLoading ? (
             <div className="text-center py-12"><FaSpinner className="animate-spin text-4xl text-green-600 mx-auto mb-4" /><p>Loading moments...</p></div>
           ) : (
@@ -295,7 +309,10 @@ export default function AboutPage() {
                           <span className="text-xs text-gray-400">{moment.authorHandle}</span>
                           <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{moment.category}</span>
                         </div>
-                        <div className="flex items-center gap-2 mt-1"><FaRegClock className="text-xs text-gray-400" /><span className="text-xs text-gray-400">{moment.date instanceof Date ? moment.date.toLocaleDateString() : 'Just now'}</span></div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <FaRegClock className="text-xs text-gray-400" />
+                          <span className="text-xs text-gray-400">{formatDate(moment.date)}</span>
+                        </div>
                       </div>
                       <button className="text-gray-400 hover:text-green-600"><FaBookmark /></button>
                     </div>
@@ -319,7 +336,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Comments Modal */}
       {showComments && selectedMoment && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowComments(false)}>
           <div className="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
@@ -340,7 +356,6 @@ export default function AboutPage() {
         </div>
       )}
 
-      {/* Footer Sections */}
       <section className="py-16 bg-gradient-to-r from-pink-50 to-rose-50">
         <div className="container mx-auto px-4 text-center">
           <FaInstagram className="w-12 h-12 text-pink-600 mx-auto mb-4" />
@@ -369,8 +384,7 @@ export default function AboutPage() {
               </div>
             </div>
             <div className="h-80 rounded-xl overflow-hidden shadow-lg relative">
-              <Image src="/images/banners/rose_garden.jpeg" alt="Rose Garden" fill sizes="(max-width: 1200px) 100vw, 85vw" className="object-cover" />
-            sizes="(max-width: 768px) 100vw, 50vw"
+              <Image src="/images/banners/rose_garden.jpeg" alt="Rose Garden" fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" />
             </div>
           </div>
         </div>

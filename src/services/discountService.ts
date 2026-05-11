@@ -1,107 +1,116 @@
-interface DiscountValidation {
+// Discount Service for managing promotions and discounts
+import { db } from '@/lib/firebase';
+import { collection, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+
+export interface DiscountResult {
   valid: boolean;
-  percentage?: number;
-  amount?: number;
+  percentage: number;
+  amount: number;
   message?: string;
+  code?: string;
 }
 
-class DiscountService {
-  private readonly DISCOUNT_KEY = 'garden_grains_discount_used';
-  private readonly DISCOUNT_EXPIRY = 365 * 24 * 60 * 60 * 1000; // 1 year
+export class DiscountService {
+  private readonly NEW_USER_DISCOUNT_KEY = 'newUserDiscountClaimed';
+  private readonly VALID_DISCOUNTS: Record<string, number> = {
+    'WELCOME20': 20,
+    'GRAINS10': 10,
+    'ROSE15': 15,
+  };
 
-  // Check if user has already used a discount
-  hasUsedDiscount(email?: string): boolean {
+  // Check if user has claimed new user discount
+  hasNewUserClaimedDiscount(): boolean {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem(this.NEW_USER_DISCOUNT_KEY) === 'true';
+  }
+
+  // Claim new user discount
+  async claimNewUserDiscount(): Promise<boolean> {
     if (typeof window === 'undefined') return false;
     
-    const usedDiscounts = JSON.parse(localStorage.getItem(this.DISCOUNT_KEY) || '[]');
-    const deviceId = this.getDeviceId();
-    
-    // Check by email
-    if (email && usedDiscounts.some((d: any) => d.email === email)) {
-      return true;
+    const hasClaimed = localStorage.getItem(this.NEW_USER_DISCOUNT_KEY) === 'true';
+    if (hasClaimed) {
+      return false;
     }
     
-    // Check by device
-    if (usedDiscounts.some((d: any) => d.deviceId === deviceId)) {
-      return true;
-    }
-    
-    return false;
-  }
-
-  // Mark discount as used
-  markDiscountUsed(email?: string): void {
-    if (typeof window === 'undefined') return;
-    
-    const usedDiscounts = JSON.parse(localStorage.getItem(this.DISCOUNT_KEY) || '[]');
-    usedDiscounts.push({
-      email: email,
-      deviceId: this.getDeviceId(),
-      timestamp: Date.now(),
-      expiry: Date.now() + this.DISCOUNT_EXPIRY
-    });
-    localStorage.setItem(this.DISCOUNT_KEY, JSON.stringify(usedDiscounts));
-  }
-
-  // Get device fingerprint
-  private getDeviceId(): string {
-    let deviceId = localStorage.getItem('device_id');
-    if (!deviceId) {
-      deviceId = `${navigator.userAgent}_${screen.width}x${screen.height}_${new Date().getTimezoneOffset()}`;
-      deviceId = btoa(deviceId).substring(0, 32);
-      localStorage.setItem('device_id', deviceId);
-    }
-    return deviceId;
+    localStorage.setItem(this.NEW_USER_DISCOUNT_KEY, 'true');
+    localStorage.setItem('newUserDiscountApplied', 'true');
+    return true;
   }
 
   // Validate discount code
-  async validateDiscount(code: string, totalPrice: number, email?: string): Promise<DiscountValidation> {
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API call
-    
+  async validateDiscount(code: string, orderTotal: number): Promise<DiscountResult> {
+    // Normalize code to uppercase
     const normalizedCode = code.toUpperCase().trim();
     
-    // Check for new user discount (WELCOME20)
+    // Check if discount exists
+    const discountPercentage = this.VALID_DISCOUNTS[normalizedCode];
+    
+    if (!discountPercentage) {
+      return {
+        valid: false,
+        percentage: 0,
+        amount: 0,
+        message: 'Invalid discount code',
+        code: normalizedCode
+      };
+    }
+    
+    // Check for new user discount
     if (normalizedCode === 'WELCOME20') {
-      // Prevent abuse
-      if (this.hasUsedDiscount(email)) {
+      const hasClaimed = this.hasNewUserClaimedDiscount();
+      if (hasClaimed) {
         return {
           valid: false,
-          message: 'This discount has already been used. New customers only!'
+          percentage: 0,
+          amount: 0,
+          message: 'Discount already claimed',
+          code: normalizedCode
         };
       }
-      
-      const percentage = 20;
-      const amount = (totalPrice * percentage) / 100;
-      
-      return {
-        valid: true,
-        percentage,
-        amount,
-        message: '20% off for new customers!'
-      };
     }
     
-    // Other discount codes
-    const discounts: Record<string, number> = {
-      'SAVE10': 10,
-      'GARDEN15': 15,
-      'WELCOME20': 20,
-      'FIRSTORDER': 15,
-    };
-    
-    const percentage = discounts[normalizedCode];
-    if (percentage) {
-      return {
-        valid: true,
-        percentage,
-        amount: (totalPrice * percentage) / 100
-      };
-    }
+    const discountAmount = (orderTotal * discountPercentage) / 100;
     
     return {
-      valid: false,
-      message: 'Invalid or expired discount code'
+      valid: true,
+      percentage: discountPercentage,
+      amount: discountAmount,
+      message: 'Discount applied successfully!',
+      code: normalizedCode
     };
+  }
+
+  // Apply discount to order total (legacy method)
+  applyDiscount(total: number, discountPercentage: number = 20): number {
+    const discount = (total * discountPercentage) / 100;
+    return total - discount;
+  }
+
+  // Get discount amount (legacy method)
+  getDiscountAmount(total: number, discountPercentage: number = 20): number {
+    return (total * discountPercentage) / 100;
+  }
+
+  // Check if discount is applicable
+  isDiscountApplicable(userId: string, orderTotal: number): boolean {
+    return orderTotal > 0 && !this.hasNewUserClaimedDiscount();
+  }
+
+  // Save discount usage to Firestore
+  async saveDiscountUsage(userId: string, discountAmount: number, orderId: string): Promise<void> {
+    try {
+      const discountRef = doc(collection(db, 'discountUsage'), orderId);
+      await setDoc(discountRef, {
+        userId,
+        discountAmount,
+        orderId,
+        appliedAt: new Date().toISOString(),
+        discountType: 'NEW_USER_20'
+      });
+    } catch (error) {
+      console.error('Error saving discount usage:', error);
+    }
   }
 }
 

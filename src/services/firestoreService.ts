@@ -1,157 +1,165 @@
-import { db, collections, firestoreUtils } from '@/lib/firebase';
-import { where, orderBy, limit } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { 
+  collection, 
+  doc, 
+  getDoc, 
+  getDocs, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  query, 
+  where, 
+  orderBy, 
+  limit,
+  onSnapshot,
+  Timestamp,
+  serverTimestamp,
+  Unsubscribe
+} from 'firebase/firestore';
 
 // Order Service
 export const orderService = {
-  // Create a new order
-  createOrder: async (orderData: any) => {
-    const order = {
+  async createOrder(orderData: any) {
+    const ordersRef = collection(db, 'orders');
+    const docRef = await addDoc(ordersRef, {
       ...orderData,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    return await firestoreUtils.createDoc(collections.orders, order);
+      createdAt: serverTimestamp(),
+      status: 'pending'
+    });
+    return docRef.id;
   },
 
-  // Get order by ID
-  getOrder: async (orderId: string) => {
-    return await firestoreUtils.getDoc(collections.orders, orderId);
+  async getOrder(orderId: string) {
+    const orderRef = doc(db, 'orders', orderId);
+    const orderSnap = await getDoc(orderRef);
+    if (orderSnap.exists()) {
+      return { id: orderSnap.id, ...orderSnap.data() };
+    }
+    return null;
   },
 
-  // Update order status
-  updateOrderStatus: async (orderId: string, status: string, driverId?: string) => {
-    const updates: any = { status, updatedAt: new Date().toISOString() };
-    if (driverId) updates.driverId = driverId;
-    await firestoreUtils.updateDoc(collections.orders, orderId, updates);
+  async getUserOrders(userId: string) {
+    const ordersRef = collection(db, 'orders');
+    const q = query(ordersRef, where('customerId', '==', userId), orderBy('createdAt', 'desc'));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   },
 
-  // Get user orders
-  getUserOrders: async (userId: string) => {
-    return await firestoreUtils.queryDocs(collections.orders, [
-      where('customer.id', '==', userId),
-      orderBy('createdAt', 'desc')
-    ]);
+  async updateOrderStatus(orderId: string, status: string) {
+    const orderRef = doc(db, 'orders', orderId);
+    await updateDoc(orderRef, { status, updatedAt: serverTimestamp() });
   },
 
-  // Get pending orders for drivers
-  getPendingOrders: async () => {
-    return await firestoreUtils.queryDocs(collections.orders, [
-      where('status', '==', 'pending'),
-      where('orderType', '==', 'delivery'),
-      orderBy('createdAt', 'asc')
-    ]);
+  // Real-time subscription to a single order
+  subscribeToOrder(orderId: string, callback: (order: any) => void): Unsubscribe {
+    const orderRef = doc(db, 'orders', orderId);
+    return onSnapshot(orderRef, (doc) => {
+      if (doc.exists()) {
+        callback({ id: doc.id, ...doc.data() });
+      } else {
+        callback(null);
+      }
+    });
   },
 
-  // Subscribe to order updates (real-time)
-  subscribeToOrder: (orderId: string, callback: (order: any) => void) => {
-    if (!db) throw new Error('Firestore not initialized');
-    const { doc, onSnapshot } = require('firebase/firestore');
-    return onSnapshot(doc(db, collections.orders, orderId), (snapshot: any) => {
-      if (snapshot.exists()) {
-        callback({ id: snapshot.id, ...snapshot.data() });
+  // Real-time subscription to user orders
+  subscribeToUserOrders(userId: string, callback: (orders: any[]) => void): Unsubscribe {
+    const ordersRef = collection(db, 'orders');
+    const q = query(ordersRef, where('customerId', '==', userId), orderBy('createdAt', 'desc'));
+    return onSnapshot(q, (snapshot) => {
+      const orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      callback(orders);
+    });
+  },
+
+  // Subscribe to all orders (for admin)
+  subscribeToAllOrders(callback: (orders: any[]) => void): Unsubscribe {
+    const ordersRef = collection(db, 'orders');
+    const q = query(ordersRef, orderBy('createdAt', 'desc'));
+    return onSnapshot(q, (snapshot) => {
+      const orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      callback(orders);
+    });
+  }
+};
+
+// Driver Service
+export const driverService = {
+  async getDrivers() {
+    const driversRef = collection(db, 'drivers');
+    const querySnapshot = await getDocs(driversRef);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  },
+
+  async getAvailableDrivers() {
+    const driversRef = collection(db, 'drivers');
+    const q = query(driversRef, where('status', '==', 'available'));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  },
+
+  async updateDriverLocation(driverId: string, location: { lat: number; lng: number }) {
+    const driverRef = doc(db, 'drivers', driverId);
+    await updateDoc(driverRef, {
+      currentLocation: location,
+      lastActive: serverTimestamp()
+    });
+  },
+
+  subscribeToDriverLocation(driverId: string, callback: (location: any) => void): Unsubscribe {
+    const driverRef = doc(db, 'drivers', driverId);
+    return onSnapshot(driverRef, (doc) => {
+      if (doc.exists()) {
+        callback(doc.data().currentLocation);
       }
     });
   }
 };
 
-// Menu Service
-export const menuService = {
-  // Get all menu items
-  getMenuItems: async (category?: string) => {
-    const constraints = [];
-    if (category) {
-      constraints.push(where('category', '==', category));
+// Stats Service
+export const statsService = {
+  async incrementVisitCount() {
+    const statsRef = doc(db, 'stats', 'visits');
+    const statsSnap = await getDoc(statsRef);
+    if (statsSnap.exists()) {
+      const currentCount = statsSnap.data().count || 0;
+      await updateDoc(statsRef, { count: currentCount + 1 });
+    } else {
+      await addDoc(collection(db, 'stats'), { id: 'visits', count: 1 });
     }
-    constraints.push(orderBy('name', 'asc'));
-    return await firestoreUtils.queryDocs(collections.menu, constraints);
   },
 
-  // Get featured items
-  getFeaturedItems: async () => {
-    return await firestoreUtils.queryDocs(collections.menu, [
-      where('featured', '==', true),
-      limit(6)
-    ]);
+  async getVisitCount() {
+    const statsRef = doc(db, 'stats', 'visits');
+    const statsSnap = await getDoc(statsRef);
+    return statsSnap.exists() ? statsSnap.data().count || 0 : 0;
   },
 
-  // Get item by ID
-  getMenuItem: async (itemId: string) => {
-    return await firestoreUtils.getDoc(collections.menu, itemId);
+  async incrementLikeCount() {
+    const statsRef = doc(db, 'stats', 'likes');
+    const statsSnap = await getDoc(statsRef);
+    if (statsSnap.exists()) {
+      const currentCount = statsSnap.data().count || 0;
+      await updateDoc(statsRef, { count: currentCount + 1 });
+    } else {
+      await addDoc(collection(db, 'stats'), { id: 'likes', count: 1 });
+    }
   },
 
-  // Admin: Add menu item
-  addMenuItem: async (itemData: any) => {
-    const item = {
-      ...itemData,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    return await firestoreUtils.createDoc(collections.menu, item);
+  async getLikeCount() {
+    const statsRef = doc(db, 'stats', 'likes');
+    const statsSnap = await getDoc(statsRef);
+    return statsSnap.exists() ? statsSnap.data().count || 0 : 0;
   },
 
-  // Admin: Update menu item
-  updateMenuItem: async (itemId: string, itemData: any) => {
-    await firestoreUtils.updateDoc(collections.menu, itemId, {
-      ...itemData,
-      updatedAt: new Date().toISOString()
+  subscribeToStats(statId: string, callback: (stat: any) => void): Unsubscribe {
+    const statRef = doc(db, 'stats', statId);
+    return onSnapshot(statRef, (doc) => {
+      if (doc.exists()) {
+        callback({ id: doc.id, ...doc.data() });
+      } else {
+        callback({ id: statId, count: 0 });
+      }
     });
-  }
-};
-
-// User Service
-export const userService = {
-  // Create/Update user profile
-  saveUserProfile: async (userId: string, userData: any) => {
-    const profile = {
-      ...userData,
-      updatedAt: new Date().toISOString()
-    };
-    await firestoreUtils.updateDoc(collections.users, userId, profile);
-  },
-
-  // Get user profile
-  getUserProfile: async (userId: string) => {
-    return await firestoreUtils.getDoc(collections.users, userId);
-  },
-
-  // Save user address
-  saveUserAddress: async (userId: string, address: any) => {
-    const user = await firestoreUtils.getDoc(collections.users, userId);
-    const addresses = user?.addresses || [];
-    addresses.push({ ...address, id: Date.now().toString(), isDefault: addresses.length === 0 });
-    await firestoreUtils.updateDoc(collections.users, userId, { addresses });
-    return addresses;
-  }
-};
-
-// Review Service
-export const reviewService = {
-  // Add review
-  addReview: async (reviewData: any) => {
-    const review = {
-      ...reviewData,
-      createdAt: new Date().toISOString(),
-      verified: false
-    };
-    return await firestoreUtils.createDoc(collections.reviews, review);
-  },
-
-  // Get restaurant reviews
-  getRestaurantReviews: async () => {
-    return await firestoreUtils.queryDocs(collections.reviews, [
-      where('type', '==', 'restaurant'),
-      orderBy('createdAt', 'desc')
-    ]);
-  },
-
-  // Get average rating
-  getAverageRating: async () => {
-    const reviews = await firestoreUtils.queryDocs(collections.reviews, [
-      where('type', '==', 'restaurant')
-    ]);
-    if (reviews.length === 0) return 0;
-    const total = reviews.reduce((sum, r) => sum + (r.rating || 0), 0);
-    return total / reviews.length;
   }
 };
