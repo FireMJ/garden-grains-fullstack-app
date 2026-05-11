@@ -145,7 +145,7 @@ export default function AboutPage() {
       {/* Hero Section */}
       <section className="relative h-[60vh] min-h-[500px] overflow-hidden">
         <div className="absolute inset-0">
-          <Image src="/images/banners/rose_garden.jpeg" alt="Rose Garden" fill className="object-cover" priority />
+          <Image src="/images/banners/rose_garden.jpeg" alt="Rose Garden" fill sizes="(max-width: 1200px) 100vw, 85vw" className="object-cover" priority />
             sizes="(max-width: 768px) 100vw, 50vw"
           <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-black/30" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
@@ -369,7 +369,7 @@ export default function AboutPage() {
               </div>
             </div>
             <div className="h-80 rounded-xl overflow-hidden shadow-lg relative">
-              <Image src="/images/banners/rose_garden.jpeg" alt="Rose Garden" fill className="object-cover" />
+              <Image src="/images/banners/rose_garden.jpeg" alt="Rose Garden" fill sizes="(max-width: 1200px) 100vw, 85vw" className="object-cover" />
             sizes="(max-width: 768px) 100vw, 50vw"
             </div>
           </div>

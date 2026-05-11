@@ -24,7 +24,7 @@ export interface Moment {
   date: Date | Timestamp;
   verified: boolean;
   category: string;
-  imageUrl?: string;
+  imageUrl?: string | null;
   userId?: string;
   userLiked?: boolean;
 }
@@ -42,16 +42,24 @@ class MomentService {
   private momentsCollection = collection(db, 'moments');
   private commentsCollection = collection(db, 'comments');
 
-  // Create a new moment
   async createMoment(moment: Omit<Moment, 'id' | 'date' | 'likes' | 'comments'>): Promise<string> {
     try {
-      const docRef = await addDoc(this.momentsCollection, {
-        ...moment,
+      const cleanMoment: any = {
+        author: moment.author,
+        authorHandle: moment.authorHandle,
+        content: moment.content,
         likes: 0,
         comments: 0,
         date: serverTimestamp(),
-        createdAt: serverTimestamp()
-      });
+        verified: moment.verified || false,
+        category: moment.category || 'experience',
+      };
+      
+      if (moment.imageUrl && moment.imageUrl !== 'undefined') {
+        cleanMoment.imageUrl = moment.imageUrl;
+      }
+      
+      const docRef = await addDoc(this.momentsCollection, cleanMoment);
       return docRef.id;
     } catch (error) {
       console.error('Error creating moment:', error);
@@ -59,45 +67,47 @@ class MomentService {
     }
   }
 
-  // Get all moments with real-time listener
   subscribeToMoments(callback: (moments: Moment[]) => void, limit_count: number = 50) {
-    const q = query(
-      this.momentsCollection, 
-      orderBy('date', 'desc'),
-      limit(limit_count)
-    );
+    const q = query(this.momentsCollection, orderBy('date', 'desc'), limit(limit_count));
     
-    return onSnapshot(q, (snapshot) => {
-      const moments = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          date: data.date?.toDate?.() || new Date(),
-          userLiked: false
-        } as Moment;
-      });
-      callback(moments);
-    });
+    return onSnapshot(q, 
+      (snapshot) => {
+        const moments = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            date: data.date?.toDate?.() || new Date(),
+            userLiked: false
+          } as Moment;
+        });
+        callback(moments);
+      },
+      (error) => {
+        console.error('Error fetching moments:', error);
+        callback([]);
+      }
+    );
   }
 
-  // Like a moment
   async likeMoment(momentId: string): Promise<void> {
-    const momentRef = doc(this.momentsCollection, momentId);
-    await updateDoc(momentRef, {
-      likes: increment(1)
-    });
+    try {
+      const momentRef = doc(this.momentsCollection, momentId);
+      await updateDoc(momentRef, { likes: increment(1) });
+    } catch (error) {
+      console.error('Error liking moment:', error);
+    }
   }
 
-  // Unlike a moment
   async unlikeMoment(momentId: string): Promise<void> {
-    const momentRef = doc(this.momentsCollection, momentId);
-    await updateDoc(momentRef, {
-      likes: increment(-1)
-    });
+    try {
+      const momentRef = doc(this.momentsCollection, momentId);
+      await updateDoc(momentRef, { likes: increment(-1) });
+    } catch (error) {
+      console.error('Error unliking moment:', error);
+    }
   }
 
-  // Add a comment to a moment
   async addComment(momentId: string, comment: Omit<Comment, 'id' | 'date' | 'likes'>): Promise<string> {
     try {
       const docRef = await addDoc(this.commentsCollection, {
@@ -107,11 +117,8 @@ class MomentService {
         date: serverTimestamp()
       });
       
-      // Update comment count on moment
       const momentRef = doc(this.momentsCollection, momentId);
-      await updateDoc(momentRef, {
-        comments: increment(1)
-      });
+      await updateDoc(momentRef, { comments: increment(1) });
       
       return docRef.id;
     } catch (error) {
@@ -120,33 +127,35 @@ class MomentService {
     }
   }
 
-  // Get comments for a moment
   subscribeToComments(momentId: string, callback: (comments: Comment[]) => void) {
-    const q = query(
-      this.commentsCollection,
-      where('momentId', '==', momentId),
-      orderBy('date', 'asc')
-    );
+    const q = query(this.commentsCollection, where('momentId', '==', momentId), orderBy('date', 'asc'));
     
-    return onSnapshot(q, (snapshot) => {
-      const comments = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          date: data.date?.toDate?.() || new Date()
-        } as Comment;
-      });
-      callback(comments);
-    });
+    return onSnapshot(q, 
+      (snapshot) => {
+        const comments = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            date: data.date?.toDate?.() || new Date()
+          } as Comment;
+        });
+        callback(comments);
+      },
+      (error) => {
+        console.error('Error fetching comments:', error);
+        callback([]);
+      }
+    );
   }
 
-  // Like a comment
   async likeComment(commentId: string): Promise<void> {
-    const commentRef = doc(this.commentsCollection, commentId);
-    await updateDoc(commentRef, {
-      likes: increment(1)
-    });
+    try {
+      const commentRef = doc(this.commentsCollection, commentId);
+      await updateDoc(commentRef, { likes: increment(1) });
+    } catch (error) {
+      console.error('Error liking comment:', error);
+    }
   }
 }
 
