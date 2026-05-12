@@ -7,11 +7,26 @@ import { FaUsers, FaClipboardList, FaStar, FaTruck, FaChartLine } from 'react-ic
 import AdminNavbar from '@/components/AdminNavbar';
 
 export default function AdminPage() {
-  const { user, userRole } = useAuth();
+  const { user, userRole, loading } = useAuth();
   const router = useRouter();
 
+  useEffect(() => {
+    if (!loading) {
+      if (!user || userRole !== 'admin') {
+        router.push('/login');
+      }
+    }
+  }, [user, userRole, loading, router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
+
   if (!user || userRole !== 'admin') {
-    router.push('/login');
     return null;
   }
 

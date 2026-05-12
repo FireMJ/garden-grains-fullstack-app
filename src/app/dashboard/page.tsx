@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, orderBy, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { FaPhone, FaMapMarkerAlt, FaClock, FaCheck, FaTimes, FaSpinner, FaBell, FaMotorcycle, FaSearch } from 'react-icons/fa';
 import { toast, Toaster } from 'react-hot-toast';
 import AdminNavbar from '@/components/AdminNavbar';
@@ -27,22 +27,22 @@ interface Order {
 }
 
 export default function DashboardPage() {
-  const { user, userRole } = useAuth();
+  const { user, userRole, loading } = useAuth();
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'pending' | 'preparing' | 'ready' | 'delivered'>('pending');
   const [showNotifications, setShowNotifications] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [stats, setStats] = useState({ pending: 0, preparing: 0, ready: 0, delivered: 0 });
 
   useEffect(() => {
-    if (!user || (userRole !== 'admin' && userRole !== 'staff')) {
-      router.push('/login');
-      return;
+    if (!loading) {
+      if (!user || (userRole !== 'admin' && userRole !== 'staff')) {
+        router.push('/login');
+      }
     }
-  }, [user, userRole, router]);
+  }, [user, userRole, loading, router]);
 
   useEffect(() => {
     if (!user) return;
@@ -74,7 +74,6 @@ export default function DashboardPage() {
       
       setOrders(newOrders);
       setStats({ pending: pendingCount, preparing: preparingCount, ready: readyCount, delivered: deliveredCount });
-      setLoading(false);
     });
     
     return () => unsubscribe();
@@ -111,13 +110,6 @@ export default function DashboardPage() {
     return d.toLocaleTimeString();
   };
 
-  const tabs = [
-    { id: 'pending', label: 'Pending', color: 'orange', count: stats.pending, icon: FaBell },
-    { id: 'preparing', label: 'Preparing', color: 'blue', count: stats.preparing, icon: FaSpinner },
-    { id: 'ready', label: 'Ready', color: 'green', count: stats.ready, icon: FaCheck },
-    { id: 'delivered', label: 'Delivered', color: 'gray', count: stats.delivered, icon: FaMotorcycle },
-  ];
-
   if (loading) {
     return (
       <>
@@ -125,12 +117,23 @@ export default function DashboardPage() {
         <div className="min-h-screen bg-gray-100 flex items-center justify-center pt-20">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading orders...</p>
+            <p className="text-gray-600">Loading dashboard...</p>
           </div>
         </div>
       </>
     );
   }
+
+  if (!user || (userRole !== 'admin' && userRole !== 'staff')) {
+    return null;
+  }
+
+  const tabs = [
+    { id: 'pending', label: 'Pending', color: 'orange', count: stats.pending, icon: FaBell },
+    { id: 'preparing', label: 'Preparing', color: 'blue', count: stats.preparing, icon: FaSpinner },
+    { id: 'ready', label: 'Ready', color: 'green', count: stats.ready, icon: FaCheck },
+    { id: 'delivered', label: 'Delivered', color: 'gray', count: stats.delivered, icon: FaMotorcycle },
+  ];
 
   return (
     <>
@@ -139,7 +142,6 @@ export default function DashboardPage() {
         <Toaster position="top-right" />
         
         <div className="max-w-7xl mx-auto px-4 py-6">
-          {/* Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Order Management</h1>
@@ -165,7 +167,6 @@ export default function DashboardPage() {
             </div>
           </div>
           
-          {/* Tabs */}
           <div className="flex space-x-1 bg-white rounded-lg p-1 mb-6 shadow-sm">
             {tabs.map((tab) => (
               <button
@@ -190,7 +191,6 @@ export default function DashboardPage() {
             ))}
           </div>
           
-          {/* Orders Grid */}
           {filteredOrders.length === 0 ? (
             <div className="bg-white rounded-xl shadow-sm p-12 text-center">
               <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -288,9 +288,6 @@ export default function DashboardPage() {
                         >
                           <FaMotorcycle /> Mark as Delivered
                         </button>
-                      )}
-                      {order.status === 'delivered' && (
-                        <div className="w-full text-center text-gray-500 text-sm py-2">Completed ✓</div>
                       )}
                     </div>
                   </div>

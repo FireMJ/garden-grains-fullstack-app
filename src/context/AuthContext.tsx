@@ -1,176 +1,118 @@
-"use client";
+'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import {
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { 
   User,
-  onAuthStateChanged,
+  onAuthStateChanged, 
   signOut,
-  createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  updateProfile,
-  sendPasswordResetEmail,
-  GoogleAuthProvider,
-  signInWithPopup
+  createUserWithEmailAndPassword,
+  updateProfile
 } from 'firebase/auth';
-import { auth } from '@/lib/auth';
-import { db } from '@/lib/firebase';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 interface AuthContextType {
   user: User | null;
+  userData: any | null;
+  userRole: string | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
-  signup: (email: string, password: string, name: string) => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-  updateUserProfile: (displayName: string, photoURL?: string) => Promise<void>;
-  updateUserPhone: (phoneNumber: string) => Promise<void>;
+  refreshUserData: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [userData, setUserData] = useState<any | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const fetchUserData = async (uid: string) => {
+    try {
+      const userRef = doc(db, 'users', uid);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        const data = userSnap.data();
+        setUserData(data);
+        setUserRole(data.role || 'customer');
+        return data;
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+    return null;
+  };
+
+  const refreshUserData = async () => {
+    if (user) {
+      await fetchUserData(user.uid);
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
+      if (user) {
+        await fetchUserData(user.uid);
+      } else {
+        setUserData(null);
+        setUserRole(null);
+      }
       setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
-  const login = async (email: string, password: string) => {
-    setLoading(true);
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (error: any) {
-      console.error('Login error:', error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
+  const signIn = async (email: string, password: string) => {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    await fetchUserData(userCredential.user.uid);
   };
 
-  const loginWithGoogle = async () => {
-    setLoading(true);
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-    } catch (error: any) {
-      console.error('Google login error:', error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signup = async (email: string, password: string, name: string) => {
-    setLoading(true);
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-
-      if (userCredential.user) {
-        await updateProfile(userCredential.user, {
-          displayName: name
-        });
-        
-        // Create user document in Firestore
-        await setDoc(doc(db, 'users', userCredential.user.uid), {
-          email,
-          displayName: name,
-          createdAt: new Date(),
-          phoneNumber: '',
-        });
-
-        await userCredential.user.reload();
-        setUser({ ...userCredential.user });
-      }
-    } catch (error: any) {
-      console.error('Signup error:', error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
+  const signUp = async (email: string, password: string, name: string) => {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    await updateProfile(userCredential.user, { displayName: name });
+    
+    // Create user document
+    await setDoc(doc(db, 'users', userCredential.user.uid), {
+      uid: userCredential.user.uid,
+      email,
+      name,
+      role: 'customer',
+      phone: '',
+      createdAt: new Date()
+    });
+    
+    await fetchUserData(userCredential.user.uid);
   };
 
   const logout = async () => {
-    setLoading(true);
-    try {
-      await signOut(auth);
-    } catch (error: any) {
-      console.error('Logout error:', error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
+    await signOut(auth);
+    setUserData(null);
+    setUserRole(null);
   };
 
-  const resetPassword = async (email: string) => {
-    try {
-      await sendPasswordResetEmail(auth, email);
-    } catch (error: any) {
-      console.error('Password reset error:', error);
-      throw error;
-    }
-  };
-
-  const updateUserProfile = async (displayName: string, photoURL?: string) => {
-    if (!auth.currentUser) throw new Error("No user logged in");
-
-    setLoading(true);
-    try {
-      await updateProfile(auth.currentUser, {
-        displayName,
-        photoURL
-      });
-      
-      // Update Firestore
-      const userDocRef = doc(db, 'users', auth.currentUser.uid);
-      await setDoc(userDocRef, { displayName }, { merge: true });
-
-      await auth.currentUser.reload();
-      setUser({ ...auth.currentUser });
-    } catch (error: any) {
-      console.error('Profile update error:', error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateUserPhone = async (phoneNumber: string) => {
-    if (!auth.currentUser) throw new Error("No user logged in");
-
-    setLoading(true);
-    try {
-      // Store phone number in Firestore (Firebase Auth requires re-authentication for phone updates)
-      const userDocRef = doc(db, 'users', auth.currentUser.uid);
-      await setDoc(userDocRef, { phoneNumber }, { merge: true });
-      
-      // Also store in localStorage for quick access
-      localStorage.setItem(`user_phone_${auth.currentUser.uid}`, phoneNumber);
-    } catch (error: any) {
-      console.error('Phone update error:', error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const value: AuthContextType = {
+  const value = {
     user,
+    userData,
+    userRole,
     loading,
-    login,
-    loginWithGoogle,
+    signIn,
+    signUp,
     logout,
-    signup,
-    resetPassword,
-    updateUserProfile,
-    updateUserPhone,
+    refreshUserData
   };
 
   return (
@@ -178,24 +120,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
-
-// Add to existing AuthContext
-export interface UserData {
-  uid: string;
-  email: string;
-  name: string;
-  role: 'customer' | 'staff' | 'admin';
-  phone?: string;
-}
-
-// Add to the AuthContext return value
-// Make sure userRole is included
+};
