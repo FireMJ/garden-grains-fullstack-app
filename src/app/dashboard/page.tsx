@@ -3,295 +3,303 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { FaStar, FaShoppingBag, FaCalendarAlt, FaUser, FaPhone, FaEnvelope, FaMapMarkerAlt, FaHistory } from 'react-icons/fa';
+import { db } from '@/lib/firebase';
+import { collection, query, where, onSnapshot, orderBy, doc, updateDoc } from 'firebase/firestore';
+import { FaPhone, FaMapMarkerAlt, FaClock, FaCheck, FaTimes, FaSpinner, FaBell, FaMotorcycle, FaSearch } from 'react-icons/fa';
+import { toast, Toaster } from 'react-hot-toast';
+import AdminNavbar from '@/components/AdminNavbar';
+
+const playNotificationSound = () => {
+  const audio = new Audio('/sounds/new-order.mp3');
+  audio.play().catch(e => console.log('Audio playback failed:', e));
+};
 
 interface Order {
   id: string;
-  orderNumber: string;
-  amount: number;
-  status: string;
-  date: string;
+  customerName: string;
+  customerPhone?: string;
+  deliveryAddress?: string;
   items: any[];
-}
-
-interface Review {
-  id: string;
-  rating: number;
-  comment: string;
-  date: string;
-  itemName: string;
+  totalPrice: number;
+  status: 'pending' | 'preparing' | 'ready' | 'delivered' | 'rejected';
+  createdAt: any;
+  specialInstructions?: string;
 }
 
 export default function DashboardPage() {
-  const { user, updateUserProfile } = useAuth();
+  const { user, userRole } = useAuth();
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [stats, setStats] = useState({
-    totalOrders: 0,
-    totalSpent: 0,
-    averageRating: 0,
-    memberSince: '',
-  });
-  const [isEditing, setIsEditing] = useState(false);
-  const [displayName, setDisplayName] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'pending' | 'preparing' | 'ready' | 'delivered'>('pending');
+  const [showNotifications, setShowNotifications] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [stats, setStats] = useState({ pending: 0, preparing: 0, ready: 0, delivered: 0 });
 
   useEffect(() => {
-    if (!user) {
+    if (!user || (userRole !== 'admin' && userRole !== 'staff')) {
       router.push('/login');
       return;
     }
-    
-    setDisplayName(user.displayName || '');
-    setPhoneNumber(user.phoneNumber || '');
-    loadUserData();
-  }, [user, router]);
+  }, [user, userRole, router]);
 
-  const loadUserData = () => {
-    // Load orders from localStorage
-    const ordersStr = localStorage.getItem('orders');
-    const userOrders = ordersStr ? JSON.parse(ordersStr) : [];
-    setOrders(userOrders.slice(0, 5));
+  useEffect(() => {
+    if (!user) return;
+
+    const ordersRef = collection(db, 'orders');
+    const q = query(ordersRef, orderBy('createdAt', 'desc'));
     
-    // Calculate stats
-    const totalOrders = userOrders.length;
-    const totalSpent = userOrders.reduce((sum, order) => sum + (order.amount || 0), 0);
-    
-    setStats({
-      totalOrders,
-      totalSpent,
-      averageRating: 4.8,
-      memberSince: user?.metadata?.creationTime 
-        ? new Date(user.metadata.creationTime).toLocaleDateString() 
-        : '2024',
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const newOrders: Order[] = [];
+      let pendingCount = 0, preparingCount = 0, readyCount = 0, deliveredCount = 0;
+      
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'added' && change.doc.data().status === 'pending' && showNotifications) {
+          playNotificationSound();
+          toast.success(`New order #${change.doc.id.slice(-6)}!`, { duration: 5000, icon: '🛎️' });
+        }
+      });
+      
+      snapshot.docs.forEach(doc => {
+        const order = { id: doc.id, ...doc.data() } as Order;
+        newOrders.push(order);
+        switch (order.status) {
+          case 'pending': pendingCount++; break;
+          case 'preparing': preparingCount++; break;
+          case 'ready': readyCount++; break;
+          case 'delivered': deliveredCount++; break;
+        }
+      });
+      
+      setOrders(newOrders);
+      setStats({ pending: pendingCount, preparing: preparingCount, ready: readyCount, delivered: deliveredCount });
+      setLoading(false);
     });
     
-    // Mock reviews (replace with actual data later)
-    setReviews([
-      { id: '1', rating: 5, comment: 'Great food!', date: '2024-03-15', itemName: 'Creamy Butternut Soup' },
-      { id: '2', rating: 4, comment: 'Delicious bowl', date: '2024-03-10', itemName: 'Smoky Chipotle Bowl' },
-    ]);
-  };
+    return () => unsubscribe();
+  }, [user, showNotifications]);
 
-  const handleUpdateProfile = async () => {
-    setIsUpdating(true);
+  useEffect(() => {
+    let filtered = orders.filter(order => order.status === activeTab);
+    if (searchTerm) {
+      filtered = filtered.filter(order => 
+        order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.customerName?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    setFilteredOrders(filtered);
+  }, [orders, activeTab, searchTerm]);
+
+  const updateOrderStatus = async (orderId: string, newStatus: Order['status']) => {
     try {
-      await updateUserProfile(displayName);
-      if (phoneNumber) {
-        localStorage.setItem(`user_phone_${user?.uid}`, phoneNumber);
-      }
-      setIsEditing(false);
-      alert('Profile updated successfully!');
+      const orderRef = doc(db, 'orders', orderId);
+      await updateDoc(orderRef, { status: newStatus, updatedAt: new Date() });
+      toast.success(`Order #${orderId.slice(-6)} marked as ${newStatus}`);
     } catch (error) {
-      console.error('Error updating profile:', error);
-      alert('Failed to update profile');
-    } finally {
-      setIsUpdating(false);
+      console.error('Error updating order:', error);
+      toast.error('Failed to update order status');
     }
   };
 
-  if (!user) {
+  const formatTime = (date: any) => {
+    if (!date) return 'Just now';
+    const d = date.toDate ? date.toDate() : new Date(date);
+    const minutes = Math.floor((new Date().getTime() - d.getTime()) / 60000);
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes} min ago`;
+    return d.toLocaleTimeString();
+  };
+
+  const tabs = [
+    { id: 'pending', label: 'Pending', color: 'orange', count: stats.pending, icon: FaBell },
+    { id: 'preparing', label: 'Preparing', color: 'blue', count: stats.preparing, icon: FaSpinner },
+    { id: 'ready', label: 'Ready', color: 'green', count: stats.ready, icon: FaCheck },
+    { id: 'delivered', label: 'Delivered', color: 'gray', count: stats.delivered, icon: FaMotorcycle },
+  ];
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-      </div>
+      <>
+        <AdminNavbar />
+        <div className="min-h-screen bg-gray-100 flex items-center justify-center pt-20">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading orders...</p>
+          </div>
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-6xl mx-auto px-4">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Dashboard</h1>
+    <>
+      <AdminNavbar />
+      <div className="min-h-screen bg-gray-100">
+        <Toaster position="top-right" />
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Profile Section */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow p-6">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
-                  <FaUser className="w-10 h-10 text-green-600" />
-                </div>
-                <div>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
-                      className="text-xl font-bold border rounded px-2 py-1"
-                    />
-                  ) : (
-                    <h2 className="text-xl font-bold text-gray-900">{displayName || 'User'}</h2>
-                  )}
-                  <p className="text-sm text-gray-500">Member since {stats.memberSince}</p>
-                </div>
-              </div>
-              
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 text-gray-600">
-                  <FaEnvelope className="w-4 h-4" />
-                  <span>{user.email}</span>
-                </div>
-                {isEditing ? (
-                  <div className="flex items-center gap-3 text-gray-600">
-                    <FaPhone className="w-4 h-4" />
-                    <input
-                      type="tel"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      placeholder="Phone number"
-                      className="flex-1 border rounded px-2 py-1 text-sm"
-                    />
-                  </div>
-                ) : (
-                  phoneNumber && (
-                    <div className="flex items-center gap-3 text-gray-600">
-                      <FaPhone className="w-4 h-4" />
-                      <span>{phoneNumber}</span>
-                    </div>
-                  )
-                )}
-              </div>
-              
-              <div className="mt-6 flex gap-3">
-                {isEditing ? (
-                  <>
-                    <button
-                      onClick={handleUpdateProfile}
-                      disabled={isUpdating}
-                      className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
-                    >
-                      {isUpdating ? 'Saving...' : 'Save Changes'}
-                    </button>
-                    <button
-                      onClick={() => setIsEditing(false)}
-                      className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300"
-                    >
-                      Cancel
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="w-full bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200"
-                  >
-                    Edit Profile
-                  </button>
-                )}
-              </div>
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Order Management</h1>
+              <p className="text-sm text-gray-500">Manage incoming orders in real-time</p>
             </div>
-            
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 gap-4 mt-6">
-              <div className="bg-white rounded-xl shadow p-4 text-center">
-                <FaShoppingBag className="w-6 h-6 text-green-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-gray-900">{stats.totalOrders}</div>
-                <div className="text-xs text-gray-500">Total Orders</div>
+            <div className="flex gap-3">
+              <div className="relative">
+                <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search orders..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                />
               </div>
-              <div className="bg-white rounded-xl shadow p-4 text-center">
-                <FaStar className="w-6 h-6 text-yellow-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-gray-900">{stats.averageRating}</div>
-                <div className="text-xs text-gray-500">Avg Rating</div>
-              </div>
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className={`p-2 rounded-full relative ${showNotifications ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-600'}`}
+              >
+                <FaBell />
+              </button>
             </div>
           </div>
           
-          {/* Recent Orders */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl shadow p-6 mb-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-900">Recent Orders</h2>
-                <Link href="/orders" className="text-sm text-green-600 hover:underline">View All →</Link>
-              </div>
-              
-              {orders.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <FaShoppingBag className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                  <p>No orders yet</p>
-                  <Link href="/menu" className="text-green-600 hover:underline mt-2 inline-block">
-                    Start Shopping →
-                  </Link>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {orders.map((order) => (
-                    <div key={order.id} className="border rounded-lg p-4 hover:shadow transition">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-mono text-sm text-gray-600">{order.orderNumber}</p>
-                          <p className="text-xs text-gray-500">{new Date(order.date).toLocaleDateString()}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-green-600">R{order.amount?.toFixed(2) || '0.00'}</p>
-                          <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">
-                            {order.status || 'Completed'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            
-            {/* Recent Reviews */}
-            <div className="bg-white rounded-xl shadow p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-900">Recent Reviews</h2>
-                <Link href="/reviews" className="text-sm text-green-600 hover:underline">Write a Review →</Link>
-              </div>
-              
-              {reviews.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <FaStar className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                  <p>No reviews yet</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {reviews.map((review) => (
-                    <div key={review.id} className="border-b pb-3 last:border-0">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-medium text-gray-900">{review.itemName}</p>
-                          <div className="flex items-center gap-1 mt-1">
-                            {[...Array(5)].map((_, i) => (
-                              <FaStar key={i} className={`w-3 h-3 ${i < review.rating ? 'text-yellow-500' : 'text-gray-300'}`} />
-                            ))}
-                          </div>
-                          <p className="text-sm text-gray-600 mt-1">{review.comment}</p>
-                        </div>
-                        <p className="text-xs text-gray-400">{new Date(review.date).toLocaleDateString()}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+          {/* Tabs */}
+          <div className="flex space-x-1 bg-white rounded-lg p-1 mb-6 shadow-sm">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${
+                  activeTab === tab.id
+                    ? 'bg-green-600 text-white shadow-md'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <tab.icon className="text-sm" />
+                <span>{tab.label}</span>
+                {tab.count > 0 && (
+                  <span className={`px-2 py-0.5 text-xs rounded-full ${
+                    activeTab === tab.id ? 'bg-white text-green-600' : 'bg-gray-200 text-gray-700'
+                  }`}>
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
-        </div>
-        
-        {/* Quick Links */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-          <Link href="/profile/addresses" className="bg-white rounded-xl shadow p-4 text-center hover:shadow-lg transition">
-            <FaMapMarkerAlt className="w-6 h-6 text-green-600 mx-auto mb-2" />
-            <span className="text-sm font-medium">Addresses</span>
-          </Link>
-          <Link href="/orders" className="bg-white rounded-xl shadow p-4 text-center hover:shadow-lg transition">
-            <FaHistory className="w-6 h-6 text-green-600 mx-auto mb-2" />
-            <span className="text-sm font-medium">Order History</span>
-          </Link>
-          <Link href="/profile/notifications" className="bg-white rounded-xl shadow p-4 text-center hover:shadow-lg transition">
-            <FaCalendarAlt className="w-6 h-6 text-green-600 mx-auto mb-2" />
-            <span className="text-sm font-medium">Notifications</span>
-          </Link>
-          <Link href="/reserve" className="bg-white rounded-xl shadow p-4 text-center hover:shadow-lg transition">
-            <FaStar className="w-6 h-6 text-green-600 mx-auto mb-2" />
-            <span className="text-sm font-medium">Write Review</span>
-          </Link>
+          
+          {/* Orders Grid */}
+          {filteredOrders.length === 0 ? (
+            <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FaCheck className="text-3xl text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900">No {activeTab} orders</h3>
+              <p className="text-gray-500 mt-1">Orders will appear here when they're {activeTab}</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {filteredOrders.map((order) => (
+                <div key={order.id} className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition">
+                  <div className={`p-4 ${
+                    order.status === 'pending' ? 'bg-orange-50 border-l-4 border-orange-500' :
+                    order.status === 'preparing' ? 'bg-blue-50 border-l-4 border-blue-500' :
+                    order.status === 'ready' ? 'bg-green-50 border-l-4 border-green-500' :
+                    'bg-gray-50 border-l-4 border-gray-500'
+                  }`}>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-sm text-gray-500 font-mono">#{order.id.slice(-6)}</p>
+                        <p className="text-xs text-gray-400 flex items-center gap-1 mt-1">
+                          <FaClock className="text-xs" /> {formatTime(order.createdAt)}
+                        </p>
+                      </div>
+                      <p className="font-bold text-green-600">R{order.totalPrice?.toFixed(2)}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 space-y-3">
+                    <div className="flex items-start gap-2">
+                      <FaPhone className="text-gray-400 mt-0.5 text-sm" />
+                      <div>
+                        <p className="font-medium text-gray-900">{order.customerName || 'Customer'}</p>
+                        {order.customerPhone && <p className="text-sm text-gray-600">{order.customerPhone}</p>}
+                      </div>
+                    </div>
+                    
+                    {order.deliveryAddress && (
+                      <div className="flex items-start gap-2">
+                        <FaMapMarkerAlt className="text-gray-400 mt-0.5 text-sm" />
+                        <p className="text-sm text-gray-600">{order.deliveryAddress}</p>
+                      </div>
+                    )}
+                    
+                    <div className="border-t pt-3">
+                      <p className="text-sm font-medium text-gray-900 mb-2">Items:</p>
+                      <div className="space-y-1 max-h-32 overflow-y-auto">
+                        {order.items?.map((item, idx) => (
+                          <div key={idx} className="flex justify-between text-sm">
+                            <span className="text-gray-600">{item.quantity}x {item.name}</span>
+                            <span className="font-medium">R{(item.price * item.quantity).toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {order.specialInstructions && (
+                      <div className="bg-yellow-50 p-2 rounded-lg">
+                        <p className="text-xs text-yellow-800">
+                          <span className="font-medium">Note:</span> {order.specialInstructions}
+                        </p>
+                      </div>
+                    )}
+                    
+                    <div className="flex gap-2 pt-2">
+                      {order.status === 'pending' && (
+                        <>
+                          <button
+                            onClick={() => updateOrderStatus(order.id, 'preparing')}
+                            className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2"
+                          >
+                            <FaCheck /> Accept
+                          </button>
+                          <button
+                            onClick={() => updateOrderStatus(order.id, 'rejected')}
+                            className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition flex items-center justify-center gap-2"
+                          >
+                            <FaTimes /> Reject
+                          </button>
+                        </>
+                      )}
+                      {order.status === 'preparing' && (
+                        <button
+                          onClick={() => updateOrderStatus(order.id, 'ready')}
+                          className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2"
+                        >
+                          <FaCheck /> Mark as Ready
+                        </button>
+                      )}
+                      {order.status === 'ready' && (
+                        <button
+                          onClick={() => updateOrderStatus(order.id, 'delivered')}
+                          className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2"
+                        >
+                          <FaMotorcycle /> Mark as Delivered
+                        </button>
+                      )}
+                      {order.status === 'delivered' && (
+                        <div className="w-full text-center text-gray-500 text-sm py-2">Completed ✓</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
-    </div>
+    </>
   );
 }

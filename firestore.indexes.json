@@ -42,3 +42,25 @@
   ],
   "fieldOverrides": []
 }
+,
+  {
+    "collectionGroup": "promos",
+    "queryScope": "COLLECTION",
+    "fields": [
+      { "fieldPath": "email", "order": "ASCENDING" }
+    ]
+  },
+  {
+    "collectionGroup": "promos",
+    "queryScope": "COLLECTION",
+    "fields": [
+      { "fieldPath": "deviceFingerprint", "order": "ASCENDING" }
+    ]
+  },
+  {
+    "collectionGroup": "promos",
+    "queryScope": "COLLECTION",
+    "fields": [
+      { "fieldPath": "userId", "order": "ASCENDING" }
+    ]
+  }

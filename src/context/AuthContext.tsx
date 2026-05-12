@@ -187,3 +187,15 @@ export function useAuth() {
   }
   return context;
 }
+
+// Add to existing AuthContext
+export interface UserData {
+  uid: string;
+  email: string;
+  name: string;
+  role: 'customer' | 'staff' | 'admin';
+  phone?: string;
+}
+
+// Add to the AuthContext return value
+// Make sure userRole is included

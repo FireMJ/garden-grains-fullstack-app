@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSwipeable } from "react-swipeable";
 import { motion } from "framer-motion";
+import FloatingPromoButton from "@/components/FloatingPromoButton";
 import { useCart } from "@/context/CartContext";
 import {
   FaArrowRight,
@@ -511,6 +512,7 @@ export default function HomePage() {
         <FloatingCallButton />
         <FloatingMenuButton />
         <FloatingReserveButton />
+      <FloatingPromoButton />
       </main>
     </>
   );
