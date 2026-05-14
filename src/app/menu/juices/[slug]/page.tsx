@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { juices, juiceAddOns } from '@/data/juices';
 import { useCart } from '@/context/CartContext';
+import BackButton from "@/components/BackButton";
 interface AddOnWithId {
   id: string;
   name: string;

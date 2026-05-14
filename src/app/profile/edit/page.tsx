@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { db } from '@/lib/firebase';
-import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import BackButton from '@/components/BackButton';
 import { FaUser, FaEnvelope, FaPhone, FaSave, FaArrowLeft } from 'react-icons/fa';
 import { toast, Toaster } from 'react-hot-toast';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 export default function EditProfilePage() {
-  const { user, userData, refreshUserData } = useAuth();
+  const { user, refreshUserData } = useAuth();
   const router = useRouter();
   const [formData, setFormData] = useState({
     name: '',
@@ -25,23 +26,33 @@ export default function EditProfilePage() {
       return;
     }
     
-    if (userData) {
-      setFormData({
-        name: userData.name || user.displayName || '',
-        email: user.email || '',
-        phone: userData.phone || '',
-      });
-      setInitialLoading(false);
-    } else if (user) {
-      // Fallback to user object
-      setFormData({
-        name: user.displayName || '',
-        email: user.email || '',
-        phone: '',
-      });
-      setInitialLoading(false);
-    }
-  }, [user, userData, router]);
+    const loadUserData = async () => {
+      try {
+        const userRef = doc(db, 'users', user.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          const data = userSnap.data();
+          setFormData({
+            name: data.name || user.displayName || '',
+            email: user.email || '',
+            phone: data.phone || '',
+          });
+        } else {
+          setFormData({
+            name: user.displayName || '',
+            email: user.email || '',
+            phone: '',
+          });
+        }
+      } catch (error) {
+        console.error('Error loading user data:', error);
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+    
+    loadUserData();
+  }, [user, router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -52,7 +63,6 @@ export default function EditProfilePage() {
     setLoading(true);
     
     try {
-      // Update Firestore user document
       const userRef = doc(db, 'users', user!.uid);
       await updateDoc(userRef, {
         name: formData.name,
@@ -60,20 +70,14 @@ export default function EditProfilePage() {
         updatedAt: new Date(),
       });
       
-      // Refresh user data in context
       await refreshUserData();
-      
       toast.success('Profile updated successfully!');
       setTimeout(() => {
         router.push('/profile');
       }, 1500);
     } catch (error: any) {
       console.error('Error updating profile:', error);
-      if (error.code === 'permission-denied') {
-        toast.error('Permission denied. Please make sure you are logged in.');
-      } else {
-        toast.error('Failed to update profile. Please try again.');
-      }
+      toast.error('Failed to update profile. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -95,14 +99,9 @@ export default function EditProfilePage() {
       <Toaster position="top-right" />
       
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-2 text-gray-600 hover:text-green-600 mb-6 transition"
-        >
-          <FaArrowLeft /> Back
-        </button>
+        <BackButton fallbackHref="/profile" label="Back to Profile" />
         
-        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+        <div className="bg-white rounded-xl shadow-md overflow-hidden mt-4">
           <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4">
             <h1 className="text-2xl font-bold text-white">Edit Profile</h1>
             <p className="text-green-100 text-sm mt-1">Update your personal information</p>
@@ -159,21 +158,13 @@ export default function EditProfilePage() {
               disabled={loading}
               className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 rounded-lg hover:shadow-lg transition font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {loading ? (
-                'Saving...'
-              ) : (
+              {loading ? 'Saving...' : (
                 <>
                   <FaSave /> Save Changes
                 </>
               )}
             </button>
           </form>
-        </div>
-        
-        <div className="mt-6 text-center">
-          <p className="text-xs text-gray-500">
-            Your account information is secure and private
-          </p>
         </div>
       </div>
     </div>

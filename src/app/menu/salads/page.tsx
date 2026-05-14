@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import BackButton from "@/components/BackButton";
 import Image from 'next/image';
 import { salads } from '@/data/saladsData';
 import { loadPopularItems, isItemPopular } from '@/services/popularItemsService';

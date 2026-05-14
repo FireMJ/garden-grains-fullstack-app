@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { toasties, friesUpsellOptions, juiceUpsellOptions, toastieAddOns } from '@/data/toastiesData';
 import { useCart } from '@/context/CartContext';
+import BackButton from "@/components/BackButton";
 const generateAddOnId = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, "-");
 import { Minus, Plus, ShoppingCart, Star, Check, ArrowLeft, Coffee, Flame } from 'lucide-react';
 import { FaFire, FaTruck, FaCocktail } from 'react-icons/fa';
@@ -215,6 +216,7 @@ export default function ToastieDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50 pt-20">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <BackButton fallbackHref="/menu" />
         {/* Back Button */}
         <button
           onClick={() => router.back()}

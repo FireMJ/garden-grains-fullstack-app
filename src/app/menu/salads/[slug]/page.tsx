@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
+import BackButton from "@/components/BackButton";
 import Image from "next/image";
 import Link from "next/link";
 import { salads, saladAddOns, friesUpsellOptions, juiceUpsellOptions, saladDressings } from "@/data/saladsData";
@@ -190,6 +191,7 @@ export default function SaladDetailPage({ params }: PageProps) {
       </div>
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <BackButton fallbackHref="/menu" />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div>
             <div className="relative h-96 rounded-2xl overflow-hidden shadow-lg">
