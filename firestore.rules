@@ -3,7 +3,17 @@ service cloud.firestore {
   match /databases/{database}/documents {
     
     // ========================================
-    // CONSTANTIA MOMENTS COLLECTION
+    // USERS COLLECTION - Allow users to update their own profile
+    // ========================================
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false;
+    }
+    
+    // ========================================
+    // MOMENTS COLLECTION
     // ========================================
     match /moments/{momentId} {
       allow read: if true;
@@ -13,7 +23,7 @@ service cloud.firestore {
     }
     
     // ========================================
-    // COMMENTS & REPLIES
+    // COMMENTS COLLECTION
     // ========================================
     match /comments/{commentId} {
       allow read: if true;
@@ -22,134 +32,32 @@ service cloud.firestore {
       allow delete: if false;
     }
     
-    match /replies/{replyId} {
-      allow read: if true;
-      allow create: if true;
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']);
-      allow delete: if false;
-    }
-    
-    // ========================================
-    // LIKES TRACKING
-    // ========================================
-    match /likes/{likeId} {
-      allow read: if true;
-      allow create: if request.auth != null;
-      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
-    }
-    
-    // ========================================
-    // REVIEWS COLLECTION
-    // ========================================
-    match /reviews/{reviewId} {
-      allow read: if true;
-      allow create: if true;
-      allow update: if request.auth != null && request.auth.token.role == 'admin';
-      allow delete: if request.auth != null && request.auth.token.role == 'admin';
-    }
-    
-    // ========================================
-    // DRIVER APPLICATIONS (NEW)
-    // Online registration with admin approval workflow
-    // ========================================
-    match /driverApplications/{applicationId} {
-      // Anyone can submit a driver application
-      allow create: if true;
-      
-      // Applicants can read their own application
-      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
-      
-      // Admin can read all applications
-      allow read: if request.auth != null && request.auth.token.role == 'admin';
-      
-      // Admin can approve/reject applications
-      allow update: if request.auth != null 
-        && request.auth.token.role == 'admin'
-        && request.resource.data.keys().hasOnly(['status', 'adminNotes', 'reviewedAt', 'reviewedBy']);
-      
-      // Driver can update only after approval
-      allow update: if request.auth != null 
-        && request.auth.uid == resource.data.userId
-        && resource.data.status == 'approved';
-      
-      allow delete: if false;
-    }
-    
-    // ========================================
-    // DRIVERS COLLECTION (Approved drivers)
-    // ========================================
-    match /drivers/{driverId} {
-      allow read: if true;
-      allow create: if request.auth != null && request.auth.token.role == 'admin';
-      allow update: if request.auth != null && (request.auth.token.role == 'admin' || request.auth.uid == resource.data.uid);
-      allow delete: if request.auth != null && request.auth.token.role == 'admin';
-    }
-    
-    // ========================================
-    // DRIVER VERIFICATION DOCUMENTS
-    // ========================================
-    match /driverDocuments/{documentId} {
-      allow read: if request.auth != null && (request.auth.token.role == 'admin' || request.auth.uid == resource.data.userId);
-      allow create: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow update: if request.auth != null && request.auth.token.role == 'admin';
-      allow delete: if false;
-    }
-    
-    // ========================================
-    // PROMOTIONS & DISCOUNTS
-    // ========================================
-    match /promotions/{promotionId} {
-      allow read: if true;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
-    }
-    
-    match /devicePromotions/{deviceId} {
-      allow read: if request.auth != null && request.auth.token.role == 'admin';
-      allow create: if true;
-    }
-    
     // ========================================
     // ORDERS COLLECTION
     // ========================================
     match /orders/{orderId} {
-      allow create: if request.auth != null
-        && request.auth.uid != null
-        && request.resource.data.customerId == request.auth.uid;
-      allow read: if request.auth != null && request.auth.uid == resource.data.customerId;
-      allow update: if request.auth != null 
-        && request.auth.uid == resource.data.customerId
-        && request.resource.data.keys().hasOnly(['items', 'specialInstructions']);
-      allow write: if request.auth != null && request.auth.token.role == 'admin';
-    }
-    
-    // ========================================
-    // USERS COLLECTION
-    // ========================================
-    match /users/{userId} {
-      allow read: if true;
-      allow create: if request.auth != null && request.auth.uid == userId;
-      allow update: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // ========================================
-    // STATS & NOTIFICATIONS
-    // ========================================
-    match /stats/{statId} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.token.role == 'admin';
-    }
-    
-    match /notifications/{notificationId} {
-      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read: if request.auth != null;
       allow create: if request.auth != null;
-      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow update: if request.auth != null;
+      allow delete: if false;
     }
     
-    match /favorites/{favoriteId} {
+    // ========================================
+    // PROMOS COLLECTION
+    // ========================================
+    match /promos/{promoId} {
       allow read: if true;
-      allow create: if request.auth != null;
-      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if true;
+      allow update: if request.auth != null;
+      allow delete: if false;
+    }
+    
+    // ========================================
+    // CATALOG - Allow all other reads
+    // ========================================
+    match /{document=**} {
+      allow read: if true;
+      allow write: if false;
     }
   }
 }

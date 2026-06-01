@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSwipeable } from "react-swipeable";
 import { motion } from "framer-motion";
+import FloatingPromoButton from "@/components/FloatingPromoButton";
 import { useCart } from "@/context/CartContext";
 import {
   FaArrowRight,
@@ -368,7 +369,7 @@ function MenuHighlightsSection() {
   const highlights = [
     { name: "Smoky Chipotle Chicken Bowl", price: "R163", category: "Bowls", description: "grilled chipotle-marinated chicken strips, corn, black beans, grilled peppers & red onion, avocado slices, tomato salsa, shredded lettuce, cheddar cheese, served with a dressing of your choice,sesame seeds", popular: true, imageId: 1 },
     { name: "Protein Avocado Stack Salad", price: "R135", category: "Salads", description: "avocado diced, cherry tomatoes, cucumber, red onion thinly sliced, bell peppers, fresh cilantro, sweet corn kernels, sprinkle of sesame seeds", vegetarian: true, imageId: 2 },
-    { name: "Berry Bloom Smoothie", price: "From R65", category: "Smoothies", description: "mixed berries, Greek yoghurt, banana, whole milk & honey. a burst of berry goodness in every sip!", popular: true, imageId: 3 },
+    { name: "Berry Bloom Smoothie", price: "From R65", category: "Smoothies", description: "mixed berries, greek yoghurt, almonds & honey. A burst of berry goodness in every sip!", popular: true, imageId: 3 },
     { name: "Chicken Avocado Wrap", price: "R135", category: "Wraps", description: "grilled chicken breast, creamy avocado slices, sautéed cherry tomatoes, spinach, and greek yoghurt in a whole wheat wrap", imageId: 4 },
     { name: "Beef & Veg Stir-Fry", price: "R159", category: "Stir-Fry", description: "tender beef, broccoli, carrots, bell peppers, green onions, beef stock, low sodium soy sauce, honey, sesame oil, fresh ginger, garlic, cornstarch, with a sprinkle of sesame seeds", imageId: 5 },
     { name: "Creamy Spiced Sweet Potato Soup", price: "R135", category: "Soups", description: "olive oil, onion, garlic, fresh ginger, ground cumin, smoked paprika, cinnamon, ground coriander, sweet potatoes, carrot, vegetable broth, coconut milk, orange juice", vegetarian: true, imageId: 6 }
@@ -511,6 +512,7 @@ export default function HomePage() {
         <FloatingCallButton />
         <FloatingMenuButton />
         <FloatingReserveButton />
+      <FloatingPromoButton />
       </main>
     </>
   );

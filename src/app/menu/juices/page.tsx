@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import BackButton from "@/components/BackButton";
 import Image from 'next/image';
 import { juices } from '@/data/juices';
 import { Search, Star } from 'lucide-react';

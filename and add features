@@ -1,0 +1,60 @@
+warning: in the working copy of 'src/app/admin/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/checkout/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/forgot-password/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/bowls/[slug]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/bowls/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/breakfast/[slug]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/chicken/[slug]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/chicken/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/fries/[slug]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/fries/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/juices/[slug]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/juices/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/pastas/[slug]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/pastas/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/salads/[slug]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/salads/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/smoothies/[slug]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/smoothies/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/soups/[slug]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/soups/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/stirfries/[slug]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/stirfries/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/toasties/[slug]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/toasties/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/wraps/[slug]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/wraps/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/orders/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/profile/edit/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/context/AuthContext.tsx', LF will be replaced by CRLF the next time Git touches it
+src/app/admin/page.tsx
+src/app/checkout/page.tsx
+src/app/forgot-password/page.tsx
+src/app/menu/bowls/[slug]/page.tsx
+src/app/menu/bowls/page.tsx
+src/app/menu/breakfast/[slug]/page.tsx
+src/app/menu/chicken/[slug]/page.tsx
+src/app/menu/chicken/page.tsx
+src/app/menu/fries/[slug]/page.tsx
+src/app/menu/fries/page.tsx
+src/app/menu/juices/[slug]/page.tsx
+src/app/menu/juices/page.tsx
+src/app/menu/pastas/[slug]/page.tsx
+src/app/menu/pastas/page.tsx
+src/app/menu/salads/[slug]/page.tsx
+src/app/menu/salads/page.tsx
+src/app/menu/smoothies/[slug]/page.tsx
+src/app/menu/smoothies/page.tsx
+src/app/menu/soups/[slug]/page.tsx
+src/app/menu/soups/page.tsx
+src/app/menu/stirfries/[slug]/page.tsx
+src/app/menu/stirfries/page.tsx
+src/app/menu/toasties/[slug]/page.tsx
+src/app/menu/toasties/page.tsx
+src/app/menu/wraps/[slug]/page.tsx
+src/app/menu/wraps/page.tsx
+src/app/orders/page.tsx
+src/app/page.tsx
+src/app/profile/edit/page.tsx
+src/context/AuthContext.tsx

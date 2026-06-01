@@ -20,7 +20,6 @@ export default function EditProfilePage() {
 
     if (user) {
       setDisplayName(user.displayName || '');
-      // Load phone from localStorage or user data
       const savedPhone = localStorage.getItem(`user_phone_${user.uid}`);
       if (savedPhone) setPhoneNumber(savedPhone);
     }
@@ -31,12 +30,10 @@ export default function EditProfilePage() {
     setIsUpdating(true);
 
     try {
-      // Update display name (pass as object)
       if (displayName !== user?.displayName) {
         await updateUserProfile({ displayName });
       }
 
-      // Save phone number to localStorage (Firebase Auth doesn't store phone by default)
       if (user && phoneNumber) {
         localStorage.setItem(`user_phone_${user.uid}`, phoneNumber);
       }
@@ -76,58 +73,27 @@ export default function EditProfilePage() {
 
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
-              </label>
-              <input
-                type="email"
-                value={user.email || ''}
-                disabled
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+              <input type="email" value={user.email || ''} disabled className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500" />
               <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Display Name
-              </label>
-              <input
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Your display name"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-2">Display Name</label>
+              <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Your display name" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="Your phone number"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+              <input type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="Your phone number" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" />
               <p className="text-xs text-gray-500 mt-1">Used for delivery notifications</p>
             </div>
 
             <div className="flex gap-4 pt-4">
-              <button
-                type="submit"
-                disabled={isUpdating}
-                className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition font-semibold disabled:opacity-50"
-              >
+              <button type="submit" disabled={isUpdating} className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 font-semibold disabled:opacity-50">
                 {isUpdating ? 'Saving...' : 'Save Changes'}
               </button>
-              <button
-                type="button"
-                onClick={() => router.push('/profile')}
-                className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition font-semibold"
-              >
+              <button type="button" onClick={() => router.push('/profile')} className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 font-semibold">
                 Cancel
               </button>
             </div>

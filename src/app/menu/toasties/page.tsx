@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import BackButton from "@/components/BackButton";
 import Image from 'next/image';
 import { toasties } from '@/data/toasties';
 import { loadPopularItems, isItemPopular } from '@/services/popularItemsService';
