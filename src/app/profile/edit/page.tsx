@@ -1,115 +1,136 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { FaArrowLeft, FaSave } from "react-icons/fa";
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
+import { toast, Toaster } from 'react-hot-toast';
 
 export default function EditProfilePage() {
-  const { user, updateUserProfile } = useAuth();
+  const { user, updateUserProfile, loading } = useAuth();
   const router = useRouter();
-  const [displayName, setDisplayName] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
+  const [displayName, setDisplayName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      setDisplayName(user.displayName || "");
-      setPhoneNumber(user.phoneNumber || "");
+    if (!loading && !user) {
+      router.push('/login');
+      return;
     }
-  }, [user]);
+
+    if (user) {
+      setDisplayName(user.displayName || '');
+      // Load phone from localStorage or user data
+      const savedPhone = localStorage.getItem(`user_phone_${user.uid}`);
+      if (savedPhone) setPhoneNumber(savedPhone);
+    }
+  }, [user, loading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSaving(true);
-    
+    setIsUpdating(true);
+
     try {
-      // If updateUserProfile expects just the display name
-      if (displayName) {
-        await updateUserProfile(displayName);
+      // Update display name (pass as object)
+      if (displayName !== user?.displayName) {
+        await updateUserProfile({ displayName });
       }
-      
-      // Note: Phone number update might need a separate function
-      // or Firebase Admin SDK on the backend
-      
-      router.push('/profile');
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      alert("Failed to update profile. Please try again.");
+
+      // Save phone number to localStorage (Firebase Auth doesn't store phone by default)
+      if (user && phoneNumber) {
+        localStorage.setItem(`user_phone_${user.uid}`, phoneNumber);
+      }
+
+      toast.success('Profile updated successfully!');
+      setTimeout(() => router.push('/profile'), 1500);
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      toast.error(error.message || 'Failed to update profile');
     } finally {
-      setIsSaving(false);
+      setIsUpdating(false);
     }
   };
 
-  if (!user) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      <div className="min-h-screen bg-gray-50 pt-20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-2xl mx-auto px-4">
-        <Link href="/profile" className="inline-flex items-center gap-2 text-gray-600 hover:text-green-600 mb-6">
-          <FaArrowLeft /> Back to Profile
-        </Link>
+  if (!user) return null;
 
-        <div className="bg-white rounded-xl shadow p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">Edit Profile</h1>
-          
-          <form onSubmit={handleSubmit} className="space-y-4">
+  return (
+    <div className="min-h-screen bg-gray-50 pt-20">
+      <Toaster position="top-right" />
+      <div className="container mx-auto px-4 py-8 max-w-2xl">
+        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+          <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4">
+            <h1 className="text-2xl font-bold text-white">Edit Profile</h1>
+            <p className="text-green-100 text-sm">Update your personal information</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Email Address
+              </label>
+              <input
+                type="email"
+                value={user.email || ''}
+                disabled
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Display Name
               </label>
               <input
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                required
+                placeholder="Your display name"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                value={user?.email || ""}
-                disabled
-                className="w-full p-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-500"
-              />
-              <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Phone Number
               </label>
               <input
                 type="tel"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                placeholder="+27 XX XXX XXXX"
+                placeholder="Your phone number"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Note: Phone number update may require additional verification
-              </p>
+              <p className="text-xs text-gray-500 mt-1">Used for delivery notifications</p>
             </div>
-            
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              <FaSave /> {isSaving ? "Saving..." : "Save Changes"}
-            </button>
+
+            <div className="flex gap-4 pt-4">
+              <button
+                type="submit"
+                disabled={isUpdating}
+                className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition font-semibold disabled:opacity-50"
+              >
+                {isUpdating ? 'Saving...' : 'Save Changes'}
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push('/profile')}
+                className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition font-semibold"
+              >
+                Cancel
+              </button>
+            </div>
           </form>
         </div>
       </div>

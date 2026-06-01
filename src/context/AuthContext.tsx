@@ -1,31 +1,31 @@
-"use client";
+'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import {
+import { 
   User,
-  onAuthStateChanged,
-  signOut,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  updateProfile,
-  sendPasswordResetEmail,
+  signOut,
+  onAuthStateChanged,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  updateProfile,
+  sendPasswordResetEmail
 } from 'firebase/auth';
-import { auth } from '@/lib/auth';
+import { auth } from '@/lib/firebase';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
+  userRole: string | null;
+  signUp: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
-  signup: (email: string, password: string, name: string) => Promise<void>;
+  updateUserProfile: (data: { displayName?: string; photoURL?: string }) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
-  updateUserProfile: (displayName: string, photoURL?: string) => Promise<void>;
-  updateUserPhone: (phoneNumber: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,148 +33,128 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!auth) {
+      console.warn('Auth not initialized');
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
+      
+      if (user) {
+        // Fetch user role from Firestore
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setUserRole(userData.role || 'customer');
+          } else {
+            setUserRole('customer');
+            // Create user document if it doesn't exist
+            await setDoc(doc(db, 'users', user.uid), {
+              email: user.email,
+              role: 'customer',
+              displayName: user.displayName || '',
+              createdAt: new Date()
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching user role:', error);
+          setUserRole('customer');
+        }
+      } else {
+        setUserRole(null);
+      }
+      
       setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
-  const login = async (email: string, password: string) => {
-    setLoading(true);
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (error: any) {
-      console.error('Login error:', error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
+  const signUp = async (email: string, password: string) => {
+    if (!auth) throw new Error('Auth not initialized');
+    const result = await createUserWithEmailAndPassword(auth, email, password);
+    setUser(result.user);
+    setUserRole('customer');
+    
+    // Create user document in Firestore
+    await setDoc(doc(db, 'users', result.user.uid), {
+      email: result.user.email,
+      role: 'customer',
+      createdAt: new Date()
+    });
   };
 
-  const loginWithGoogle = async () => {
-    setLoading(true);
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-    } catch (error: any) {
-      console.error('Google login error:', error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
+  const signIn = async (email: string, password: string) => {
+    if (!auth) throw new Error('Auth not initialized');
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    setUser(result.user);
   };
 
-  const signup = async (email: string, password: string, name: string) => {
-    setLoading(true);
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-
-      if (userCredential.user) {
-        await updateProfile(userCredential.user, {
-          displayName: name
-        });
-        
-        // Create user document in Firestore
-        await setDoc(doc(db, 'users', userCredential.user.uid), {
-          email,
-          displayName: name,
-          createdAt: new Date(),
-          phoneNumber: '',
-        });
-
-        await userCredential.user.reload();
-        setUser({ ...userCredential.user });
-      }
-    } catch (error: any) {
-      console.error('Signup error:', error);
-      throw error;
-    } finally {
-      setLoading(false);
+  const signInWithGoogle = async () => {
+    if (!auth) throw new Error('Auth not initialized');
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+    setUser(result.user);
+    setUserRole('customer');
+    
+    // Create user document in Firestore if it doesn't exist
+    const userDoc = await getDoc(doc(db, 'users', result.user.uid));
+    if (!userDoc.exists()) {
+      await setDoc(doc(db, 'users', result.user.uid), {
+        email: result.user.email,
+        displayName: result.user.displayName,
+        role: 'customer',
+        createdAt: new Date()
+      });
     }
   };
 
   const logout = async () => {
-    setLoading(true);
-    try {
-      await signOut(auth);
-    } catch (error: any) {
-      console.error('Logout error:', error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
+    if (!auth) throw new Error('Auth not initialized');
+    await signOut(auth);
+    setUser(null);
+    setUserRole(null);
+  };
+
+  const updateUserProfile = async (data: { displayName?: string; photoURL?: string }) => {
+    if (!auth || !auth.currentUser) throw new Error('No user logged in');
+    
+    await updateProfile(auth.currentUser, data);
+    
+    // Update Firestore user document
+    await updateDoc(doc(db, 'users', auth.currentUser.uid), {
+      displayName: data.displayName || '',
+      photoURL: data.photoURL || '',
+      updatedAt: new Date()
+    });
+    
+    // Refresh user object
+    setUser({ ...auth.currentUser });
   };
 
   const resetPassword = async (email: string) => {
-    try {
-      await sendPasswordResetEmail(auth, email);
-    } catch (error: any) {
-      console.error('Password reset error:', error);
-      throw error;
-    }
-  };
-
-  const updateUserProfile = async (displayName: string, photoURL?: string) => {
-    if (!auth.currentUser) throw new Error("No user logged in");
-
-    setLoading(true);
-    try {
-      await updateProfile(auth.currentUser, {
-        displayName,
-        photoURL
-      });
-      
-      // Update Firestore
-      const userDocRef = doc(db, 'users', auth.currentUser.uid);
-      await setDoc(userDocRef, { displayName }, { merge: true });
-
-      await auth.currentUser.reload();
-      setUser({ ...auth.currentUser });
-    } catch (error: any) {
-      console.error('Profile update error:', error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateUserPhone = async (phoneNumber: string) => {
-    if (!auth.currentUser) throw new Error("No user logged in");
-
-    setLoading(true);
-    try {
-      // Store phone number in Firestore (Firebase Auth requires re-authentication for phone updates)
-      const userDocRef = doc(db, 'users', auth.currentUser.uid);
-      await setDoc(userDocRef, { phoneNumber }, { merge: true });
-      
-      // Also store in localStorage for quick access
-      localStorage.setItem(`user_phone_${auth.currentUser.uid}`, phoneNumber);
-    } catch (error: any) {
-      console.error('Phone update error:', error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const value: AuthContextType = {
-    user,
-    loading,
-    login,
-    loginWithGoogle,
-    logout,
-    signup,
-    resetPassword,
-    updateUserProfile,
-    updateUserPhone,
+    if (!auth) throw new Error('Auth not initialized');
+    await sendPasswordResetEmail(auth, email);
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      userRole,
+      signUp,
+      signIn,
+      signInWithGoogle,
+      logout,
+      updateUserProfile,
+      resetPassword
+    }}>
       {children}
     </AuthContext.Provider>
   );
@@ -186,4 +166,15 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
+}
+
+// Helper function to set user role (for admin/staff setup)
+export async function setUserRole(userId: string, role: 'admin' | 'staff' | 'customer') {
+  try {
+    await setDoc(doc(db, 'users', userId), { role }, { merge: true });
+    return true;
+  } catch (error) {
+    console.error('Error setting user role:', error);
+    return false;
+  }
 }
