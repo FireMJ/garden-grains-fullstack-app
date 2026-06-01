@@ -1,0 +1,15 @@
+# Force images to be treated as binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.webp binary
+*.gif binary
+*.svg binary
+
+# Ensure proper line endings for images
+*.jpg -text
+*.jpeg -text
+*.png -text
+*.webp -text
+*.gif -text
+*.svg -text
