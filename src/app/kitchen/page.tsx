@@ -5,15 +5,8 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, doc, updateDoc } from 'firebase/firestore';
-import { FaClock, FaCheck, FaSpinner, FaBell, FaUtensils, FaHourglassHalf } from 'react-icons/fa';
+import { FaClock, FaCheck, FaSpinner, FaBell, FaUtensils } from 'react-icons/fa';
 import { toast, Toaster } from 'react-hot-toast';
-
-// Calculate prep time based on number of items
-const calculatePrepTime = (items: any[]): number => {
-  const totalItems = items.reduce((sum, item) => sum + (item.quantity || 1), 0);
-  let prepTime = 20 + (totalItems * 5);
-  return Math.min(prepTime, 45);
-};
 
 interface Order {
   id: string;
@@ -22,10 +15,10 @@ interface Order {
   totalPrice: number;
   status: 'pending' | 'preparing' | 'ready' | 'delivered';
   createdAt: any;
+  prepStartTime?: Date;
+  readyAt?: Date;
   specialInstructions?: string;
   orderType?: 'delivery' | 'pickup';
-  prepStartTime?: Date;
-  estimatedReadyTime?: Date;
 }
 
 export default function KitchenDashboard() {
@@ -33,7 +26,6 @@ export default function KitchenDashboard() {
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [activeTab, setActiveTab] = useState<'pending' | 'preparing' | 'ready'>('pending');
-  const [timers, setTimers] = useState<Record<string, { remaining: number; total: number }>>({});
 
   useEffect(() => {
     if (!loading) {
@@ -59,10 +51,10 @@ export default function KitchenDashboard() {
           totalPrice: data.total || data.totalPrice || 0,
           status: data.status || 'pending',
           createdAt: data.createdAt,
-          specialInstructions: data.specialInstructions || '',
-          orderType: data.orderType || 'pickup',
           prepStartTime: data.prepStartTime?.toDate(),
-          estimatedReadyTime: data.estimatedReadyTime?.toDate()
+          readyAt: data.readyAt?.toDate(),
+          specialInstructions: data.specialInstructions || '',
+          orderType: data.orderType || 'pickup'
         } as Order);
       });
       setOrders(newOrders);
@@ -71,16 +63,13 @@ export default function KitchenDashboard() {
     return () => unsubscribe();
   }, [user]);
 
-  const startPreparation = async (orderId: string, order: Order) => {
-    const prepTimeSeconds = calculatePrepTime(order.items) * 60;
-    const estimatedReadyTime = new Date(Date.now() + prepTimeSeconds * 1000);
-    
+  const startPreparation = async (orderId: string) => {
     try {
       const orderRef = doc(db, 'orders', orderId);
       await updateDoc(orderRef, {
         status: 'preparing',
         prepStartTime: new Date(),
-        estimatedReadyTime: estimatedReadyTime
+        estimatedReadyTime: new Date(Date.now() + 30 * 60000) // 30 minutes
       });
       toast.success(`Started preparing order #${orderId.slice(-6)}`);
     } catch (error) {
@@ -112,6 +101,11 @@ export default function KitchenDashboard() {
     ready: orders.filter(o => o.status === 'ready').length,
   };
 
+  const formatTime = (date?: Date) => {
+    if (!date) return 'Not started';
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -129,7 +123,6 @@ export default function KitchenDashboard() {
       <div className="max-w-7xl mx-auto px-4 py-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Kitchen Dashboard</h1>
         
-        {/* Stats Cards */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="bg-white rounded-lg p-4 border-l-4 border-orange-500">
             <p className="text-sm text-gray-500">New Orders</p>
@@ -145,7 +138,6 @@ export default function KitchenDashboard() {
           </div>
         </div>
         
-        {/* Tabs */}
         <div className="flex space-x-2 mb-6">
           <button onClick={() => setActiveTab('pending')} className={`px-6 py-2 rounded-lg ${activeTab === 'pending' ? 'bg-green-600 text-white' : 'bg-white text-gray-600'}`}>
             New Orders ({stats.pending})
@@ -158,13 +150,15 @@ export default function KitchenDashboard() {
           </button>
         </div>
         
-        {/* Orders Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredOrders.map((order) => (
             <div key={order.id} className="bg-white rounded-xl shadow-md overflow-hidden">
               <div className="p-4 bg-orange-50 border-l-4 border-orange-500">
-                <div className="flex justify-between">
-                  <p className="font-mono font-medium">#{order.id.slice(-6)}</p>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-mono font-medium">#{order.id.slice(-6)}</p>
+                    <p className="text-xs text-gray-500 mt-1">Ordered: {formatTime(order.createdAt?.toDate())}</p>
+                  </div>
                   <p className="font-bold text-green-600">R{order.totalPrice?.toFixed(2)}</p>
                 </div>
               </div>
@@ -179,17 +173,23 @@ export default function KitchenDashboard() {
               </div>
               <div className="p-4 bg-gray-50 border-t">
                 {order.status === 'pending' && (
-                  <button onClick={() => startPreparation(order.id, order)} className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
+                  <button onClick={() => startPreparation(order.id)} className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
                     Start Preparing
                   </button>
                 )}
                 {order.status === 'preparing' && (
-                  <button onClick={() => markAsReady(order.id)} className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700">
-                    Mark as Ready
-                  </button>
+                  <div className="space-y-2">
+                    <p className="text-xs text-gray-500 text-center">Started: {formatTime(order.prepStartTime)}</p>
+                    <button onClick={() => markAsReady(order.id)} className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700">
+                      Mark as Ready
+                    </button>
+                  </div>
                 )}
                 {order.status === 'ready' && (
-                  <div className="text-center text-green-600">Ready for pickup/delivery</div>
+                  <div className="text-center">
+                    <p className="text-green-600">Ready for {order.orderType === 'delivery' ? 'delivery' : 'pickup'}</p>
+                    <p className="text-xs text-gray-500 mt-1">Ready at: {formatTime(order.readyAt)}</p>
+                  </div>
                 )}
               </div>
             </div>
