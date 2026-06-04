@@ -1,37 +1,53 @@
-"use client";
+'use client';
 
-import { useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { FaTimesCircle } from "react-icons/fa";
+import { useSearchParams } from 'next/navigation';
+import { FaTimesCircle, FaArrowLeft, FaCreditCard } from 'react-icons/fa';
+import Link from 'next/link';
+import { Toaster } from 'react-hot-toast';
 
 export default function CancelContent() {
   const searchParams = useSearchParams();
-  const sessionId = searchParams.get("session_id");
+  const orderId = searchParams.get('orderId');
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-2xl mx-auto px-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <FaTimesCircle className="w-10 h-10 text-red-600" />
+    <div className="min-h-screen bg-gray-50 pt-20 flex items-center justify-center">
+      <Toaster position="top-right" />
+      <div className="container mx-auto px-4 py-8 max-w-md">
+        <div className="bg-white rounded-xl shadow-md overflow-hidden text-center">
+          <div className="bg-gradient-to-r from-red-600 to-orange-600 px-6 py-4">
+            <FaTimesCircle className="text-5xl text-white mx-auto mb-2" />
+            <h1 className="text-2xl font-bold text-white">Payment Cancelled</h1>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Payment Cancelled</h1>
-          <p className="text-gray-600 mb-6">
-            Your payment was cancelled. No charges have been made.
-          </p>
-          <div className="flex gap-4 justify-center">
-            <Link
-              href="/order"
-              className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition"
-            >
-              Try Again
-            </Link>
-            <Link
-              href="/menu"
-              className="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-300 transition"
-            >
-              Back to Menu
-            </Link>
+          
+          <div className="p-6">
+            <p className="text-gray-600 mb-4">
+              Your payment was cancelled. No charges have been made to your account.
+            </p>
+            
+            <div className="space-y-3">
+              {orderId && (
+                <Link
+                  href={`/payment?orderId=${orderId}`}
+                  className="flex items-center justify-center gap-2 w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold"
+                >
+                  <FaArrowLeft /> Try Again
+                </Link>
+              )}
+              
+              <Link
+                href="/cart"
+                className="flex items-center justify-center gap-2 w-full bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200 transition"
+              >
+                <FaArrowLeft /> Return to Cart
+              </Link>
+              
+              <Link
+                href="/menu"
+                className="flex items-center justify-center gap-2 w-full bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200 transition"
+              >
+                Continue Shopping
+              </Link>
+            </div>
           </div>
         </div>
       </div>

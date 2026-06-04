@@ -69,7 +69,8 @@ export default function PaymentSuccessContent() {
         const orderDoc = await getDoc(orderRef);
         
         if (orderDoc.exists()) {
-          const orderData = { id: orderDoc.id, ...orderDoc.data() };
+          const orderData = orderDoc.data();
+          const orderWithId = { id: orderDoc.id, ...orderData };
           
           if (paymentInfo && paymentInfo.responseCode === '00') {
             // Build update data without undefined values
@@ -80,7 +81,7 @@ export default function PaymentSuccessContent() {
               vodapayResponseCode: paymentInfo.responseCode,
               vodapayResponseMessage: paymentInfo.responseMessage,
               vodapayRetrievalReference: paymentInfo.retrievalReferenceNumber || paymentInfo.traceId,
-              vodapayAmountPaid: orderData.total,
+              vodapayAmountPaid: orderData.total || 0,
               vodapayTraceId: paymentInfo.traceId,
               paymentDate: new Date(),
               status: 'pending'
@@ -118,7 +119,7 @@ export default function PaymentSuccessContent() {
             toast.error(`Payment failed: ${paymentInfo.responseMessage}`);
           }
           
-          setOrder(orderData);
+          setOrder(orderWithId);
         } else {
           console.error('Order not found:', orderId);
           toast.error('Order not found');
