@@ -65,19 +65,36 @@ export default function ContactPage() {
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <MapPin className="text-[#2F5D50] mt-1" size={20} />
-                  <div><p className="font-medium">Address</p><p className="text-sm text-gray-600">Uitsig Wine Farm, Spaanschemat River Rd, Constantia, Cape Town, 7806</p></div>
+                  <div>
+                    <p className="font-medium">Address</p>
+                    <p className="text-sm text-gray-600">Constantia Uitsig Entrance</p>
+                    <p className="text-sm text-gray-600">83e Spaanschemat River Rd</p>
+                    <p className="text-sm text-gray-600">Constantia, Cape Town, 7806</p>
+                  </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <Phone className="text-[#2F5D50] mt-1" size={20} />
-                  <div><p className="font-medium">Phone</p><p className="text-sm text-gray-600">(069) 376-5574</p><p className="text-sm text-gray-600">WhatsApp: +27 69 376 5574</p></div>
+                  <div>
+                    <p className="font-medium">Phone</p>
+                    <p className="text-sm text-gray-600">(069) 376-5574</p>
+                    <p className="text-sm text-gray-600">WhatsApp: +27 69 376 5574</p>
+                  </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <Mail className="text-[#2F5D50] mt-1" size={20} />
-                  <div><p className="font-medium">Email</p><p className="text-sm text-gray-600">hello@gardengrains.co.za</p></div>
+                  <div>
+                    <p className="font-medium">Email</p>
+                    <p className="text-sm text-gray-600">hello@gardengrains.co.za</p>
+                  </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <Clock className="text-[#2F5D50] mt-1" size={20} />
-                  <div><p className="font-medium">Hours</p><p className="text-sm text-gray-600">Sun-Wed: 9am-5:30pm</p><p className="text-sm text-gray-600">Thu-Sat: 9am-9pm</p></div>
+                  <div>
+                    <p className="font-medium">Hours</p>
+                    <p className="text-sm text-gray-600">Sun-Wed: 9am-5:30pm</p>
+                    <p className="text-sm text-gray-600">Thu-Sat: 9am-9pm</p>
+                    <p className="text-sm text-gray-600 text-amber-600">Closed daily 4pm-5pm for dinner prep</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -87,7 +104,7 @@ export default function ContactPage() {
               <iframe 
                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3310.5!2d18.4412!3d-34.0425!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x1dcc427b5c2d2c8b%3A0x0!2zMzTCsDAyJzMzLjAiUyAxOMKwMjYnMjguMiJF!5e0!3m2!1sen!2sza!4v1640000000000!5m2!1sen!2sza" 
                 width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade"
-                title="Garden Grains Location Map"
+                title="Garden Grains Location Map - Constantia Uitsig, Cape Town"
               ></iframe>
             </div>
           </div>
@@ -112,22 +129,47 @@ export default function ContactPage() {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Your Name *</label>
-                    <input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2F5D50]" required />
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2F5D50] focus:border-transparent"
+                      required
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Email Address *</label>
-                    <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2F5D50]" required />
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2F5D50] focus:border-transparent"
+                      required
+                    />
                   </div>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                    <input type="tel" name="phone" value={formData.phone} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2F5D50]" />
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2F5D50] focus:border-transparent"
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
-                    <select name="subject" value={formData.subject} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2F5D50]">
+                    <select
+                      name="subject"
+                      value={formData.subject}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2F5D50] focus:border-transparent"
+                    >
                       <option value="">Select a subject</option>
                       <option value="General Inquiry">General Inquiry</option>
                       <option value="Order Issue">Order Issue</option>
@@ -140,10 +182,21 @@ export default function ContactPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Message *</label>
-                  <textarea name="message" value={formData.message} onChange={handleChange} rows={5} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2F5D50]" required></textarea>
+                  <textarea
+                    name="message"
+                    value={formData.message}
+                    onChange={handleChange}
+                    rows={5}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2F5D50] focus:border-transparent"
+                    required
+                  ></textarea>
                 </div>
 
-                <button type="submit" disabled={loading} className="w-full bg-[#2F5D50] text-white py-3 rounded-xl font-semibold hover:bg-[#23483E] transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-[#2F5D50] text-white py-3 rounded-xl font-semibold hover:bg-[#23483E] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
                   {loading ? 'Sending...' : <><Send size={18} /> Send Message</>}
                 </button>
               </form>

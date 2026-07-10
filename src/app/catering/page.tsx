@@ -3,25 +3,17 @@
 import { useState, FormEvent, useEffect } from "react";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import Image from "next/image";
 import Link from "next/link";
 
 // Types
-interface CateringPackage {
+interface DiningPackage {
   id: string;
   name: string;
-  description: string;
   price: number;
-  serves: string;
-  minGuests: number;
-  maxGuests: number;
+  menuHighlights: string[];
+  drinks: string;
+  notes: string;
   popular?: boolean;
-  features: {
-    name: string;
-    included: boolean;
-  }[];
-  image: string;
-  cuisineOptions: string[];
 }
 
 interface AddOn {
@@ -30,16 +22,6 @@ interface AddOn {
   description: string;
   price: number;
   priceType: "perPerson" | "flat";
-  category: string;
-}
-
-interface EventType {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  recommendedPackages: string[];
-  averageGuests: string;
 }
 
 interface CateringFormData {
@@ -52,166 +34,82 @@ interface CateringFormData {
   eventType: string;
   guests: number;
   package: string;
-  cuisinePreferences: string[];
+  selectedAddOns: string[];
   dietaryRestrictions: string;
   budget: string;
   venueLocation: string;
   serviceType: "full" | "dropoff" | "buffet" | "plated";
-  additionalServices: string[];
   message: string;
-  referralSource: string;
   heardAboutUs: string;
+  venueHireType: "exclusive" | "nonexclusive" | "none";
+  venueHours: number;
 }
 
-// Data
-const eventTypes: EventType[] = [
+// Dining Packages Data
+const diningPackages: DiningPackage[] = [
   {
-    id: "corporate",
-    name: "Corporate Event",
-    description: "Office lunches, meetings, conferences, and company parties",
-    icon: "💼",
-    recommendedPackages: ["basic", "premium"],
-    averageGuests: "25-100"
-  },
-  {
-    id: "wedding",
-    name: "Wedding",
-    description: "Wedding receptions, bridal showers, and engagement parties",
-    icon: "💒",
-    recommendedPackages: ["deluxe", "premium"],
-    averageGuests: "50-200"
-  },
-  {
-    id: "birthday",
-    name: "Birthday Party",
-    description: "Birthday celebrations of all ages",
-    icon: "🎂",
-    recommendedPackages: ["basic", "premium"],
-    averageGuests: "15-50"
-  },
-  {
-    id: "private",
-    name: "Private Dinner",
-    description: "Intimate gatherings, family reunions, anniversaries",
-    icon: "🏠",
-    recommendedPackages: ["basic", "premium"],
-    averageGuests: "10-30"
-  },
-  {
-    id: "holiday",
-    name: "Holiday Party",
-    description: "Christmas, New Year's, Thanksgiving, and other celebrations",
-    icon: "🎄",
-    recommendedPackages: ["premium", "deluxe"],
-    averageGuests: "20-80"
-  },
-  {
-    id: "fundraiser",
-    name: "Fundraiser / Gala",
-    description: "Charity events, galas, and non-profit gatherings",
-    icon: "🤝",
-    recommendedPackages: ["deluxe"],
-    averageGuests: "75-300"
-  }
-];
-
-const cateringPackages: CateringPackage[] = [
-  {
-    id: "basic",
-    name: "Garden Gathering",
-    description: "Perfect for small corporate meetings and intimate gatherings",
-    price: 185,
-    serves: "10-25 guests",
-    minGuests: 10,
-    maxGuests: 25,
-    popular: false,
-    features: [
-      { name: "3 Main Course Options", included: true },
-      { name: "2 Side Dishes", included: true },
-      { name: "Fresh Garden Salad", included: true },
-      { name: "Assorted Beverages (Soft Drinks)", included: true },
-      { name: "Basic Setup & Serveware", included: true },
-      { name: "Delivery within 15km", included: true },
-      { name: "Serving Staff", included: false },
-      { name: "Custom Menu Planning", included: false },
-      { name: "Dessert Station", included: false },
-      { name: "Premium Beverages", included: false }
-    ],
-    image: "/images/catering/basic-package.jpg",
-    cuisineOptions: ["Mediterranean", "Classic American", "Asian Fusion"]
-  },
-  {
-    id: "premium",
-    name: "Harvest Celebration",
-    description: "Ideal for weddings, corporate events, and mid-sized parties",
-    price: 295,
-    serves: "25-75 guests",
-    minGuests: 25,
-    maxGuests: 75,
+    id: "harvest",
+    name: "Harvest Table",
+    price: 495,
     popular: true,
-    features: [
-      { name: "5 Main Course Options", included: true },
-      { name: "4 Side Dishes", included: true },
-      { name: "Gourmet Appetizers (4 varieties)", included: true },
-      { name: "Artisan Bread & Spreads", included: true },
-      { name: "Full Beverage Service (Soft Drinks & Juices)", included: true },
-      { name: "Professional Setup & Decor", included: true },
-      { name: "2 Serving Staff Included", included: true },
-      { name: "Delivery within 30km", included: true },
-      { name: "Custom Menu Planning", included: true },
-      { name: "Dessert Station", included: false },
-      { name: "Bar Service", included: false }
+    menuHighlights: [
+      "Charcuterie boards",
+      "Slow‑cooked beef roast",
+      "Grilled chicken fillets",
+      "Local fish (hake or line fish)",
+      "Seasonal salads",
+      "Starch (Couscous, Brown rice, Quinoa)",
+      "Brownie + ice cream"
     ],
-    image: "/images/catering/premium-package.jpg",
-    cuisineOptions: ["Mediterranean", "Classic American", "Asian Fusion", "South African"]
+    drinks: "Jugs of freshly squeezed juices",
+    notes: "Communal dining style; seasonal salads rotate"
   },
   {
-    id: "deluxe",
-    name: "Grand Feast",
-    description: "Ultimate catering experience for large events and weddings",
-    price: 395,
-    serves: "75-200 guests",
-    minGuests: 75,
-    maxGuests: 200,
+    id: "set-menu",
+    name: "Set Menu (3‑Course)",
+    price: 550,
     popular: false,
-    features: [
-      { name: "8 Main Course Options", included: true },
-      { name: "6 Side Dishes", included: true },
-      { name: "Premium Appetizer Station", included: true },
-      { name: "Interactive Food Stations", included: true },
-      { name: "Full Premium Beverage Package", included: true },
-      { name: "Custom Bar Service", included: true },
-      { name: "Gourmet Dessert Station", included: true },
-      { name: "Professional Event Staff (4+ servers)", included: true },
-      { name: "Full Event Coordination", included: true },
-      { name: "Custom Menu Design", included: true },
-      { name: "Delivery Anywhere in Cape Town", included: true },
-      { name: "Premium Tableware & Linens", included: true }
+    menuHighlights: [
+      "Starter: Charcuterie board",
+      "Main: Choice of grilled chicken, beef roast, or local fish",
+      "Seasonal salads + starch (Couscous, Brown rice, Quinoa)",
+      "Dessert: Brownie + ice cream"
     ],
-    image: "/images/catering/deluxe-package.jpg",
-    cuisineOptions: ["Mediterranean", "Asian Fusion", "South African", "International Fusion"]
+    drinks: "Bottomless freshly squeezed juices",
+    notes: "Formal plated service"
   }
 ];
 
+// Premium Add-Ons
 const addOns: AddOn[] = [
-  { id: "bar", name: "Full Bar Service", description: "Professional bartender + premium alcohol selection", price: 2500, priceType: "flat", category: "beverage" },
-  { id: "mocktail", name: "Mocktail Station", description: "3 signature non-alcoholic cocktails", price: 350, priceType: "perPerson", category: "beverage" },
-  { id: "dessert", name: "Dessert Table", description: "Assorted mini desserts and cake", price: 180, priceType: "perPerson", category: "food" },
-  { id: "cheese", name: "Artisan Cheese Board", description: "Local cheeses, crackers, and fruits", price: 450, priceType: "flat", category: "appetizer" },
-  { id: "staff", name: "Additional Server", description: "Extra serving staff (per server)", price: 2500, priceType: "flat", category: "service" },
-  { id: "photobooth", name: "Photo Booth", description: "Photo booth with props and prints", price: 3500, priceType: "flat", category: "entertainment" },
-  { id: "flowers", name: "Floral Centerpieces", description: "Table floral arrangements", price: 450, priceType: "flat", category: "decor" },
-  { id: "linens", name: "Premium Linens", description: "Upgraded tablecloths and napkins", price: 250, priceType: "flat", category: "decor" },
-];
-
-const cuisineOptions = [
-  "Mediterranean", "Asian Fusion", "Classic American", "South African", 
-  "Italian", "Indian", "Mexican", "Middle Eastern", "Japanese", "Vegan/Plant-Based"
-];
-
-const dietaryOptions = [
-  "Vegetarian", "Vegan", "Gluten-Free", "Dairy-Free", "Nut-Free", 
-  "Kosher", "Halal", "Low-Carb", "Diabetic-Friendly"
+  { 
+    id: "karoo-lamb", 
+    name: "Karoo Leg of Lamb", 
+    description: "Rosemary & garlic, red wine reduction", 
+    price: 95, 
+    priceType: "perPerson" 
+  },
+  { 
+    id: "norwegian-salmon", 
+    name: "Norwegian Salmon", 
+    description: "Garlic thyme butter", 
+    price: 110, 
+    priceType: "perPerson" 
+  },
+  { 
+    id: "extra-salad", 
+    name: "Extra Salad/Side", 
+    description: "Additional seasonal salad or side dish", 
+    price: 45, 
+    priceType: "perPerson" 
+  },
+  { 
+    id: "dessert-upgrade", 
+    name: "Dessert Upgrade", 
+    description: "Brownie + Sorbet Trio", 
+    price: 55, 
+    priceType: "perPerson" 
+  }
 ];
 
 const serviceTypes = [
@@ -226,6 +124,15 @@ const referralSources = [
   "Previous Client", "Wedding Fair", "Advertisement", "Other"
 ];
 
+const eventTypes = [
+  { id: "corporate", name: "Corporate Event", icon: "💼" },
+  { id: "wedding", name: "Wedding", icon: "💒" },
+  { id: "birthday", name: "Birthday Party", icon: "🎂" },
+  { id: "private", name: "Private Dinner", icon: "🏠" },
+  { id: "holiday", name: "Holiday Party", icon: "🎄" },
+  { id: "fundraiser", name: "Fundraiser / Gala", icon: "🤝" }
+];
+
 export default function CateringPage() {
   const [formData, setFormData] = useState<CateringFormData>({
     name: "",
@@ -236,72 +143,32 @@ export default function CateringPage() {
     eventTime: "",
     eventType: "",
     guests: 30,
-    package: "premium",
-    cuisinePreferences: [],
+    package: "harvest",
+    selectedAddOns: [],
     dietaryRestrictions: "",
     budget: "",
     venueLocation: "",
     serviceType: "full",
-    additionalServices: [],
     message: "",
-    referralSource: "",
-    heardAboutUs: ""
+    heardAboutUs: "",
+    venueHireType: "none",
+    venueHours: 0
   });
 
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<"packages" | "custom">("packages");
-  const [showQuote, setShowQuote] = useState(false);
-  const [filteredPackages, setFilteredPackages] = useState(cateringPackages);
+  const [totalEstimate, setTotalEstimate] = useState(0);
+  const [venueCost, setVenueCost] = useState(0);
 
-  // Filter packages based on guest count
-  useEffect(() => {
-    if (formData.guests) {
-      const filtered = cateringPackages.filter(
-        pkg => formData.guests >= pkg.minGuests && formData.guests <= pkg.maxGuests
-      );
-      setFilteredPackages(filtered.length > 0 ? filtered : cateringPackages);
-      
-      // Auto-select appropriate package if current selection doesn't fit
-      if (filtered.length > 0 && !filtered.some(p => p.id === formData.package)) {
-        setFormData(prev => ({ ...prev, package: filtered[0].id }));
-      }
-    }
-  }, [formData.guests]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'guests' ? parseInt(value) || 0 : value
-    }));
-  };
-
-  const handleCuisineToggle = (cuisine: string) => {
-    setFormData(prev => ({
-      ...prev,
-      cuisinePreferences: prev.cuisinePreferences.includes(cuisine)
-        ? prev.cuisinePreferences.filter(c => c !== cuisine)
-        : [...prev.cuisinePreferences, cuisine]
-    }));
-  };
-
-  const handleAddOnToggle = (addOnId: string) => {
-    setSelectedAddOns(prev =>
-      prev.includes(addOnId)
-        ? prev.filter(id => id !== addOnId)
-        : [...prev, addOnId]
-    );
-  };
+  const VENUE_HOURLY_RATE = 1000;
 
   const calculateTotal = () => {
-    const selectedPkg = cateringPackages.find(p => p.id === formData.package);
+    const selectedPkg = diningPackages.find(p => p.id === formData.package);
     if (!selectedPkg) return 0;
     
     let total = selectedPkg.price * formData.guests;
     
-    selectedAddOns.forEach(addOnId => {
+    formData.selectedAddOns.forEach(addOnId => {
       const addOn = addOns.find(a => a.id === addOnId);
       if (addOn) {
         total += addOn.priceType === "perPerson" 
@@ -310,28 +177,66 @@ export default function CateringPage() {
       }
     });
     
+    // Add venue hire cost
+    if (formData.venueHireType === "exclusive" && formData.venueHours > 0) {
+      total += formData.venueHours * VENUE_HOURLY_RATE;
+    }
+    
     return total;
+  };
+
+  useEffect(() => {
+    setTotalEstimate(calculateTotal());
+    setVenueCost(formData.venueHireType === "exclusive" ? formData.venueHours * VENUE_HOURLY_RATE : 0);
+  }, [formData.package, formData.guests, formData.selectedAddOns, formData.venueHireType, formData.venueHours]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === 'guests' || name === 'venueHours' ? parseInt(value) || 0 : value
+    }));
+  };
+
+  const handleVenueHireChange = (type: "exclusive" | "nonexclusive" | "none") => {
+    setFormData(prev => ({
+      ...prev,
+      venueHireType: type,
+      venueHours: type === "none" ? 0 : prev.venueHours || 0
+    }));
+  };
+
+  const handleAddOnToggle = (addOnId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      selectedAddOns: prev.selectedAddOns.includes(addOnId)
+        ? prev.selectedAddOns.filter(id => id !== addOnId)
+        : [...prev.selectedAddOns, addOnId]
+    }));
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    
+    // Validate venue hire selection
+    if (formData.venueHireType === "exclusive" && formData.venueHours === 0) {
+      alert("Please enter the number of hours for exclusive venue hire.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // Save catering inquiry to Firestore with enhanced data
       await addDoc(collection(db, "cateringInquiries"), {
         ...formData,
-        selectedAddOns,
         totalEstimate: calculateTotal(),
+        venueCost: venueCost,
         submittedAt: serverTimestamp(),
         status: "pending",
         source: "website"
       });
 
       setSubmitted(true);
-      
-      // Optional: Send email notification (would need backend API)
-      // await fetch('/api/catering-notification', { method: 'POST', body: JSON.stringify(formData) });
       
     } catch (error: unknown) {
       console.error("Error submitting catering inquiry:", error);
@@ -341,8 +246,7 @@ export default function CateringPage() {
     }
   };
 
-  const selectedPackage = cateringPackages.find(pkg => pkg.id === formData.package);
-  const totalEstimate = calculateTotal();
+  const selectedPackage = diningPackages.find(pkg => pkg.id === formData.package);
 
   if (submitted) {
     return (
@@ -424,139 +328,186 @@ export default function CateringPage() {
         </div>
       </div>
 
-      {/* Event Types */}
+      {/* Exclusive Venue Hire */}
       <div className="py-16 bg-white">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-4">Perfect for Any Event</h2>
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-8 border-2 border-amber-200">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-3xl">🏛️</span>
+              <h2 className="text-3xl font-bold text-gray-900">Exclusive Venue Hire</h2>
+            </div>
+            <div className="grid md:grid-cols-2 gap-8">
+              <div>
+                <p className="text-4xl font-bold text-[#1E4259] mb-2">R1,000 <span className="text-lg font-normal text-gray-600">per hour</span></p>
+                <ul className="space-y-2 text-gray-700">
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-600 mt-1">✓</span>
+                    <span>Full use of restaurant space</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-600 mt-1">✓</span>
+                    <span>Professional staff service</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-600 mt-1">✓</span>
+                    <span>Décor flexibility</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-orange-600 mt-1">⚠️</span>
+                    <span className="text-sm">Deposit required upfront for estimated hours (non-refundable if cancelled)</span>
+                  </li>
+                </ul>
+              </div>
+              <div className="bg-white/80 rounded-xl p-4">
+                <h4 className="font-semibold text-gray-900 mb-2">Perfect For:</h4>
+                <div className="flex flex-wrap gap-2">
+                  <span className="px-3 py-1 bg-gray-100 rounded-full text-sm">Weddings</span>
+                  <span className="px-3 py-1 bg-gray-100 rounded-full text-sm">Corporate Events</span>
+                  <span className="px-3 py-1 bg-gray-100 rounded-full text-sm">Private Parties</span>
+                  <span className="px-3 py-1 bg-gray-100 rounded-full text-sm">Galas</span>
+                  <span className="px-3 py-1 bg-gray-100 rounded-full text-sm">Anniversaries</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Dining Packages */}
+      <div id="packages" className="py-16">
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center text-gray-900 mb-4">🍽️ Dining Packages</h2>
           <p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto">
-            No matter the occasion, we have catering solutions tailored to your needs
+            Choose from our carefully crafted dining packages for your event
           </p>
-          
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {eventTypes.map((event) => (
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {diningPackages.map((pkg) => (
               <div
-                key={event.id}
-                onClick={() => {
-                  setFormData(prev => ({ ...prev, eventType: event.id }));
-                  document.getElementById('inquiry')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className={`text-center p-4 rounded-xl cursor-pointer transition-all ${
-                  formData.eventType === event.id
-                    ? 'bg-green-100 ring-2 ring-green-500'
-                    : 'bg-gray-50 hover:bg-green-50'
+                key={pkg.id}
+                className={`bg-white rounded-2xl shadow-lg overflow-hidden transition-all ${
+                  formData.package === pkg.id ? 'ring-4 ring-green-500 scale-[1.02]' : ''
                 }`}
               >
-                <div className="text-3xl mb-2">{event.icon}</div>
-                <h3 className="font-semibold text-gray-900 text-sm mb-1">{event.name}</h3>
-                <p className="text-xs text-gray-500">{event.averageGuests} guests</p>
+                {pkg.popular && (
+                  <div className="bg-[#F4A261] text-white text-center py-2 text-sm font-medium">
+                    Most Popular
+                  </div>
+                )}
+                <div className="p-6">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{pkg.name}</h3>
+                  
+                  <div className="mb-4">
+                    <span className="text-3xl font-bold text-green-600">R {pkg.price}</span>
+                    <span className="text-gray-500 text-sm"> /person</span>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <h4 className="font-semibold text-gray-700 mb-2">Menu Highlights:</h4>
+                    <ul className="space-y-1">
+                      {pkg.menuHighlights.map((item, idx) => (
+                        <li key={idx} className="text-sm text-gray-600 flex items-start gap-2">
+                          <span className="text-green-600">•</span>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  
+                  <div className="bg-gray-50 rounded-lg p-3 mb-3">
+                    <p className="text-sm font-medium text-gray-700">🥤 Drinks:</p>
+                    <p className="text-sm text-gray-600">{pkg.drinks}</p>
+                  </div>
+                  
+                  <div className="bg-blue-50 rounded-lg p-3 mb-4">
+                    <p className="text-sm font-medium text-blue-700">📝 Note:</p>
+                    <p className="text-sm text-blue-600">{pkg.notes}</p>
+                  </div>
+                  
+                  <button
+                    onClick={() => setFormData(prev => ({ ...prev, package: pkg.id }))}
+                    className={`w-full py-3 rounded-lg transition font-medium ${
+                      formData.package === pkg.id
+                        ? 'bg-green-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-green-600 hover:text-white'
+                    }`}
+                  >
+                    {formData.package === pkg.id ? 'Selected' : 'Select Package'}
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Packages Section */}
-      <div id="packages" className="py-16">
+      {/* Premium Add-Ons */}
+      <div className="py-16 bg-white">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-4">Catering Packages</h2>
-          <p className="text-center text-gray-600 mb-8 max-w-2xl mx-auto">
-            Choose from our carefully crafted packages, or let us create a custom menu for your event
+          <h2 className="text-3xl font-bold text-center text-gray-900 mb-4">🥩 Premium Add‑Ons</h2>
+          <p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto">
+            Enhance your dining experience with these premium upgrades
           </p>
 
-          {/* Guest Count Filter */}
-          <div className="max-w-md mx-auto mb-8">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Number of Guests
-            </label>
-            <input
-              type="range"
-              min="10"
-              max="300"
-              value={formData.guests}
-              onChange={(e) => setFormData(prev => ({ ...prev, guests: parseInt(e.target.value) }))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-600"
-            />
-            <div className="flex justify-between text-sm text-gray-600 mt-2">
-              <span>{formData.guests} guests</span>
-              {filteredPackages.length > 0 && (
-                <span className="text-green-600">
-                  {filteredPackages.length} package{filteredPackages.length > 1 ? 's' : ''} available
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Package Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {cateringPackages.map((pkg) => {
-              const isAvailable = formData.guests >= pkg.minGuests && formData.guests <= pkg.maxGuests;
-              
-              return (
-                <div
-                  key={pkg.id}
-                  className={`bg-white rounded-2xl shadow-lg overflow-hidden transition-all ${
-                    !isAvailable ? 'opacity-60' : ''
-                  } ${
-                    formData.package === pkg.id ? 'ring-4 ring-green-500 scale-105' : ''
-                  }`}
-                >
-                  {pkg.popular && (
-                    <div className="bg-[#F4A261] text-white text-center py-2 text-sm font-medium">
-                      Most Popular
-                    </div>
-                  )}
-                  <div className="relative h-48 w-full">
-                    <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
-                      <span className="text-white text-4xl">🍽️</span>
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{pkg.name}</h3>
-                    <p className="text-gray-600 mb-4">{pkg.description}</p>
-                    
-                    <div className="mb-4">
-                      <span className="text-3xl font-bold text-green-600">R {pkg.price}</span>
-                      <span className="text-gray-500 text-sm"> /person</span>
-                    </div>
-                    
-                    <p className="text-sm text-gray-500 mb-4">Recommended for {pkg.serves}</p>
-                    
-                    <div className="space-y-2 mb-6">
-                      {pkg.features.slice(0, 5).map((feature, idx) => (
-                        <div key={idx} className="flex items-start">
-                          <svg className={`w-5 h-5 mr-2 flex-shrink-0 ${
-                            feature.included ? 'text-green-500' : 'text-gray-300'
-                          }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            {feature.included ? (
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            ) : (
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            )}
-                          </svg>
-                          <span className={`text-sm ${feature.included ? 'text-gray-700' : 'text-gray-400'}`}>
-                            {feature.name}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <button
-                      onClick={() => setFormData(prev => ({ ...prev, package: pkg.id }))}
-                      disabled={!isAvailable}
-                      className={`w-full py-3 rounded-lg transition font-medium ${
-                        formData.package === pkg.id
-                          ? 'bg-green-600 text-white'
-                          : isAvailable
-                            ? 'bg-gray-100 text-gray-700 hover:bg-green-600 hover:text-white'
-                            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                      }`}
-                    >
-                      {formData.package === pkg.id ? 'Selected' : 'Select Package'}
-                    </button>
-                  </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {addOns.map((addOn) => (
+              <div
+                key={addOn.id}
+                onClick={() => handleAddOnToggle(addOn.id)}
+                className={`border-2 rounded-xl p-6 cursor-pointer transition-all ${
+                  formData.selectedAddOns.includes(addOn.id)
+                    ? 'border-green-500 bg-green-50 shadow-md'
+                    : 'border-gray-200 hover:border-green-300 bg-white'
+                }`}
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <h4 className="font-semibold text-gray-900">{addOn.name}</h4>
+                  <span className="text-green-600 font-bold">
+                    +R{addOn.price} <span className="text-xs font-normal text-gray-500">pp</span>
+                  </span>
                 </div>
-              );
-            })}
+                <p className="text-sm text-gray-600">{addOn.description}</p>
+                {formData.selectedAddOns.includes(addOn.id) && (
+                  <div className="mt-3 text-xs text-green-600 font-medium">✓ Selected</div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Booking Terms */}
+      <div className="py-16 bg-gray-50">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="bg-white rounded-2xl shadow-lg p-8">
+            <h2 className="text-3xl font-bold text-center text-gray-900 mb-8">💳 Booking Terms</h2>
+            
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="text-center p-6 bg-gray-50 rounded-xl">
+                <div className="text-4xl mb-3">💰</div>
+                <h3 className="font-bold text-gray-900 mb-2">Deposit</h3>
+                <p className="text-gray-600 text-sm">
+                  R100 per person <br />
+                  <span className="text-xs text-gray-500">(deducted from final bill; non-refundable for no-shows)</span>
+                </p>
+              </div>
+              
+              <div className="text-center p-6 bg-gray-50 rounded-xl">
+                <div className="text-4xl mb-3">🏛️</div>
+                <h3 className="font-bold text-gray-900 mb-2">Exclusive Venue Deposit</h3>
+                <p className="text-gray-600 text-sm">
+                  Payable upfront for estimated hours of use
+                </p>
+              </div>
+              
+              <div className="text-center p-6 bg-gray-50 rounded-xl">
+                <div className="text-4xl mb-3">📋</div>
+                <h3 className="font-bold text-gray-900 mb-2">Service Charge</h3>
+                <p className="text-gray-600 text-sm">
+                  10% for tables of 6+ guests
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -578,12 +529,9 @@ export default function CateringPage() {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                    Full Name *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
                   <input
                     type="text"
-                    id="name"
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
@@ -593,12 +541,9 @@ export default function CateringPage() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-2">
-                    Company/Organization
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Company/Organization</label>
                   <input
                     type="text"
-                    id="companyName"
                     name="companyName"
                     value={formData.companyName}
                     onChange={handleInputChange}
@@ -607,12 +552,9 @@ export default function CateringPage() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                    Email Address *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
                   <input
                     type="email"
-                    id="email"
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
@@ -622,12 +564,9 @@ export default function CateringPage() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone Number *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
                   <input
                     type="tel"
-                    id="phone"
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
@@ -647,12 +586,9 @@ export default function CateringPage() {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="eventDate" className="block text-sm font-medium text-gray-700 mb-2">
-                    Event Date *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Event Date *</label>
                   <input
                     type="date"
-                    id="eventDate"
                     name="eventDate"
                     value={formData.eventDate}
                     onChange={handleInputChange}
@@ -662,12 +598,9 @@ export default function CateringPage() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="eventTime" className="block text-sm font-medium text-gray-700 mb-2">
-                    Event Time *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Event Time *</label>
                   <input
                     type="time"
-                    id="eventTime"
                     name="eventTime"
                     value={formData.eventTime}
                     onChange={handleInputChange}
@@ -676,11 +609,8 @@ export default function CateringPage() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="eventType" className="block text-sm font-medium text-gray-700 mb-2">
-                    Event Type *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Event Type *</label>
                   <select
-                    id="eventType"
                     name="eventType"
                     value={formData.eventType}
                     onChange={handleInputChange}
@@ -689,17 +619,14 @@ export default function CateringPage() {
                   >
                     <option value="">Select event type</option>
                     {eventTypes.map(event => (
-                      <option key={event.id} value={event.id}>{event.name}</option>
+                      <option key={event.id} value={event.id}>{event.icon} {event.name}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="guests" className="block text-sm font-medium text-gray-700 mb-2">
-                    Number of Guests *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Number of Guests *</label>
                   <input
                     type="number"
-                    id="guests"
                     name="guests"
                     value={formData.guests}
                     onChange={handleInputChange}
@@ -709,13 +636,10 @@ export default function CateringPage() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
                   />
                 </div>
-                <div>
-                  <label htmlFor="venueLocation" className="block text-sm font-medium text-gray-700 mb-2">
-                    Venue/Location *
-                  </label>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Venue/Location *</label>
                   <input
                     type="text"
-                    id="venueLocation"
                     name="venueLocation"
                     value={formData.venueLocation}
                     onChange={handleInputChange}
@@ -725,11 +649,8 @@ export default function CateringPage() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="serviceType" className="block text-sm font-medium text-gray-700 mb-2">
-                    Service Type *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Service Type *</label>
                   <select
-                    id="serviceType"
                     name="serviceType"
                     value={formData.serviceType}
                     onChange={handleInputChange}
@@ -741,113 +662,9 @@ export default function CateringPage() {
                     ))}
                   </select>
                 </div>
-              </div>
-            </div>
-
-            {/* Menu Preferences */}
-            <div className="bg-gray-50 rounded-xl p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
-                <span className="w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center mr-2">3</span>
-                Menu Preferences
-              </h3>
-              
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Cuisine Preferences (select all that apply)
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {cuisineOptions.map((cuisine) => (
-                    <button
-                      key={cuisine}
-                      type="button"
-                      onClick={() => handleCuisineToggle(cuisine)}
-                      className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-                        formData.cuisinePreferences.includes(cuisine)
-                          ? 'bg-green-600 text-white'
-                          : 'bg-white border border-gray-300 text-gray-700 hover:border-green-500'
-                      }`}
-                    >
-                      {cuisine}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="dietaryRestrictions" className="block text-sm font-medium text-gray-700 mb-2">
-                  Dietary Restrictions / Allergies
-                </label>
-                <textarea
-                  id="dietaryRestrictions"
-                  name="dietaryRestrictions"
-                  value={formData.dietaryRestrictions}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
-                  placeholder="Please list any dietary restrictions, allergies, or special requirements..."
-                />
-              </div>
-            </div>
-
-            {/* Add-ons */}
-            <div className="bg-gray-50 rounded-xl p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
-                <span className="w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center mr-2">4</span>
-                Add-ons & Upgrades
-              </h3>
-              <p className="text-gray-600 mb-4">Enhance your catering experience with these options</p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {addOns.map((addOn) => (
-                  <div
-                    key={addOn.id}
-                    onClick={() => handleAddOnToggle(addOn.id)}
-                    className={`border rounded-lg p-4 cursor-pointer transition ${
-                      selectedAddOns.includes(addOn.id)
-                        ? 'border-green-500 bg-green-50'
-                        : 'border-gray-200 hover:border-green-300 bg-white'
-                    }`}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-semibold text-gray-900">{addOn.name}</h4>
-                      <span className="text-green-600 font-medium">
-                        R {addOn.price} {addOn.priceType === 'perPerson' ? '/person' : ''}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600">{addOn.description}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Budget & Additional Info */}
-            <div className="bg-gray-50 rounded-xl p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
-                <span className="w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center mr-2">5</span>
-                Additional Information
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label htmlFor="budget" className="block text-sm font-medium text-gray-700 mb-2">
-                    Estimated Budget Range (R)
-                  </label>
-                  <input
-                    type="text"
-                    id="budget"
-                    name="budget"
-                    value={formData.budget}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
-                    placeholder="e.g., 5000-10000"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="heardAboutUs" className="block text-sm font-medium text-gray-700 mb-2">
-                    How did you hear about us? *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">How did you hear about us? *</label>
                   <select
-                    id="heardAboutUs"
                     name="heardAboutUs"
                     value={formData.heardAboutUs}
                     onChange={handleInputChange}
@@ -861,13 +678,133 @@ export default function CateringPage() {
                   </select>
                 </div>
               </div>
+            </div>
+
+            {/* Venue Hire Selection */}
+            <div className="bg-gray-50 rounded-xl p-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                <span className="w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center mr-2">3</span>
+                Venue Hire Options
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">Select your venue hire preference (mandatory)</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div
+                  onClick={() => handleVenueHireChange("exclusive")}
+                  className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${
+                    formData.venueHireType === "exclusive"
+                      ? 'border-green-500 bg-green-50 shadow-md'
+                      : 'border-gray-200 hover:border-green-300 bg-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-2xl">🏛️</span>
+                    <h4 className="font-semibold text-gray-900">Exclusive</h4>
+                  </div>
+                  <p className="text-sm text-gray-600">Full venue hire at R1,000/hour</p>
+                  {formData.venueHireType === "exclusive" && (
+                    <div className="mt-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Hours Required *</label>
+                      <input
+                        type="number"
+                        name="venueHours"
+                        value={formData.venueHours}
+                        onChange={handleInputChange}
+                        min="1"
+                        max="24"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                        placeholder="Enter hours"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div
+                  onClick={() => handleVenueHireChange("nonexclusive")}
+                  className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${
+                    formData.venueHireType === "nonexclusive"
+                      ? 'border-green-500 bg-green-50 shadow-md'
+                      : 'border-gray-200 hover:border-green-300 bg-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-2xl">🍽️</span>
+                    <h4 className="font-semibold text-gray-900">Non-Exclusive</h4>
+                  </div>
+                  <p className="text-sm text-gray-600">Shared venue space (no additional cost)</p>
+                  {formData.venueHireType === "nonexclusive" && (
+                    <div className="mt-3 text-sm text-green-600">✓ Selected</div>
+                  )}
+                </div>
+
+                <div
+                  onClick={() => handleVenueHireChange("none")}
+                  className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${
+                    formData.venueHireType === "none"
+                      ? 'border-green-500 bg-green-50 shadow-md'
+                      : 'border-gray-200 hover:border-green-300 bg-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-2xl">📍</span>
+                    <h4 className="font-semibold text-gray-900">No Venue Hire</h4>
+                  </div>
+                  <p className="text-sm text-gray-600">I have my own venue</p>
+                  {formData.venueHireType === "none" && (
+                    <div className="mt-3 text-sm text-green-600">✓ Selected</div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Dietary Restrictions */}
+            <div className="bg-gray-50 rounded-xl p-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                <span className="w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center mr-2">4</span>
+                Dietary Requirements
+              </h3>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Dietary Restrictions / Allergies
+                </label>
+                <textarea
+                  name="dietaryRestrictions"
+                  value={formData.dietaryRestrictions}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                  placeholder="Please list any dietary restrictions, allergies, or special requirements..."
+                />
+              </div>
+            </div>
+
+            {/* Additional Information */}
+            <div className="bg-gray-50 rounded-xl p-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                <span className="w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center mr-2">5</span>
+                Additional Information
+              </h3>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Estimated Budget Range (R)
+                </label>
+                <input
+                  type="text"
+                  name="budget"
+                  value={formData.budget}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                  placeholder="e.g., 5000-10000"
+                />
+              </div>
 
               <div>
-                <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Additional Comments or Special Requests
                 </label>
                 <textarea
-                  id="message"
                   name="message"
                   value={formData.message}
                   onChange={handleInputChange}
@@ -879,53 +816,66 @@ export default function CateringPage() {
             </div>
 
             {/* Quote Summary */}
-            {selectedPackage && (
-              <div className="bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl p-6">
-                <h3 className="text-xl font-bold mb-4">Quote Summary</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span>Package: {selectedPackage.name}</span>
-                    <span className="font-bold">R {selectedPackage.price}/person</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Number of Guests</span>
-                    <span>{formData.guests}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Base Price</span>
-                    <span>R {(selectedPackage.price * formData.guests).toFixed(2)}</span>
-                  </div>
-                  {selectedAddOns.length > 0 && (
-                    <>
-                      <div className="border-t border-white/20 pt-2">
-                        <span className="font-semibold">Add-ons:</span>
-                      </div>
-                      {selectedAddOns.map(addOnId => {
-                        const addOn = addOns.find(a => a.id === addOnId);
-                        return addOn ? (
-                          <div key={addOnId} className="flex justify-between text-sm">
-                            <span>{addOn.name}</span>
-                            <span>R {addOn.priceType === 'perPerson' 
-                              ? (addOn.price * formData.guests).toFixed(2)
-                              : addOn.price.toFixed(2)}
-                            </span>
-                          </div>
-                        ) : null;
-                      })}
-                    </>
-                  )}
-                  <div className="border-t border-white/20 pt-3 mt-3">
-                    <div className="flex justify-between text-xl font-bold">
-                      <span>Estimated Total</span>
-                      <span>R {totalEstimate.toFixed(2)}</span>
+            <div className="bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl p-6">
+              <h3 className="text-xl font-bold mb-4">💰 Quote Summary</h3>
+              <div className="space-y-3">
+                {selectedPackage && (
+                  <>
+                    <div className="flex justify-between">
+                      <span>Package: {selectedPackage.name}</span>
+                      <span className="font-bold">R {selectedPackage.price}/person</span>
                     </div>
-                    <p className="text-sm text-green-100 mt-2">
-                      *Final quote may vary based on menu customization and seasonal availability
-                    </p>
+                    <div className="flex justify-between">
+                      <span>Number of Guests</span>
+                      <span>{formData.guests}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Base Price</span>
+                      <span>R {(selectedPackage.price * formData.guests).toFixed(2)}</span>
+                    </div>
+                  </>
+                )}
+                
+                {formData.selectedAddOns.length > 0 && (
+                  <>
+                    <div className="border-t border-white/20 pt-2">
+                      <span className="font-semibold">Add-ons:</span>
+                    </div>
+                    {formData.selectedAddOns.map(addOnId => {
+                      const addOn = addOns.find(a => a.id === addOnId);
+                      return addOn ? (
+                        <div key={addOnId} className="flex justify-between text-sm">
+                          <span>{addOn.name}</span>
+                          <span>R {(addOn.price * formData.guests).toFixed(2)}</span>
+                        </div>
+                      ) : null;
+                    })}
+                  </>
+                )}
+                
+                {formData.venueHireType === "exclusive" && formData.venueHours > 0 && (
+                  <>
+                    <div className="border-t border-white/20 pt-2">
+                      <span className="font-semibold">Venue Hire:</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Exclusive Venue ({formData.venueHours} hour{formData.venueHours > 1 ? 's' : ''})</span>
+                      <span>R {venueCost.toFixed(2)}</span>
+                    </div>
+                  </>
+                )}
+                
+                <div className="border-t border-white/20 pt-3 mt-3">
+                  <div className="flex justify-between text-xl font-bold">
+                    <span>Estimated Total</span>
+                    <span>R {totalEstimate.toFixed(2)}</span>
                   </div>
+                  <p className="text-sm text-green-100 mt-2">
+                    *Final quote may vary based on menu customization and seasonal availability
+                  </p>
                 </div>
               </div>
-            )}
+            </div>
 
             {/* Submit Button */}
             <button

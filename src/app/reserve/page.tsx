@@ -1,10 +1,11 @@
-"use client";
+'use client';
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { FaArrowLeft, FaCalendarAlt, FaClock, FaUsers, FaPhone, FaEnvelope, FaUser, FaUtensils } from "react-icons/fa";
+import { FaArrowLeft, FaCalendarAlt, FaClock, FaUsers, FaPhone, FaEnvelope, FaUser, FaUtensils, FaCheckCircle } from "react-icons/fa";
+import { toast, Toaster } from "react-hot-toast";
 
 export default function ReservePage() {
   const router = useRouter();
@@ -21,6 +22,7 @@ export default function ReservePage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -35,20 +37,32 @@ export default function ReservePage() {
     setIsSubmitting(true);
 
     try {
-      // Here you would typically save to Firebase
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      const response = await fetch('/api/send-reservation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to send reservation');
+      }
+
       setSubmitted(true);
+      setEmailSent(result.emailSent || false);
+      toast.success('Reservation request sent successfully!');
       
-      // Reset form after 3 seconds
       setTimeout(() => {
         setSubmitted(false);
         router.push('/');
-      }, 3000);
+      }, 4000);
       
     } catch (error) {
       console.error('Error submitting reservation:', error);
-      alert('There was an error processing your reservation. Please try again.');
+      toast.error('Failed to send reservation. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -73,20 +87,24 @@ export default function ReservePage() {
         <div className="max-w-2xl mx-auto px-4">
           <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
             <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+              <FaCheckCircle className="w-10 h-10 text-green-600" />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Reservation Request Sent!</h1>
             <p className="text-gray-600 mb-4">
               Thank you for choosing Garden & Grains. We'll confirm your reservation shortly.
             </p>
+            {emailSent && (
+              <div className="bg-blue-50 rounded-xl p-3 mb-4 text-sm text-blue-700">
+                📧 A confirmation email has been sent to {formData.email}
+              </div>
+            )}
             <div className="bg-gray-50 rounded-xl p-4 mb-6 text-left">
               <h3 className="font-semibold text-gray-900 mb-2">Reservation Details:</h3>
               <ul className="space-y-1 text-sm text-gray-600">
                 <li>📅 Date: {formData.date}</li>
                 <li>⏰ Time: {formData.time}</li>
                 <li>👥 Guests: {formData.guests}</li>
+                <li>📧 Email: {formData.email}</li>
               </ul>
             </div>
             <p className="text-sm text-gray-500">Redirecting to homepage...</p>
@@ -98,8 +116,8 @@ export default function ReservePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
+      <Toaster position="top-right" />
       <div className="max-w-4xl mx-auto px-4">
-        {/* Back to Menu Link */}
         <Link 
           href="/menu" 
           className="inline-flex items-center gap-2 text-gray-600 hover:text-green-600 transition mb-6 group"
@@ -108,19 +126,19 @@ export default function ReservePage() {
           <span>Back to Menu</span>
         </Link>
 
-        {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-[#2F5D50] mb-4">Reserve a Table</h1>
           <p className="text-gray-600 max-w-2xl mx-auto">
             Experience farm-to-table dining at Uitsig Wine Farm. Reserve your table for an unforgettable meal.
           </p>
+          <p className="text-sm text-gray-500 mt-2">
+            📧 Confirmation will be sent to <strong>reservations@gardengrains.co.za</strong>
+          </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Reservation Form */}
           <div className="lg:col-span-2">
             <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow p-6">
-              {/* Personal Information */}
               <div className="mb-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <FaUser className="text-green-600" />
@@ -168,7 +186,6 @@ export default function ReservePage() {
                 </div>
               </div>
 
-              {/* Reservation Details */}
               <div className="mb-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <FaCalendarAlt className="text-green-600" />
@@ -235,7 +252,6 @@ export default function ReservePage() {
                 </div>
               </div>
 
-              {/* Special Requests */}
               <div className="mb-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <FaUtensils className="text-green-600" />
@@ -251,7 +267,6 @@ export default function ReservePage() {
                 />
               </div>
 
-              {/* Important Notes */}
               <div className="mb-6 p-4 bg-yellow-50 rounded-lg">
                 <h3 className="font-semibold text-yellow-800 mb-2">Important Notes</h3>
                 <ul className="text-sm text-yellow-700 space-y-1 list-disc pl-4">
@@ -262,7 +277,6 @@ export default function ReservePage() {
                 </ul>
               </div>
 
-              {/* Operating Hours */}
               <div className="mb-6 p-4 bg-blue-50 rounded-lg">
                 <h3 className="font-semibold text-blue-800 mb-2">Operating Hours</h3>
                 <div className="grid grid-cols-2 gap-4 text-sm text-blue-700">
@@ -278,18 +292,19 @@ export default function ReservePage() {
                 <p className="text-xs text-blue-600 mt-2">Closed daily 4:00 PM - 5:00 PM for dinner prep</p>
               </div>
 
-              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={isSubmitting}
                 className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-medium disabled:opacity-50"
               >
-                {isSubmitting ? 'Processing...' : 'Request Reservation'}
+                {isSubmitting ? 'Sending Request...' : 'Request Reservation'}
               </button>
+              <p className="text-xs text-gray-500 text-center mt-2">
+                📧 A confirmation will be sent to your email
+              </p>
             </form>
           </div>
 
-          {/* Contact Info Sidebar */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow p-6 sticky top-24">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Need Help?</h2>
@@ -311,8 +326,8 @@ export default function ReservePage() {
 
                 <div className="p-3 bg-gray-50 rounded-lg">
                   <h3 className="font-semibold text-gray-900 mb-2">Email</h3>
-                  <a href="mailto:hello@gardengrains.co.za" className="text-green-600 hover:underline">
-                    hello@gardengrains.co.za
+                  <a href="mailto:reservations@gardengrains.co.za" className="text-green-600 hover:underline">
+                    reservations@gardengrains.co.za
                   </a>
                 </div>
 
