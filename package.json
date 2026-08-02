@@ -7,33 +7,16 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "set-admin": "npx ts-node scripts/set-admin-role.ts"
+    "lint": "eslint ."
   },
   "dependencies": {
-    "@firebase/auth": "^1.13.0",
-    "@firebase/firestore": "^4.14.0",
-    "@firebase/storage": "^0.14.2",
-    "@googlemaps/js-api-loader": "^1.16.8",
-    "@react-google-maps/api": "^2.19.3",
-    "axios": "^1.7.2",
-    "emoji-picker-react": "^4.19.1",
-    "firebase": "^10.14.1",
     "framer-motion": "^11.2.10",
-    "jose": "^6.2.3",
     "lucide-react": "^0.394.0",
     "next": "16.2.2",
-    "nodemailer": "^9.0.3",
     "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "react-hot-toast": "^2.6.0",
-    "react-icons": "^5.2.1",
-    "react-swipeable": "^7.0.1",
-    "resend": "^6.17.1",
-    "sonner": "^1.5.0"
+    "react-dom": "18.3.1"
   },
   "devDependencies": {
-    "@types/google.maps": "^3.64.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
@@ -42,7 +25,6 @@
     "eslint-config-next": "16.2.2",
     "postcss": "^8.5.9",
     "tailwindcss": "3.4.19",
-    "ts-node": "^10.9.2",
     "typescript": "^5"
   }
 }

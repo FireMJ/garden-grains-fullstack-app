@@ -1,36 +1,33 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import "./globals.css";
-import { CartProvider } from "@/context/CartContext";
-import { AuthProvider } from "@/context/AuthContext";
-import { FirebaseProvider } from "@/components/FirebaseProvider";
-import Header from "@/components/Header";
+import localFont from "next/font/local";
 
-const inter = Inter({ subsets: ["latin"] });
+import { SiteShell } from "@/site/site-shell";
+
+import "./globals.css";
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-body", display: "swap" });
+const display = localFont({
+  src: "../../public/fonts/garden-grains-display.woff2",
+  variable: "--font-display",
+  weight: "400",
+  style: "normal",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
-  title: "Garden Grains - Farm to Table Restaurant",
-  description: "Fresh, locally sourced ingredients prepared with passion in Constantia, Cape Town",
+  title: {
+    default: "Garden & Grains — A Constantia Moment",
+    template: "%s | Garden & Grains",
+  },
+  description: "Fresh, considered food at Heritage Market, Constantia Uitsig in Cape Town.",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <FirebaseProvider>
-          <AuthProvider>
-            <CartProvider>
-              <Header />
-              <main className="min-h-screen pt-0">
-                {children}
-              </main>
-            </CartProvider>
-          </AuthProvider>
-        </FirebaseProvider>
+    <html lang="en" data-scroll-behavior="smooth">
+      <body className={`${inter.variable} ${display.variable}`}>
+        <SiteShell novelApiKey={process.env.NEXT_PUBLIC_NOVEL_API_KEY ?? ""}>{children}</SiteShell>
       </body>
     </html>
   );
