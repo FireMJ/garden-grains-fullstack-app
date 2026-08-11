@@ -27,10 +27,7 @@ npm run lint
 
 ## Environment
 
-- `NEXT_PUBLIC_NOVEL_API_KEY`
-- `NEXT_PUBLIC_NOVEL_GIFT_CARDS_URL`
-
-These values are public browser configuration. Never expose private payment, email, webhook, or administrative credentials.
+Novel's public browser configuration lives in `src/site/config.ts`; the public pages do not require environment values. Never expose private payment, email, webhook, or administrative credentials.
 
 ## Documentation index
 

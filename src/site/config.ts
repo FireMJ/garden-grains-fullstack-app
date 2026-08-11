@@ -19,10 +19,14 @@ export interface SiteConfig {
   addressLines: string[];
   mapsUrl: string;
   instagramUrl: string;
+  novelApiKey: string;
   giftCardsUrl: string;
   hours: SiteHours[];
   nav: SiteNavItem[];
 }
+
+const novelApiKey = "c19846ea-c6c6-487e-a193-758a06bd2d7e";
+const novelGiftCardsUrl = "https://giftcards.withnovel.com/gardengrains";
 
 export const siteConfig: SiteConfig = {
   name: "Garden & Grains",
@@ -38,7 +42,8 @@ export const siteConfig: SiteConfig = {
   ],
   mapsUrl: "https://maps.google.com/?q=Uitsig+Wine+Farm",
   instagramUrl: "https://instagram.com/gardenandgrains",
-  giftCardsUrl: process.env.NEXT_PUBLIC_NOVEL_GIFT_CARDS_URL ?? "",
+  novelApiKey,
+  giftCardsUrl: novelGiftCardsUrl,
   hours: [
     { days: "Sunday — Wednesday", hours: "09:00 — 17:30" },
     { days: "Thursday — Saturday", hours: "09:00 — 21:00" },
@@ -47,8 +52,7 @@ export const siteConfig: SiteConfig = {
   nav: [
     { label: "About", href: "/about", kind: "route" },
     { label: "Menu", href: "/menu", kind: "route" },
-    { label: "Gift Cards", href: process.env.NEXT_PUBLIC_NOVEL_GIFT_CARDS_URL ?? "", kind: "gift-cards" },
+    { label: "Gift Cards", href: novelGiftCardsUrl, kind: "gift-cards" },
     { label: "Order via WhatsApp", href: "", kind: "order" },
   ],
 };
-

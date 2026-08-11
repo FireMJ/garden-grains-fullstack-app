@@ -17,7 +17,7 @@ npm ci
 npm run dev
 ```
 
-The site works without environment values. To connect Novel bookings and gift cards, copy an example environment file and supply the optional public values listed there.
+Novel bookings and gift cards use the public configuration in `src/site/config.ts`, so no Vercel environment values are required.
 
 ```sh
 npm run lint

@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import localFont from "next/font/local";
 
 import { SiteShell } from "@/site/site-shell";
+import { siteConfig } from "@/site/config";
 
 import "./globals.css";
 
@@ -27,7 +28,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" data-scroll-behavior="smooth">
       <body className={`${inter.variable} ${display.variable}`}>
-        <SiteShell novelApiKey={process.env.NEXT_PUBLIC_NOVEL_API_KEY ?? ""}>{children}</SiteShell>
+        <SiteShell novelApiKey={siteConfig.novelApiKey}>{children}</SiteShell>
       </body>
     </html>
   );
