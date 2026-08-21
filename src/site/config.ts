@@ -26,7 +26,7 @@ export interface SiteConfig {
 }
 
 const novelApiKey = "c19846ea-c6c6-487e-a193-758a06bd2d7e";
-const novelGiftCardsUrl = "https://giftcards.withnovel.com/gardengrains";
+const novelGiftCardsUrl = "https://giftcards.withnovel.com/garden-grains";
 
 export const siteConfig: SiteConfig = {
   name: "Garden & Grains",
